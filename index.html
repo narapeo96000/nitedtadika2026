@@ -1,80 +1,103 @@
-<!doctype html>
-<html lang="th">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ระบบนิเทศออนไลน์ ตาดีกา 2569</title>
-  <meta name="description" content="ระบบนิเทศออนไลน์ ศูนย์อิสลามศึกษาประจำมัสยิด (ตาดีกา) — แผงข้อมูล ฟีเจอร์ และวิธีการใช้งาน">
-  <style>
-    :root{--accent:#0b6d4f;--muted:#666}
-    body{font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Thai','Helvetica Neue', Arial; line-height:1.6; margin:0; color:#222}
-    header{background:linear-gradient(90deg,var(--accent),#137f61); color:white; padding:2rem 1rem}
-    .container{max-width:1000px;margin:0 auto;padding:1rem}
-    h1{margin:.2rem 0}
-    .card{background:#fff;border-radius:8px;padding:1rem;margin:1rem 0;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
-    nav{display:flex;gap:1rem;flex-wrap:wrap;margin-top:.5rem}
-    a.button{display:inline-block;padding:.5rem .9rem;background:#fff;color:var(--accent);border-radius:6px;text-decoration:none;font-weight:600}
-    footer{padding:1rem;text-align:center;color:var(--muted);font-size:.9rem}
-    ul{padding-left:1.1rem}
-    @media(min-width:700px){header{padding:3rem 1rem}}
-  </style>
-</head>
-<body>
-  <header>
-    <div class="container">
-      <h1>ระบบนิเทศออนไลน์ ตาดีกา 2569</h1>
-      <p style="margin:.2rem 0;opacity:.95">ระบบสนับสนุนการนิเทศและติดตามการเรียนการสอนของศูนย์อิสลามศึกษาประจำมัสยิด (ตาดีกา) ในรูปแบบออนไลน์</p>
-      <nav>
-        <a class="button" href="#about">เกี่ยวกับระบบ</a>
-        <a class="button" href="#features">คุณสมบัติ</a>
-        <a class="button" href="#howto">วิธีใช้งาน</a>
-        <a class="button" href="#contact">ติดต่อ</a>
-        <a class="button" href="code_artifact.html">นิเทศออนไลน์</a>
-      </nav>
-    </div>
-  </header>
+<script>
+    // 👇 เอา URL ของเว็บแอปที่คัดลอกไว้จาก Step 1 มาวางตรงนี้!
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwQg-neCufXxZnqxzv1uJd1Ic4G9IlyTOG_67mjwRETsho6J7SsQbxzwe0i2_6tIe-JQQ/exec';
 
-  <main class="container">
-    <section id="about" class="card">
-      <h2>เกี่ยวกับระบบ</h2>
-      <p>ระบบนิเทศออนไลน์นี้ออกแบบมาเพื่อช่วยให้ผู้บริหารและอาจารย์นิเทศสามารถติดตามการสอน ประเมินผล และให้ข้อเสนอแนะกับครูและนักเรียนตาดีกา ได้อย่างมีระบบและเข้าถึงข้อมูลได้สะดวกทุกที่ทุกเวลา</p>
-      <ul>
-        <li>บันทึกผลการนิเทศและข้อเสนอแนะ</li>
-        <li>เก็บสถิติการเข้าเรียนและประเมินผล</li>
-        <li>สร้างรายงานสำหรับผู้บริหาร</li>
-      </ul>
-    </section>
+    // คำนวณคะแนนอัตโนมัติ (เหมือนเดิม)
+    const scoreInputs = document.querySelectorAll('.score-input');
+    scoreInputs.forEach(input => {
+      input.addEventListener('input', calculateTotal);
+    });
 
-    <section id="features" class="card">
-      <h2>คุณสมบัติเด่น</h2>
-      <ul>
-        <li>แดชบอร์ดสรุปภาพรวมการนิเทศ</li>
-        <li>ระบบบันทึกการนิเทศแบบฟอร์มออนไลน์</li>
-        <li>ระบบแจ้งเตือนและติดตามงาน</li>
-        <li>รายงานสรุปแบบ PDF/Excel</li>
-      </ul>
-    </section>
+    function calculateTotal() {
+      const s1 = parseInt(document.getElementById('score1').value) || 0;
+      const s2 = parseInt(document.getElementById('score2').value) || 0;
+      const total = s1 + s2;
+      document.getElementById('totalDisplay').innerText = total;
+      document.getElementById('totalScore').value = total;
+    }
 
-    <section id="howto" class="card">
-      <h2>วิธีการใช้งาน (สั้น ๆ)</h2>
-      <ol>
-        <li>สมัครบัญชีผู้ใช้สำหรับอาจารย์นิเทศและผู้บริหาร</li>
-        <li>เพิ่มข้อมูลตาดีกาและครูผู้สอน</li>
-        <li>บันทึกการนิเทศผ่านฟอร์มออนไลน์หลังการเยี่ยม/สังเกต</li>
-        <li>ดูรายงานสรุปและดาวน์โหลดเมื่อจำเป็น</li>
-      </ol>
-      <p style="color:var(--muted)">หมายเหตุ: หน้าเว็บนี้เป็นหน้าเริ่มต้น (index) สำหรับแอปพลิเคชัน — สามารถขยายระบบด้วยการเชื่อมฐานข้อมูล และระบบยืนยันตัวตนต่อไป</p>
-    </section>
+    // ฟังก์ชันส่งฟอร์มไปยัง Google Apps Script
+    async function submitForm(event) {
+      event.preventDefault();
+      
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังบันทึก...';
 
-    <section id="contact" class="card">
-      <h2>ติดต่อและแหล่งข้อมูล</h2>
-      <p>หากต้องการข้อมูลเพิ่มเติมหรือต้องการพัฒนา โปรดติดต่อผู้ดูแลระบบ</p>
-      <p>ค้นหาข้อมูลทั่วไปเกี่ยวกับตาดีกา: <a href="https://www.google.com/search?q=%E0%B8%A8%E0%B8%B9%E0%B8%99%E0%B8%A2%E0%B9%8C%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B9%80%E0%B8%A3%E0%B8%B5%E0%B8%A2%E0%B8%99%E0%B8%A3%E0%B8%B9%E0%B9%89%E0%B8%9B%E0%B8%A3%E0%B8%B0%E0%B8%88%E0%B8%B3%E0%B8%A1%E0%B8%B1%E0%B8%AA%E0%B8%A2%E0%B8%B4%E0%B8%94" target="_blank">ผลการค้นหา (Google)</a></p>
-    </section>
-  </main>
+      const formData = {
+        centerName: document.getElementById('centerName').value,
+        formType: document.getElementById('formType').value,
+        score1: document.getElementById('score1').value,
+        score2: document.getElementById('score2').value,
+        totalScore: document.getElementById('totalScore').value,
+        comment: document.getElementById('comment').value,
+        supervisor: document.getElementById('supervisor').value
+      };
 
-  <footer>
-    <div class="container">&copy; 2569 ระบบนิเทศออนไลน์ ตาดีกา — พัฒนาโดย narapeo96000</div>
-  </footer>
-</body>
-</html>
+      try {
+        // ใช้ fetch ส่งข้อมูลไปที่ Apps Script
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // ใช้ text/plain เพื่อเลี่ยงปัญหา CORS
+          body: JSON.stringify({ action: 'saveForm', payload: formData })
+        });
+        
+        const result = await response.json();
+        
+        alert(result.message);
+        if(result.success) {
+          document.getElementById('evaluationForm').reset();
+          calculateTotal();
+        }
+      } catch (error) {
+        alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'บันทึกข้อมูลการนิเทศ';
+      }
+    }
+
+    // --- ระบบ Chatbot "น้องศึกษา" ---
+    function toggleChat() {
+      const chat = document.getElementById('chat-widget');
+      chat.style.display = chat.style.display === 'flex' ? 'none' : 'flex';
+    }
+
+    function handleChatEnter(event) {
+      if (event.key === 'Enter') sendMessage();
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById('chatInput');
+      const msg = input.value.trim();
+      if (!msg) return;
+
+      const chatBody = document.getElementById('chat-body');
+      
+      chatBody.innerHTML += `<div class="msg-user">${msg}</div>`;
+      input.value = '';
+      chatBody.scrollTop = chatBody.scrollHeight;
+
+      const loadingId = 'loading-' + Date.now();
+      chatBody.innerHTML += `<div class="msg-bot" id="${loadingId}">...กำลังพิมพ์...</div>`;
+      chatBody.scrollTop = chatBody.scrollHeight;
+
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'chat', payload: msg })
+        });
+        
+        const result = await response.json();
+        
+        document.getElementById(loadingId).remove();
+        chatBody.innerHTML += `<div class="msg-bot">${result.reply}</div>`;
+        chatBody.scrollTop = chatBody.scrollHeight;
+        
+      } catch (error) {
+        document.getElementById(loadingId).remove();
+        chatBody.innerHTML += `<div class="msg-bot" style="color:red;">ระบบขัดข้อง กรุณาลองใหม่ค่ะ</div>`;
+      }
+    }
+  </script>
