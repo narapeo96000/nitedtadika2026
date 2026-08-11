@@ -511,6 +511,15 @@
     let selectedTadika = null;
     let activeTab = 1;
 
+    // SweetAlert: ปิดข้อความอัตโนมัติใน 5 วินาที (ทุกหน้า) ยกเว้น dialog ยืนยัน/หน้าต่างโหลด
+    const _origSwalFire = Swal.fire;
+    Swal.fire = function (opts) {
+      if (typeof opts === 'object' && opts && opts.showCancelButton !== true && opts.allowOutsideClick !== false) {
+        opts.timer = 5000;
+      }
+      return _origSwalFire.call(this, opts);
+    };
+
     // ---- API helper ----
     async function api(action, payload) {
       return fetch(API_URL, {
