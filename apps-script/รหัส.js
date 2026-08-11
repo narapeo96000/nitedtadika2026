@@ -233,7 +233,7 @@ function getTadikaList() {
   return {success: true, data: list};
 }
 
-// --- สถิติระบบนิเทศออนไลน์ (นับจากชีต ADDRESS/DATA/USERS) ---
+// --- สถิติระบบนิเทศออนไลน์ (นับเฉพาะตาดีกาจากชีต ADDR_TADEKA + DATA_TADEKA ไม่รวมปอเนาะ) ---
 function getStats() {
   const ss = SpreadsheetApp.openById(SHEET_ID);
   let totalTadika = 0, totalEval = 0, totalUsers = 0, sumPct = 0;
@@ -244,49 +244,49 @@ function getStats() {
 
   // ADDRESS: A=ID, B=สถานะ, J=เลขที่/หมู่/ถนน, O/P/Q=ครู ช/ญ/รวม, R/S/T=นักเรียน ช/ญ/รวม
   const toNum = v => { const n = Number(String(v).replace(/,/g, '').trim()); return isNaN(n) ? 0 : n; };
-  for(const cfg of ADDR_SHEETS) {
-    const addr = ss.getSheetByName(cfg.name);
-    if(!addr) continue;
+  const addr = ss.getSheetByName(SHEET_ADDR_TADEKA);
+  if(addr) {
     const lastRow = addr.getLastRow();
-    if(lastRow < 6) continue;
-    const vals = addr.getRange(6, 1, lastRow - 5, 22).getValues();
-    vals.forEach(r => {
-      if(String(r[0]).trim() === '') return;
-      totalTadika++;
-      const status = String(r[1] || '').trim();
-      if(status) {
-        if(status.includes('จดทะเบียน') && !status.includes('ไม่')) registered++;
-        else unregistered++;
-      }
-      const tm = toNum(r[14]), tf = toNum(r[15]), tt = toNum(r[16]);
-      tMale += tm; tFemale += tf; tTotal += tt || (tm + tf);
-      const sm = toNum(r[17]), sf = toNum(r[18]), st = toNum(r[19]);
-      sMale += sm; sFemale += sf; sTotal += st || (sm + sf);
-    });
+    if(lastRow >= 6) {
+      const vals = addr.getRange(6, 1, lastRow - 5, 22).getValues();
+      vals.forEach(r => {
+        if(String(r[0]).trim() === '') return;
+        totalTadika++;
+        const status = String(r[1] || '').trim();
+        if(status) {
+          if(status.includes('จดทะเบียน') && !status.includes('ไม่')) registered++;
+          else unregistered++;
+        }
+        const tm = toNum(r[14]), tf = toNum(r[15]), tt = toNum(r[16]);
+        tMale += tm; tFemale += tf; tTotal += tt || (tm + tf);
+        const sm = toNum(r[17]), sf = toNum(r[18]), st = toNum(r[19]);
+        sMale += sm; sFemale += sf; sTotal += st || (sm + sf);
+      });
+    }
   }
 
-  for(const cfg of DATA_SHEETS) {
-    const data = ss.getSheetByName(cfg.name);
-    if(!data) continue;
+  const data = ss.getSheetByName(SHEET_DATA_TADEKA);
+  if(data) {
     const lastRow = data.getLastRow();
-    if(lastRow < 2) continue;
-    // หาตำแหน่งคอลัมน์จาก header เพื่อกันข้อมูลเลื่อนคอลัมน์
-    const header = data.getRange(1, 1, 1, 15).getValues()[0];
-    const colOf = name => {
-      for(let i = 0; i < header.length; i++) if(String(header[i]).trim() === name) return i;
-      return -1;
-    };
-    const ciName = colOf('ชื่อศูนย์'), ciPct = colOf('ร้อยละ'), ciLvl = colOf('ระดับ'), ciTs = colOf('Timestamp');
-    const vals = data.getRange(2, 1, lastRow - 1, 15).getValues();
-    totalEval += vals.length;
-    vals.forEach(r => {
-      const pct = Number(r[ciPct]);
-      let lvl = String(r[ciLvl] || '').trim();
-      if(!lvl || !(lvl in levelCounts)) lvl = 'ไม่ระบุ';
-      levelCounts[lvl]++;
-      if(!isNaN(pct)) sumPct += pct;
-      latest.push({ name: String(r[ciName] || ''), timestamp: formatDate(r[ciTs]), pct: isNaN(pct) ? 0 : pct, level: lvl });
-    });
+    if(lastRow >= 2) {
+      // หาตำแหน่งคอลัมน์จาก header เพื่อกันข้อมูลเลื่อนคอลัมน์
+      const header = data.getRange(1, 1, 1, 15).getValues()[0];
+      const colOf = name => {
+        for(let i = 0; i < header.length; i++) if(String(header[i]).trim() === name) return i;
+        return -1;
+      };
+      const ciName = colOf('ชื่อศูนย์'), ciPct = colOf('ร้อยละ'), ciLvl = colOf('ระดับ'), ciTs = colOf('Timestamp');
+      const vals = data.getRange(2, 1, lastRow - 1, 15).getValues();
+      totalEval = vals.length;
+      vals.forEach(r => {
+        const pct = Number(r[ciPct]);
+        let lvl = String(r[ciLvl] || '').trim();
+        if(!lvl || !(lvl in levelCounts)) lvl = 'ไม่ระบุ';
+        levelCounts[lvl]++;
+        if(!isNaN(pct)) sumPct += pct;
+        latest.push({ name: String(r[ciName] || ''), timestamp: formatDate(r[ciTs]), pct: isNaN(pct) ? 0 : pct, level: lvl });
+      });
+    }
   }
   latest.sort((a, b) => a.timestamp < b.timestamp ? 1 : -1);
 
