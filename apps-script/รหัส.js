@@ -688,8 +688,8 @@ function fetchStatisticsForAI() {
 // ---------------------------------------------------------
 function callGeminiAPI(userMessage, contextData) {
   const API_KEY = getGeminiApiKey();
-  const MODEL = 'gemini-1.5-flash';
-  const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/' + MODEL + ':generateContent?key=' + API_KEY;
+  // ลำดับโมเดลที่ต้องการใช้ (ตัวแรกดีที่สุด ถ้าล้มเหลวจะถอยไปตัวถัดไปอัตโนมัติ)
+  const MODELS = ['gemini-3.5-flash', 'gemini-3-flash', 'gemini-3.1-flash-lite', 'gemini-1.5-flash'];
 
   const systemPrompt = "คุณคือ \"น้องศึกษา\" ผู้ช่วยอัจฉริยะ AI บุคลิกสุภาพ เป็นมิตร กระตือรือร้น ให้เกียรติผู้ใช้งาน ใช้ภาษาไทยที่ถูกต้อง เป็นทางการแต่นุ่มนวล และลงท้ายประโยคด้วย \"ครับ/ค่ะ\" เสมอ ตอบให้กระชับ ตรงประเด็น ใช้ Bullet points จัดรูปแบบให้อ่านง่าย คำทักทายเริ่มต้น คือ \"อัสลามุอะลัยกุม! ขอสันติจงมีแด่ท่าน ฉันคือ \"น้องศึกษา\" ผู้ช่วย AI ยินดีให้คำปรึกษาเกี่ยวกับชุดเครื่องมือนิเทศออนไลน์สำหรับตาดีกา ปอเนาะ โรงเรียนเอกชน ฉันพร้อมตอบคำถาม เกณฑ์การให้คะแนน การจัดการเรียนรู้ หรือมีอะไรให้ช่วย สอบถามได้เลย ครับ/ค่ะ 😊\n\n" +
     "หน้าที่หลักของคุณคือ:\n" +
@@ -744,17 +744,28 @@ function callGeminiAPI(userMessage, contextData) {
     muteHttpExceptions: true
   };
 
-  try {
-    const response = UrlFetchApp.fetch(API_URL, options);
-    const data = JSON.parse(response.getContentText());
-    if (data.candidates && data.candidates.length > 0) {
-      return data.candidates[0].content.parts[0].text;
-    } else if (data.error) {
-      return "AI แจ้งข้อผิดพลาด (รหัส " + (data.error.code || '?') + "): " + (data.error.message || 'ไม่ทราบสาเหตุ');
-    } else {
-      return "ขออภัยค่ะ ขณะนี้น้องศึกษาไม่สามารถดึงข้อมูลได้ค่ะ";
+  // ลองเรียกแต่ละโมเดลตามลำดับ: ตัวไหนตอบสำเร็จให้ใช้ทันที ถ้า error/quota ให้ถอยไปตัวถัดไป
+  for (let i = 0; i < MODELS.length; i++) {
+    const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/' + MODELS[i] + ':generateContent?key=' + API_KEY;
+    try {
+      const response = UrlFetchApp.fetch(API_URL, options);
+      const data = JSON.parse(response.getContentText());
+      if (data.candidates && data.candidates.length > 0) {
+        return data.candidates[0].content.parts[0].text;
+      }
+      // ยังไม่สำเร็จ เก็บข้อความ error ของโมเดลสุดท้ายไว้แจ้งถ้าครบทุกตัวแล้ว
+      if (i === MODELS.length - 1) {
+        if (data.error) {
+          return "AI แจ้งข้อผิดพลาด (รหัส " + (data.error.code || '?') + "): " + (data.error.message || 'ไม่ทราบสาเหตุ');
+        }
+        return "ขออภัยค่ะ ขณะนี้น้องศึกษาไม่สามารถดึงข้อมูลได้ค่ะ";
+      }
+    } catch (error) {
+      if (i === MODELS.length - 1) {
+        return "AI ขัดข้องชั่วคราว: " + error;
+      }
+      // ลองโมเดลถัดไป
     }
-  } catch (error) {
-    return "AI ขัดข้องชั่วคราว: " + error;
   }
+  return "ขออภัยค่ะ ขณะนี้น้องศึกษาไม่สามารถดึงข้อมูลได้ค่ะ";
 }
