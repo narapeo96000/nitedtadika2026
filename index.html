@@ -41,92 +41,42 @@
 
   <div class="container mb-5">
 
-// 1. ระบบ Login (อัปเดตใหม่ ให้มีหน่วงเวลา 5 วินาที พร้อม SweetAlert2)
-    async function handleLogin(e) {
-      e.preventDefault();
-      const btn = document.getElementById('loginBtn');
-      btn.disabled = true;
-      
-      showLoading('กำลังตรวจสอบข้อมูลผู้ใช้...');
+ <!-- ส่วนที่ 1: Login -->
+    <div id="loginSection" class="row justify-content-center">
+      <div class="col-md-6 col-lg-5">
+        <div class="card p-4">
+          <h4 class="mb-4 text-primary">📝 แบบบันทึกการนิเทศ</h4>
+          <form id="evaluationForm" onsubmit="submitForm(event)">
+            
+          <h4 class="mb-4 text-center text-primary">ล็อกอินเข้าสู่ระบบ</h4>
+          <form onsubmit="handleLogin(event)">
+            <div class="mb-3">
+              <label class="form-label">ชื่อศูนย์ตาดีกา / ศอม.</label>
+              <input type="text" class="form-control" id="centerName" required placeholder="ระบุชื่อศูนย์">
+              <label>Username</label>
+              <input type="text" id="loginUser" class="form-control" required>
+            </div>
+            <div class="mb-4">
+              <label>Password</label>
+              <input type="password" id="loginPass" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100" id="loginBtn">เข้าสู่ระบบ</button>
+          </form>
+        </div>
+      </div>
+    </div>
 
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          headers: {'Content-Type': 'text/plain;charset=utf-8'},
-          body: JSON.stringify({
-            action: 'login',
-            payload: {
-              username: document.getElementById('loginUser').value,
-              password: document.getElementById('loginPass').value
-            }
-          })
-        }).then(r => r.json());
-
-        if(res.success) {
-          currentUser = res.userData;
-          document.getElementById('headerUserText').innerText = `ผู้นิเทศ: ${currentUser.fname}`;
-          
-          // ปิด Loading เดิมก่อนแสดงอันใหม่
-          Swal.close();
-
-          // แสดง SweetAlert แจ้งเข้าสู่ระบบสำเร็จ พร้อมนับเวลา 5 วินาที
-          Swal.fire({
-            icon: 'success',
-            title: 'เข้าสู่ระบบสำเร็จ!',
-            html: `ยินดีต้อนรับ <b>${currentUser.fname}</b><br>ระบบจะพาท่านเข้าสู่หน้าจอหลักใน <b></b> วินาที.`,
-            timer: 5000,
-            timerProgressBar: true,
-            allowOutsideClick: false,
-            showConfirmButton: false, // ซ่อนปุ่ม "ตกลง" บังคับรอ
-            didOpen: () => {
-              const timer = Swal.getPopup().querySelector("b:nth-of-type(2)");
-              timerInterval = setInterval(() => {
-                // อัปเดตตัวเลขแสดงเวลาที่เหลือ
-                timer.textContent = Math.ceil(Swal.getTimerLeft() / 1000);
-              }, 100);
-            },
-            willClose: () => {
-              clearInterval(timerInterval);
-            }
-          }).then((result) => {
-            // เมื่อครบ 5 วินาที (SweetAlert ปิดลง) จะสลับหน้าจอ
-            if (result.dismiss === Swal.DismissReason.timer) {
-              document.getElementById('loginSection').classList.add('section-hidden');
-              document.getElementById('selectSection').classList.remove('section-hidden');
-              loadTadikaList();
-            }
-          });
-
-        } else {
-          // แจ้งเตือนเมื่อ Login ไม่สำเร็จ หน่วงไว้ 5 วินาทีเช่นกัน
-          Swal.fire({ 
-            icon: 'error', 
-            title: 'เข้าสู่ระบบล้มเหลว', 
-            html: `${res.message}<br>กรุณาลองใหม่อีกครั้ง ระบบจะปิดข้อความใน <b></b> วินาที.`,
-            timer: 5000,
-            timerProgressBar: true,
-            didOpen: () => {
-              const timer = Swal.getPopup().querySelector("b");
-              timerInterval = setInterval(() => {
-                timer.textContent = Math.ceil(Swal.getTimerLeft() / 1000);
-              }, 100);
-            },
-            willClose: () => {
-              clearInterval(timerInterval);
-            }
-          });
-        }
-      } catch (err) { 
-        Swal.fire({ 
-          icon: 'error', 
-          title: 'เครือข่ายขัดข้อง', 
-          text: 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้ กรุณาตรวจสอบอินเทอร์เน็ตของท่าน' 
-        });
-      }
-      
-      btn.disabled = false;
-    }
-    
+            <div class="mb-3">
+              <label class="form-label">รูปแบบการประเมิน (5 รูปแบบ)</label>
+              <select class="form-select" id="formType" required>
+                <option value="">-- เลือกรูปแบบ --</option>
+                <option value="รูปแบบที่ 1 - การบริหารจัดการ">รูปแบบที่ 1 - การบริหารจัดการ</option>
+                <option value="รูปแบบที่ 2 - การจัดการเรียนการสอน">รูปแบบที่ 2 - การจัดการเรียนการสอน</option>
+                <option value="รูปแบบที่ 3 - สื่อและนวัตกรรม">รูปแบบที่ 3 - สื่อและนวัตกรรม</option>
+                <option value="รูปแบบที่ 4 - การวัดและประเมินผล">รูปแบบที่ 4 - การวัดและประเมินผล</option>
+                <option value="รูปแบบที่ 5 - การมีส่วนร่วมชุมชน">รูปแบบที่ 5 - การมีส่วนร่วมชุมชน</option>
+              </select>
+              
     <!-- ส่วนที่ 2: เลือกศูนย์ตาดีกา -->
     <div id="selectSection" class="row justify-content-center section-hidden">
       <div class="col-md-8">
@@ -250,7 +200,7 @@
       });
     }
 
-    // 1. ระบบ Login
+// 1. ระบบ Login (อัปเดตใหม่ ให้มีหน่วงเวลา 5 วินาที พร้อม SweetAlert2)
     async function handleLogin(e) {
       e.preventDefault();
       const btn = document.getElementById('loginBtn');
@@ -275,22 +225,62 @@
           currentUser = res.userData;
           document.getElementById('headerUserText').innerText = `ผู้นิเทศ: ${currentUser.fname}`;
           
+          // ปิด Loading เดิมก่อนแสดงอันใหม่
+          Swal.close();
+
+          // แสดง SweetAlert แจ้งเข้าสู่ระบบสำเร็จ พร้อมนับเวลา 5 วินาที
           Swal.fire({
             icon: 'success',
             title: 'เข้าสู่ระบบสำเร็จ!',
-            text: `ยินดีต้อนรับ ${currentUser.fname}`,
-            timer: 1500,
-            showConfirmButton: false
+            html: `ยินดีต้อนรับ <b>${currentUser.fname}</b><br>ระบบจะพาท่านเข้าสู่หน้าจอหลักใน <b></b> วินาที.`,
+            timer: 5000,
+            timerProgressBar: true,
+            allowOutsideClick: false,
+            showConfirmButton: false, // ซ่อนปุ่ม "ตกลง" บังคับรอ
+            didOpen: () => {
+              const timer = Swal.getPopup().querySelector("b:nth-of-type(2)");
+              timerInterval = setInterval(() => {
+                // อัปเดตตัวเลขแสดงเวลาที่เหลือ
+                timer.textContent = Math.ceil(Swal.getTimerLeft() / 1000);
+              }, 100);
+            },
+            willClose: () => {
+              clearInterval(timerInterval);
+            }
+          }).then((result) => {
+            // เมื่อครบ 5 วินาที (SweetAlert ปิดลง) จะสลับหน้าจอ
+            if (result.dismiss === Swal.DismissReason.timer) {
+              document.getElementById('loginSection').classList.add('section-hidden');
+              document.getElementById('selectSection').classList.remove('section-hidden');
+              loadTadikaList();
+            }
           });
 
-          document.getElementById('loginSection').classList.add('section-hidden');
-          document.getElementById('selectSection').classList.remove('section-hidden');
-          loadTadikaList();
         } else {
-          Swal.fire({ icon: 'error', title: 'เข้าสู่ระบบล้มเหลว', text: res.message });
+          // แจ้งเตือนเมื่อ Login ไม่สำเร็จ หน่วงไว้ 5 วินาทีเช่นกัน
+          Swal.fire({ 
+            icon: 'error', 
+            title: 'เข้าสู่ระบบล้มเหลว', 
+            html: `${res.message}<br>กรุณาลองใหม่อีกครั้ง ระบบจะปิดข้อความใน <b></b> วินาที.`,
+            timer: 5000,
+            timerProgressBar: true,
+            didOpen: () => {
+              const timer = Swal.getPopup().querySelector("b");
+              timerInterval = setInterval(() => {
+                timer.textContent = Math.ceil(Swal.getTimerLeft() / 1000);
+              }, 100);
+            },
+            willClose: () => {
+              clearInterval(timerInterval);
+            }
+          });
         }
       } catch (err) { 
-        Swal.fire({ icon: 'error', title: 'เครือข่ายขัดข้อง', text: 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้' });
+        Swal.fire({ 
+          icon: 'error', 
+          title: 'เครือข่ายขัดข้อง', 
+          text: 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้ กรุณาตรวจสอบอินเทอร์เน็ตของท่าน' 
+        });
       }
       
       btn.disabled = false;
