@@ -337,7 +337,7 @@
         <h5 class="mt-3" style="margin-bottom:6px;">🕒 การนิเทศครั้งล่าสุด (TOP 10)</h5>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>#</th><th>ศูนย์</th><th>วันที่</th><th>ร้อยละ</th><th>ระดับ</th></tr></thead>
+            <thead><tr><th>#</th><th>🕌 ศูนย์</th><th>📅 วันที่</th><th>💯 ร้อยละ</th><th>🏅 ระดับ</th></tr></thead>
             <tbody id="latestEvalBody"></tbody>
           </table>
         </div>
@@ -350,42 +350,51 @@
           <span class="badge">อัปเดตอัตโนมัติ</span>
         </div>
         <div class="tk-group">
-          <div class="tk-title">จำนวนศูนย์ตาดีกา</div>
+          <div class="tk-title">🏫 จำนวนศูนย์ตาดีกา</div>
           <div class="tk-row">
             <div class="tk-cell"><span class="tk-val" id="tk_total">—</span><span class="tk-lbl">ทั้งหมด (แห่ง)</span></div>
-            <div class="tk-cell"><span class="tk-val tk-green" id="tk_reg">—</span><span class="tk-lbl">จดทะเบียน</span></div>
-            <div class="tk-cell"><span class="tk-val tk-red" id="tk_unreg">—</span><span class="tk-lbl">ไม่จดทะเบียน</span></div>
+            <div class="tk-cell"><span class="tk-val tk-green" id="tk_reg">—</span><span class="tk-lbl">✅ จดทะเบียน</span></div>
+            <div class="tk-cell"><span class="tk-val tk-red" id="tk_unreg">—</span><span class="tk-lbl">⛔ ไม่จดทะเบียน</span></div>
           </div>
         </div>
         <div class="tk-group">
-          <div class="tk-title">ครูผู้สอน</div>
+          <div class="tk-title">👨‍🏫 ครูผู้สอน</div>
           <div class="tk-row">
             <div class="tk-cell"><span class="tk-val" id="tk_tTotal">—</span><span class="tk-lbl">รวม (คน)</span></div>
-            <div class="tk-cell"><span class="tk-val tk-blue" id="tk_tMale">—</span><span class="tk-lbl">ชาย</span></div>
-            <div class="tk-cell"><span class="tk-val tk-pink" id="tk_tFemale">—</span><span class="tk-lbl">หญิง</span></div>
+            <div class="tk-cell"><span class="tk-val tk-blue" id="tk_tMale">—</span><span class="tk-lbl">👦 ชาย</span></div>
+            <div class="tk-cell"><span class="tk-val tk-pink" id="tk_tFemale">—</span><span class="tk-lbl">👧 หญิง</span></div>
           </div>
         </div>
         <div class="tk-group">
-          <div class="tk-title">นักเรียน</div>
+          <div class="tk-title">🎒 นักเรียน</div>
           <div class="tk-row">
             <div class="tk-cell"><span class="tk-val" id="tk_sTotal">—</span><span class="tk-lbl">รวม (คน)</span></div>
-            <div class="tk-cell"><span class="tk-val tk-blue" id="tk_sMale">—</span><span class="tk-lbl">ชาย</span></div>
-            <div class="tk-cell"><span class="tk-val tk-pink" id="tk_sFemale">—</span><span class="tk-lbl">หญิง</span></div>
+            <div class="tk-cell"><span class="tk-val tk-blue" id="tk_sMale">—</span><span class="tk-lbl">👦 ชาย</span></div>
+            <div class="tk-cell"><span class="tk-val tk-pink" id="tk_sFemale">—</span><span class="tk-lbl">👧 หญิง</span></div>
           </div>
         </div>
       </div>
 
-      <!-- ข้อมูลตาดีกา (ADDRESS) ค้นหา Auto Filter -->
+      <!-- ข้อมูลตาดีกา ค้นหา AutoComplete -->
       <div class="card">
         <div class="card-title">
-          <h4>🔍 ข้อมูลตาดีกา / ศอม. ทั้งหมด</h4>
+          <h4>🏫 ข้อมูลตาดีกา / ศอม. ทั้งหมด</h4>
           <span class="badge" id="addrCount">0 รายการ</span>
         </div>
-        <input type="text" id="addrFilter" class="form-control" placeholder="🔍 พิมพ์ค้นหา รหัส / ชื่อตาดีกา / มัสยิด / หมู่ที่ / ตำบล / อำเภอ... (ตัวกรองอัตโนมัติ)"
-               autocomplete="off" oninput="renderAddrTable()">
+        <label>🔍 ค้นหาตาดีกา <span class="small text-muted">(พิมพ์แล้วเลือกจากรายการแนะนำอัตโนมัติ)</span></label>
+        <div class="position-relative">
+          <input type="text" id="addrSearch" class="form-control" placeholder="พิมพ์ รหัส / ชื่อตาดีกา / มัสยิด / หมู่ที่ / ตำบล / อำเภอ..."
+                 autocomplete="off" oninput="filterTadika('addr')" onkeydown="tadikaKey('addr', event)">
+          <div id="addrSuggest" class="suggest-box d-none"></div>
+        </div>
+        <div id="addrSelInfo" class="info-box d-none mt-2">
+          <b id="addrSelName"></b><br>
+          <span id="addrSelDetail" class="small text-muted"></span>
+          <div class="tk-detail mt-2" id="addrSelExtra"></div>
+        </div>
         <div class="table-wrap mt-2">
           <table>
-            <thead><tr><th>รหัส</th><th>ชื่อตาดีกา</th><th>ชื่อมัสยิด</th><th>ที่อยู่ (หมู่ที่ ตำบล อำเภอ)</th><th>📍 พิกัด</th></tr></thead>
+            <thead><tr><th>🆔 รหัส</th><th>🕌 ชื่อตาดีกา</th><th>🏯 มัสยิด</th><th>🏠 ที่อยู่ (หมู่/ตำบล/อำเภอ)</th><th>📌 สถานะ</th><th>👨‍🏫 ครู (ช/ญ)</th><th>🎒 นักเรียน (ช/ญ)</th><th>📍 พิกัด</th></tr></thead>
             <tbody id="addrBody"></tbody>
           </table>
         </div>
@@ -719,14 +728,17 @@
       renderAddrTable();
     }
 
-    // ---- ตารางข้อมูลตาดีกา (ADDRESS) + Auto Filter ----
+    // ---- ตารางข้อมูลตาดีกา (ADDRESS) แสดงตามที่เลือกจาก AutoComplete ----
     function renderAddrTable() {
-      const q = document.getElementById('addrFilter').value.trim().toLowerCase();
-      const rows = tadikaList.filter(t => {
-        if (!q) return true;
-        const hay = [t.id, t.name, t.mosque, t.address, t.subdist, t.dist].filter(Boolean).join(' ').toLowerCase();
-        return hay.includes(q);
-      });
+      const c = autoReg.addr;
+      const q = (document.getElementById(c.search).value || '').trim().toLowerCase();
+      let rows = c.selected ? [c.selected] : tadikaList;
+      if (!c.selected && q) {
+        rows = rows.filter(t => {
+          const hay = [t.id, t.name, t.mosque, t.address, t.subdist, t.dist].filter(Boolean).join(' ').toLowerCase();
+          return hay.includes(q);
+        });
+      }
       document.getElementById('addrCount').innerText = rows.length + ' รายการ';
       document.getElementById('addrBody').innerHTML = rows.map(t => `
         <tr>
@@ -734,8 +746,11 @@
           <td>${escHtml(t.name)}</td>
           <td>${escHtml(t.mosque)}</td>
           <td class="small">${escHtml(tadikaAddr(t)) || '—'}</td>
-          <td>${t.lat && t.lng ? '📍' : ''}</td>
-        </tr>`).join('') || '<tr><td colspan="5" class="text-center text-muted py-3">ไม่พบข้อมูลที่ค้นหา</td></tr>';
+          <td>${statusBadge(t.status)}</td>
+          <td class="small">${fmtNum(t.teachers.male)} / ${fmtNum(t.teachers.female)}</td>
+          <td class="small">${fmtNum(t.students.male)} / ${fmtNum(t.students.female)}</td>
+          <td>${t.lat && t.lng ? '📍' : '—'}</td>
+        </tr>`).join('') || '<tr><td colspan="8" class="text-center text-muted py-3">ไม่พบข้อมูลที่ค้นหา</td></tr>';
     }
 
     // ---- สถิติระบบนิเทศออนไลน์ (หน้าแรก) ----
@@ -751,11 +766,12 @@
 
         // กราฟเส้น ระดับผลการนิเทศ (ร้อยละ) 5 ระดับ
         const order = ['ดีมาก', 'ดี', 'พอใช้', 'ต้องปรับปรุง', 'ไม่ระบุ'];
+        const orderEmoji = { 'ดีมาก': '🥇', 'ดี': '🟦', 'พอใช้': '🟨', 'ต้องปรับปรุง': '🟥', 'ไม่ระบุ': '⚪' };
         const colors = ['#059669', '#2563eb', '#d97706', '#dc2626', '#94a3b8'];
         const pcts = order.map(k => d.totalEval ? Math.round((d.levelCounts[k] || 0) / d.totalEval * 100) : 0);
         document.getElementById('levelChart').innerHTML = drawLevelChart(order, pcts, colors);
         document.getElementById('levelChips').innerHTML = order.map((k, i) =>
-          `<span class="chip" style="background:${colors[i]}1f; color:${colors[i]};">${k} <b>${d.levelCounts[k] || 0}</b> ครั้ง (${pcts[i]}%)</span>`
+          `<span class="chip" style="background:${colors[i]}1f; color:${colors[i]};">${orderEmoji[k]} ${k} <b>${d.levelCounts[k] || 0}</b> ครั้ง (${pcts[i]}%)</span>`
         ).join('');
 
         // TOP 10 การนิเทศล่าสุด
@@ -882,11 +898,20 @@
       showLogin();
     }
 
-    // ---- Autocomplete กลุ่ม: 'lg' = หน้าล็อกอิน, 'sel' = หน้าหลัก ----
+    // ---- Autocomplete กลุ่ม: 'lg' = หน้าล็อกอิน, 'sel' = หน้าหลัก, 'addr' = ค้นหาตาดีกา ----
     const autoReg = {
       lg:  { search:'lgTadikaSearch', suggest:'lgTadikaSuggest', info:'lgSelInfo', selName:'lgSelName', selDetail:'lgSelDetail', btn:null, selected:null, matches:[] },
-      sel: { search:'tadikaSearch', suggest:'tadikaSuggest', info:'selectedTadikaInfo', selName:'selName', selDetail:'selDetail', btn:'selectBtn', selected:null, matches:[] }
+      sel: { search:'tadikaSearch', suggest:'tadikaSuggest', info:'selectedTadikaInfo', selName:'selName', selDetail:'selDetail', btn:'selectBtn', selected:null, matches:[] },
+      addr:{ search:'addrSearch',    suggest:'addrSuggest',    info:'addrSelInfo', selName:'addrSelName', selDetail:'addrSelDetail', btn:null, selected:null, matches:[] }
     };
+
+    const fmtNum = n => Number(n || 0).toLocaleString();
+    function statusBadge(s) {
+      const st = String(s || '').trim();
+      if (!st) return '<span class="lv lv-amber">ไม่ระบุ</span>';
+      if (st.includes('จดทะเบียน') && !st.includes('ไม่')) return '<span class="lv lv-green">✅ จดทะเบียน</span>';
+      return '<span class="lv lv-red">⛔ ไม่จดทะเบียน</span>';
+    }
 
     function filterTadika(key) {
       const c = autoReg[key];
@@ -895,7 +920,7 @@
       c.selected = null;
       document.getElementById(c.info).classList.add('d-none');
       if (c.btn) document.getElementById(c.btn).disabled = true;
-      if (!q) { box.classList.add('d-none'); box.innerHTML = ''; return; }
+      if (!q) { box.classList.add('d-none'); box.innerHTML = ''; if (key === 'addr') renderAddrTable(); return; }
 
       c.matches = tadikaList.filter(t => {
         const hay = [t.id, t.name, t.mosque, t.address, t.subdist, t.dist].filter(Boolean).join(' ').toLowerCase();
@@ -910,6 +935,7 @@
       box.innerHTML = c.matches.map((t, i) => `
         <button type="button" class="suggest-item" onclick="selectTadika('${key}', ${i})">
           <b style="color:var(--primary-deep);">${escHtml(tadikaLabel(t))}</b>
+          ${String(t.status || '').includes('จดทะเบียน') && !String(t.status || '').includes('ไม่') ? '✅' : '⛔'}
           ${t.lat && t.lng ? '<span style="color:var(--blue-dark);"> 📍</span>' : ''}<br>
           <span class="small text-muted">${escHtml(tadikaAddr(t)) || '—'}</span>
         </button>`).join('');
@@ -925,8 +951,29 @@
       document.getElementById(c.suggest).classList.add('d-none');
       document.getElementById(c.selName).innerText = tadikaLabel(t);
       document.getElementById(c.selDetail).innerText = (tadikaAddr(t) || '—') + (t.lat && t.lng ? ' 📍' : '');
+      if (key === 'addr') renderAddrDetail(t);
       document.getElementById(c.info).classList.remove('d-none');
       if (c.btn) document.getElementById(c.btn).disabled = false;
+      if (key === 'addr') renderAddrTable();
+    }
+
+    // ---- แสดงข้อมูลพื้นฐานของตาดีกาที่เลือก (AutoComplete หน้าแรก) ----
+    function renderAddrDetail(t) {
+      document.getElementById('addrSelName').innerHTML = '🏫 ' + escHtml(tadikaLabel(t));
+      document.getElementById('addrSelDetail').innerText = tadikaAddr(t) || '—';
+      const cells = [
+        ['📌 สถานะ', statusBadge(t.status)],
+        ['🕋 ชื่อมัสยิด', escHtml(t.mosque) || '—'],
+        ['👤 ประธานศูนย์ฯ', escHtml(t.head) || '—'],
+        ['📞 โทรศัพท์', escHtml(t.phone) || '—'],
+        ['📏 ขนาดศูนย์', escHtml(t.size) || '—'],
+        ['👨‍🏫 ครู (ช/ญ/รวม)', fmtNum(t.teachers.male) + ' / ' + fmtNum(t.teachers.female) + ' / ' + fmtNum(t.teachers.total)],
+        ['🎒 นักเรียน (ช/ญ/รวม)', fmtNum(t.students.male) + ' / ' + fmtNum(t.students.female) + ' / ' + fmtNum(t.students.total)],
+        ['📍 พิกัด', (t.lat && t.lng) ? t.lat + ', ' + t.lng : 'ยังไม่มีพิกัด']
+      ];
+      document.getElementById('addrSelExtra').innerHTML = '<div class="tk-row">' + cells.map(([k, v]) =>
+        `<div class="tk-cell"><span class="tk-lbl">${k}</span><span class="tk-val" style="font-size:1rem;">${v}</span></div>`
+      ).join('') + '</div>';
     }
     function selectByObj(key, t) {
       const c = autoReg[key];

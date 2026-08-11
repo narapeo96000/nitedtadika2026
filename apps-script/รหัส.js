@@ -99,15 +99,22 @@ function getTadikaList() {
   const lastRow = sheet.getLastRow();
   if(lastRow < 6) return {success: true, data: []};
   
-  // คอลัมน์: A=ID, C=มัสยิด, D=ชื่อศูนย์, J=ที่อยู่, K=ตำบล, L=อำเภอ, U=ละติจูด, V=ลองจิจูด
+  // คอลัมน์: A=ID, B=สถานะ, C=มัสยิด, D=ชื่อศูนย์, E=ประธาน, J=ที่อยู่, K=ตำบล, L=อำเภอ,
+  // M=โทร, N=ขนาด, O/P/Q=ครู ช/ญ/รวม, R/S/T=นักเรียน ช/ญ/รวม, U=ละติจูด, V=ลองจิจูด
   const rows = sheet.getRange(6, 1, lastRow - 5, 22).getValues(); 
   let list = [];
   for(let i = 0; i < rows.length; i++) {
     if(rows[i][0] != "") {
       list.push({
         id: rows[i][0],
+        status: rows[i][1],
         name: rows[i][3],
         mosque: rows[i][2],
+        head: rows[i][4],
+        phone: rows[i][12],
+        size: rows[i][13],
+        teachers: { male: rows[i][14], female: rows[i][15], total: rows[i][16] },
+        students: { male: rows[i][17], female: rows[i][18], total: rows[i][19] },
         address: rows[i][9],
         subdist: rows[i][10],
         dist: rows[i][11],
