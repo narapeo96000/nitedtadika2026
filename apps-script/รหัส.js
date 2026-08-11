@@ -548,24 +548,16 @@ function getGeminiApiKey() {
 function processChatbot(userMessage) {
   const msg = String(userMessage || '').toLowerCase();
 
-  // 1. ตรวจสอบว่าคำถามเกี่ยวกับสถิติ/จำนวน หรือไม่
-  let contextData = "";
-  if (msg.includes('กี่') || msg.includes('เท่าไหร่') || msg.includes('จำนวน') || msg.includes('สถิติ') || msg.includes('ทั้งหมด') ||
-      msg.includes('ที่เท่า') || msg.includes('คน') || msg.includes('แห่ง')) {
-    // 2. ถ้าถามเรื่องจำนวน ให้ไปดึงข้อมูลจาก Sheets มาเตรียมไว้เป็น Context
-    contextData = fetchStatisticsForAI();
-  } else if (msg.includes('ชื่อศูนย์') || msg.includes('ประธาน')) {
-    // อนาคตสามารถเพิ่มฟังก์ชันค้นหารายชื่อเฉพาะเจาะจงได้
-    contextData = "คำแนะนำ: โปรดระบุชื่อศูนย์ที่ต้องการทราบรายละเอียดให้ชัดเจน";
-  }
+  // ดึงข้อมูลสถิติ + รายละเอียดศูนย์จาก Sheets มาเป็น Context ให้ AI ตอบเสมอ
+  const contextData = fetchStatisticsForAI();
 
   // ถ้ายังไม่ได้ตั้ง API Key ให้ตอบแบบออฟไลน์ (ไม่ต้องใช้ Gemini)
   if (!getGeminiApiKey()) {
     return { reply: offlineChatReply(msg) };
   }
 
-  // 3. ส่งคำถามผู้ใช้ พร้อมข้อมูลบริบท(ถ้ามี) ไปให้ Gemini คิดคำตอบ
-  //    (ส่งกลับเป็น Markdown ธรรมดา — หน้าเว็บจะแปลงเป็น HTML ปลอดภัยเอง)
+  // ส่งคำถามผู้ใช้ พร้อมข้อมูลบริบทไปให้ Gemini คิดคำตอบ
+  // (ส่งกลับเป็น Markdown ธรรมดา — หน้าเว็บจะแปลงเป็น HTML ปลอดภัยเอง)
   return { reply: callGeminiAPI(userMessage, contextData) };
 }
 
@@ -591,56 +583,87 @@ function offlineChatReply(msg) {
 
 // ---------------------------------------------------------
 // ฟังก์ชันสำหรับคำนวณและสรุปสถิติจาก Sheet ให้เป็นข้อความ Text
+//
+// โครงสร้างชีต ADDR_TADEKA (เริ่มข้อมูลจริงที่แถว 6):
+//   A=ID, B=สถานะ, C=ชื่อมัสยิด, D=ชื่อศูนย์, E=ประธานศูนย์,
+//   F=วุฒิ(สามัญ), G=วุฒิ(ศาสนา), H=วันก่อตั้ง, I=เลขจดทะเบียน,
+//   J=เลขที่/หมู่/ถนน, K=ตำบล, L=อำเภอ, M=โทรศัพท์, N=ขนาดศูนย์,
+//   O=ผู้สอน(ชาย), P=ผู้สอน(หญิง), Q=ผู้สอน(รวม), R=ผู้เรียน(ชาย),
+//   S=ผู้เรียน(หญิง), T=ผู้เรียน(รวม)
+//
+// โครงสร้างชีต ADDR_PONDOK (เริ่มข้อมูลจริงที่แถว 6):
+//   A=รหัส, B=ชื่อปอเนาะ, C=ที่อยู่, D=อำเภอ, E=ตำบล, F=โทรศัพท์,
+//   G=จำนวนบุคลากร, H=จำนวนผู้เรียน, I=จำนวนผู้เรียนต่างชาติ
 // ---------------------------------------------------------
 function fetchStatisticsForAI() {
   const ss = SpreadsheetApp.openById(SHEET_ID);
 
   // --- ดึงข้อมูลตาดีกา ---
-  const sheetTadika = ss.getSheetByName('ADDR_TADEKA');
-  let tadikaStats = { count: 0, tMale: 0, tFemale: 0, sMale: 0, sFemale: 0 };
+  const sheetTadika = ss.getSheetByName(SHEET_ADDR_TADEKA);
+  const tadikaStats = { count: 0, tMale: 0, tFemale: 0, sMale: 0, sFemale: 0 };
+  const tadikaLines = [];
 
-  if(sheetTadika) {
-    const dataT = sheetTadika.getDataRange().getValues();
-    // สมมติเริ่มดึงข้อมูลจริงที่แถว 6 (index 5)
-    for(let i = 5; i < dataT.length; i++) {
-      if(dataT[i][0] != "") { // นับเฉพาะแถวที่มี ID
-        tadikaStats.count++;
-        // คอลัมน์ O=14(ครูชาย), P=15(ครูหญิง), R=17(นร.ชาย), S=18(นร.หญิง)
-        tadikaStats.tMale += Number(dataT[i][14]) || 0;
-        tadikaStats.tFemale += Number(dataT[i][15]) || 0;
-        tadikaStats.sMale += Number(dataT[i][17]) || 0;
-        tadikaStats.sFemale += Number(dataT[i][18]) || 0;
+  if (sheetTadika) {
+    const lastRow = sheetTadika.getLastRow();
+    if (lastRow >= 6) {
+      const dataT = sheetTadika.getRange(6, 1, lastRow - 5, 20).getValues();
+      for (let i = 0; i < dataT.length; i++) {
+        if (String(dataT[i][0]).trim() != "") { // นับเฉพาะแถวที่มี ID
+          tadikaStats.count++;
+          tadikaStats.tMale   += Number(dataT[i][14]) || 0;
+          tadikaStats.tFemale += Number(dataT[i][15]) || 0;
+          tadikaStats.sMale   += Number(dataT[i][17]) || 0;
+          tadikaStats.sFemale += Number(dataT[i][18]) || 0;
+          tadikaLines.push(
+            "• " + (dataT[i][3] || '-') +
+            " | ประธาน: " + (dataT[i][4] || '-') +
+            " | ที่ตั้ง: " + [dataT[i][10], dataT[i][11]].filter(Boolean).join(' ') +
+            " | โทร: " + (dataT[i][12] || '-') +
+            " | ครู " + (dataT[i][16] || 0) + " คน | นร. " + (dataT[i][19] || 0) + " คน"
+          );
+        }
       }
     }
   }
 
   // --- ดึงข้อมูลปอเนาะ ---
-  const sheetPondok = ss.getSheetByName('ADDR_PONDOK');
-  let pondokStats = { count: 0, tMale: 0, tFemale: 0, sMale: 0, sFemale: 0 };
+  const sheetPondok = ss.getSheetByName(SHEET_ADDR_PONDOK);
+  const pondokStats = { count: 0, staff: 0, students: 0, foreign: 0 };
+  const pondokLines = [];
 
-  if(sheetPondok) {
-    const dataP = sheetPondok.getDataRange().getValues();
-    for(let i = 5; i < dataP.length; i++) {
-      if(dataP[i][0] != "") {
-        pondokStats.count++;
-        pondokStats.tMale += Number(dataP[i][14]) || 0;
-        pondokStats.tFemale += Number(dataP[i][15]) || 0;
-        pondokStats.sMale += Number(dataP[i][17]) || 0;
-        pondokStats.sFemale += Number(dataP[i][18]) || 0;
+  if (sheetPondok) {
+    const lastRow = sheetPondok.getLastRow();
+    if (lastRow >= 6) {
+      const dataP = sheetPondok.getRange(6, 1, lastRow - 5, 9).getValues();
+      for (let i = 0; i < dataP.length; i++) {
+        if (String(dataP[i][0]).trim() != "") { // นับเฉพาะแถวที่มีรหัส
+          pondokStats.count++;
+          pondokStats.staff    += Number(dataP[i][6]) || 0;
+          pondokStats.students += Number(dataP[i][7]) || 0;
+          pondokStats.foreign  += Number(dataP[i][8]) || 0;
+          pondokLines.push(
+            "• " + (dataP[i][1] || '-') +
+            " | ที่ตั้ง: " + [dataP[i][4], dataP[i][3]].filter(Boolean).join(' ') +
+            " | โทร: " + (dataP[i][5] || '-') +
+            " | บุคลากร " + (dataP[i][6] || 0) + " คน | นร. " + (dataP[i][7] || 0) + " คน" +
+            (Number(dataP[i][8]) ? " | ต่างชาติ " + dataP[i][8] + " คน" : "")
+          );
+        }
       }
     }
   }
 
   // สร้างข้อความ Context ส่งให้ AI รับรู้
   let contextText = "" +
-    "[ข้อมูลปัจจุบันในฐานข้อมูล สำหรับให้ AI ใช้อ้างอิงในการตอบคำถาม]\n" +
-    "1. ศูนย์ตาดีกา: มีทั้งหมด " + tadikaStats.count + " แห่ง \n" +
-    "   - มีครูสอนศาสนาทั้งหมด " + (tadikaStats.tMale + tadikaStats.tFemale) + " คน (ชาย " + tadikaStats.tMale + ", หญิง " + tadikaStats.tFemale + ")\n" +
-    "   - มีผู้เรียนทั้งหมด " + (tadikaStats.sMale + tadikaStats.sFemale) + " คน (ชาย " + tadikaStats.sMale + ", หญิง " + tadikaStats.sFemale + ")\n" +
-    "\n" +
-    "2. สถาบันปอเนาะ: มีทั้งหมด " + pondokStats.count + " แห่ง\n" +
-    "   - มีครู/บาบอ ทั้งหมด " + (pondokStats.tMale + pondokStats.tFemale) + " คน (ชาย " + pondokStats.tMale + ", หญิง " + pondokStats.tFemale + ")\n" +
-    "   - มีผู้เรียนทั้งหมด " + (pondokStats.sMale + pondokStats.sFemale) + " คน (ชาย " + pondokStats.sMale + ", หญิง " + pondokStats.sFemale + ")";
+    "[ข้อมูลจริงจากฐานข้อมูลระบบนิเทศออนไลน์ — ใช้ตัวเลขเหล่านี้ตอบ ไม่ควรแต่งตัวเลข]\n\n" +
+    "1. ศูนย์ตาดีกา: ทั้งหมด " + tadikaStats.count + " แห่ง\n" +
+    "   - ครูผู้สอนรวม " + (tadikaStats.tMale + tadikaStats.tFemale) + " คน (ชาย " + tadikaStats.tMale + " / หญิง " + tadikaStats.tFemale + ")\n" +
+    "   - ผู้เรียนรวม " + (tadikaStats.sMale + tadikaStats.sFemale) + " คน (ชาย " + tadikaStats.sMale + " / หญิง " + tadikaStats.sFemale + ")\n\n" +
+    "2. สถาบันปอเนาะ: ทั้งหมด " + pondokStats.count + " แห่ง\n" +
+    "   - บุคลากรรวม " + pondokStats.staff + " คน\n" +
+    "   - ผู้เรียนรวม " + pondokStats.students + " คน (ในนั้นเป็นผู้เรียนต่างชาติ " + pondokStats.foreign + " คน)\n\n" +
+    "รายชื่อศูนย์ตาดีกา (ข้อมูลสำหรับตอบคำถามรายศูนย์):\n" + tadikaLines.join('\n') + "\n\n" +
+    "รายชื่อสถาบันปอเนาะ (ข้อมูลสำหรับตอบคำถามรายศูนย์):\n" + pondokLines.join('\n');
 
   return contextText;
 }
