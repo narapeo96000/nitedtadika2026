@@ -620,16 +620,17 @@
               </div>
             </div>
             <div class="row mt-3">
-              <div class="col-6"><label>ครู ชาย/หญิง/รวม</label>
+              <div class="col-6 col-md-4"><label>ครู ชาย/หญิง/รวม</label>
                 <div class="row"><div class="col"><input type="number" id="t_tMale" class="form-control" placeholder="ชาย"></div>
                 <div class="col"><input type="number" id="t_tFemale" class="form-control" placeholder="หญิง"></div>
                 <div class="col"><input type="number" id="t_tTotal" class="form-control" placeholder="รวม"></div></div>
               </div>
-              <div class="col-6"><label>นักเรียน ชาย/หญิง/รวม</label>
+              <div class="col-6 col-md-4"><label>นักเรียน ชาย/หญิง/รวม</label>
                 <div class="row"><div class="col"><input type="number" id="t_sMale" class="form-control" placeholder="ชาย"></div>
                 <div class="col"><input type="number" id="t_sFemale" class="form-control" placeholder="หญิง"></div>
                 <div class="col"><input type="number" id="t_sTotal" class="form-control" placeholder="รวม"></div></div>
               </div>
+              <div class="col-12 col-md-4"><label>จำนวนห้องเรียน</label><input type="number" id="t_rooms" class="form-control" placeholder="จำนวนห้องเรียน"></div>
             </div>
           </div>
 
@@ -1863,6 +1864,7 @@
           document.getElementById('t_sMale').value = d.sMale;
           document.getElementById('t_sFemale').value = d.sFemale;
           document.getElementById('t_sTotal').value = d.sTotal;
+          document.getElementById('t_rooms').value = d.rooms || '';
 
           document.getElementById('selTadikaBadge').innerHTML = tadikaLabel(t) + ' ' + typeBadge(t.type);
           document.getElementById('dashTadikaName').innerHTML = tadikaLabel(t) + ' ' + typeBadge(t.type);
@@ -2159,7 +2161,8 @@
           tTotal: document.getElementById('t_tTotal').value,
           sMale: document.getElementById('t_sMale').value,
           sFemale: document.getElementById('t_sFemale').value,
-          sTotal: document.getElementById('t_sTotal').value
+          sTotal: document.getElementById('t_sTotal').value,
+          rooms: document.getElementById('t_rooms').value
         },
         evalData: {
           formType: 'แบบที่ 1-5 (ครบทุกด้าน)',

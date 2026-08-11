@@ -356,7 +356,7 @@ function getTadikaData(id) {
     if(!sheet) continue;
     const lastRow = sheet.getLastRow();
     if(lastRow < 6) continue;
-    const rows = sheet.getRange(6, 1, lastRow - 5, 22).getValues();
+    const rows = sheet.getRange(6, 1, lastRow - 5, 23).getValues();
     for(let i = 0; i < rows.length; i++) {
       if(String(rows[i][0]).trim() === id) {
         return {
@@ -369,7 +369,7 @@ function getTadikaData(id) {
             regNum: rows[i][8], address: rows[i][9], subdist: rows[i][10], dist: rows[i][11],
             phone: rows[i][12], size: rows[i][13], tMale: rows[i][14], tFemale: rows[i][15],
             tTotal: rows[i][16], sMale: rows[i][17], sFemale: rows[i][18], sTotal: rows[i][19],
-            lat: rows[i][20], lng: rows[i][21]
+            lat: rows[i][20], lng: rows[i][21], rooms: rows[i][22]
           }
         };
       }
@@ -485,10 +485,10 @@ function saveEvaluation(payload) {
   const updateValues = [[
     t.status, t.mosque, t.name, t.head, t.eduSec, t.eduRel, t.foundedDate, t.regNum,
     t.address, t.subdist, t.dist, t.phone, t.size, t.tMale, t.tFemale, t.tTotal,
-    t.sMale, t.sFemale, t.sTotal, t.lat, t.lng
+    t.sMale, t.sFemale, t.sTotal, t.lat, t.lng, t.rooms
   ]];
   if(addressSheet && t.row) {
-    addressSheet.getRange(t.row, 2, 1, 21).setValues(updateValues);
+    addressSheet.getRange(t.row, 2, 1, 22).setValues(updateValues);
   }
 
   // บันทึก/แก้ไขผลนิเทศลงชีต DATA ที่ตรงตามประเภท
