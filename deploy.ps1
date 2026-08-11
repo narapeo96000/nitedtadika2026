@@ -1,0 +1,54 @@
+# ============================================================
+#  deploy.ps1 — อัปเดต GitHub + Apps Script (deploy) อัตโนมัติ
+#  วิธีใช้:  powershell -ExecutionPolicy Bypass -File deploy.ps1
+#
+#  หลักการ: index.html ชี้ไปที่ deployment @HEAD ของ Apps Script
+#  ซึ่งอ่านโค้ดเวอร์ชันล่าสุดเสมอ => แค่ clasp push ก็ deploy แล้ว
+# ============================================================
+$ErrorActionPreference = 'Stop'
+$Root = Split-Path -Parent $MyInvocation.MyCommand.Path
+Set-Location $Root
+
+# URL ที่เว็บแอปใช้งาน (deployment @HEAD — อัปเดตโค้ดอัตโนมัติ)
+$WebAppURL = 'https://script.google.com/macros/s/AKfycbxA9i_YG_Kiuy-P4VQjZdoseN26_nG_HsIqs3qQ0INF/exec'
+$CommitMsg = "อัปเดตอัตโนมัติ " + (Get-Date -Format 'yyyy-MM-dd HH:mm')
+
+Write-Host "`n=== 1/4 ตรวจสอบ syntax ===" -ForegroundColor Cyan
+$html = Get-Content "$Root\index.html" -Raw
+$m = [regex]::Match($html, '<script>([\s\S]*?)</script>')
+if (-not $m.Success) { throw "ไม่พบ <script> ใน index.html" }
+$tmp = Join-Path $env:TEMP "deploy_check.js"
+$m.Groups[1].Value | Set-Content $tmp -Encoding UTF8
+node --check $tmp; if ($LASTEXITCODE -ne 0) { throw "index.html JS syntax ผิด!" }
+node --check "$Root\apps-script\รหัส.js"; if ($LASTEXITCODE -ne 0) { throw "รหัส.js syntax ผิด!" }
+Write-Host "Syntax ผ่านเรียบร้อย" -ForegroundColor Green
+
+Write-Host "`n=== 2/4 Commit + Push GitHub ===" -ForegroundColor Cyan
+git add -A
+$changed = (git status --short | Measure-Object -Line).Lines
+if ($changed -gt 0) {
+  git commit -m $CommitMsg
+  git push origin main
+  Write-Host "GitHub อัปเดตเรียบร้อย ($changed ไฟล์)" -ForegroundColor Green
+} else {
+  Write-Host "ไม่มีไฟล์เปลี่ยนแปลง - ข้าม commit/push" -ForegroundColor Yellow
+}
+
+Write-Host "`n=== 3/4 Push โค้ดขึ้น Apps Script (deploy) ===" -ForegroundColor Cyan
+clasp push -f
+if ($LASTEXITCODE -ne 0) { throw "clasp push ล้มเหลว!" }
+Write-Host "Apps Script deploy เรียบร้อย" -ForegroundColor Green
+
+Write-Host "`n=== 4/4 ตรวจสอบเว็บแอป ===" -ForegroundColor Cyan
+Write-Host "URL: $WebAppURL" -ForegroundColor Green
+try {
+  $r = Invoke-WebRequest -Uri $WebAppURL -Method Post `
+    -Body '{"action":"getTadikaList"}' `
+    -ContentType 'text/plain;charset=utf-8' -TimeoutSec 25 -UseBasicParsing
+  Write-Host "เว็บแอปตอบกลับ: $($r.StatusCode)" -ForegroundColor Green
+  Write-Host ($r.Content.Substring(0, [Math]::Min(150, $r.Content.Length)))
+} catch {
+  Write-Host "ครั้งแรกหลัง push อาจ timeout (Apps Script กำลัง build) - ลองใหม่อีกครั้ง" -ForegroundColor Yellow
+}
+
+Write-Host "`n=== เสร็จสิ้น (ระบบเป็นปัจจุบันแล้ว) ===" -ForegroundColor Green

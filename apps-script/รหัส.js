@@ -3,8 +3,8 @@ const SHEET_NAME1 = 'DATA';
 const SHEET_NAME2 = 'ADDRESS';
 const SHEET_NAME3 = 'USERS';
 
-// คอลัมน์ทั้งหมดของชีต DATA (คอลัมน์ 10-11 ใช้ติดตามการแก้ไข)
-const DATA_HEADERS = ['Timestamp', 'ID ศูนย์', 'ชื่อศูนย์', 'ประเภทการประเมิน', 'คะแนน 1', 'คะแนน 2', 'รวม', 'ผู้นิเทศ', 'ข้อเสนอแนะ', 'แก้ไขครั้งล่าสุด', 'ผู้แก้ไขล่าสุด'];
+// โครงสร้างใหม่ของชีต DATA (15 คอลัมน์ รองรับการประเมิน 4 ด้าน + สรุป)
+const DATA_HEADERS = ['Timestamp', 'ID ศูนย์', 'ชื่อศูนย์', 'ประเภทการประเมิน', 'คะแนนแบบ1', 'คะแนนแบบ2', 'คะแนนแบบ3', 'คะแนนแบบ4', 'รวม/150', 'ร้อยละ', 'ระดับ', 'รายละเอียด', 'ผู้นิเทศ', 'แก้ไขครั้งล่าสุด', 'ผู้แก้ไขล่าสุด'];
 
 function doPost(e) {
   try {
@@ -15,6 +15,8 @@ function doPost(e) {
 
     if (action === 'login') {
       res = loginUser(payload);
+    } else if (action === 'register') {
+      res = registerUser(payload);
     } else if (action === 'getTadikaList') {
       res = getTadikaList();
     } else if (action === 'getTadikaData') {
@@ -35,24 +37,19 @@ function doPost(e) {
   }
 }
 
-// --- ขั้นตอนที่ 1: ตรวจสอบ Login ---
+// --- ตรวจสอบ Login ---
 function loginUser(data) {
   const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('USERS');
   if(!sheet) return {success: false, message: "ไม่พบชีต USERS"};
   
-  // สมมติว่าแถวที่ 1 เป็น Header ข้อมูลเริ่มแถวที่ 2
   const rows = sheet.getDataRange().getValues(); 
-  
-  // แปลงค่าที่ส่งมาจากหน้าเว็บให้เป็น String และตัดช่องว่างซ้ายขวา (Trim)
   const inputUser = String(data.username).trim();
   const inputPass = String(data.password).trim();
 
   for(let i = 1; i < rows.length; i++) {
-    // แปลงข้อมูลที่ดึงมาจาก Sheet ให้เป็น String และตัดช่องว่างซ้ายขวาด้วย
     let sheetUser = String(rows[i][0]).trim();
     let sheetPass = String(rows[i][1]).trim();
     
-    // เปรียบเทียบข้อมูลที่ Clean แล้ว
     if(sheetUser === inputUser && sheetPass === inputPass) {
       return {
         success: true, 
@@ -61,14 +58,36 @@ function loginUser(data) {
     }
   }
   
-  // หากไม่สำเร็จ ให้พ่นค่าที่หน้าเว็บส่งมากลับไปใน message เพื่อช่วยให้เรา Debug ได้
   return {
     success: false, 
     message: "Username หรือ Password ไม่ถูกต้อง\n\n(ข้อมูลที่ระบบได้รับ: User='" + inputUser + "', Pass='" + inputPass + "')"
   };
 }
 
-// --- ขั้นตอนที่ 2: ดึงรายชื่อศูนย์มาให้เลือก (สำหรับ Autocomplete) ---
+// --- สมัครสมาชิกใหม่ (เพิ่มผู้ใช้ลงชีต USERS) ---
+function registerUser(data) {
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME3);
+  if(!sheet) return {success: false, message: "ไม่พบชีต USERS"};
+
+  const rows = sheet.getDataRange().getValues();
+  const u = String(data.username).trim();
+  const p = String(data.password).trim();
+  const f = String(data.fname).trim();
+  const tel = String(data.tel || '').trim();
+
+  if(!u || !p || !f) return {success: false, message: "กรอกข้อมูลไม่ครบถ้วน (ต้องมี Username, Password และชื่อ-นามสกุล)"};
+
+  for(let i = 1; i < rows.length; i++) {
+    if(String(rows[i][0]).trim() === u) {
+      return {success: false, message: "Username นี้ถูกใช้งานแล้ว กรุณาใช้ชื่ออื่น"};
+    }
+  }
+
+  sheet.appendRow([u, p, f, tel]);
+  return {success: true, message: "สมัครสมาชิกเรียบร้อยแล้ว! กรุณาเข้าสู่ระบบ"};
+}
+
+// --- ดึงรายชื่อศูนย์มาให้เลือก (Autocomplete) ---
 function getTadikaList() {
   const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME2);
   if(!sheet) return {success: false, message: "ไม่พบชีต ADDRESS"};
@@ -76,42 +95,44 @@ function getTadikaList() {
   const lastRow = sheet.getLastRow();
   if(lastRow < 6) return {success: true, data: []};
   
-  // คอลัมน์: A=ID, C=มัสยิด, D=ชื่อศูนย์, J=ที่อยู่, K=ตำบล, L=อำเภอ
-  const rows = sheet.getRange(6, 1, lastRow - 5, 12).getValues(); 
+  // คอลัมน์: A=ID, C=มัสยิด, D=ชื่อศูนย์, J=ที่อยู่, K=ตำบล, L=อำเภอ, U=ละติจูด, V=ลองจิจูด
+  const rows = sheet.getRange(6, 1, lastRow - 5, 22).getValues(); 
   let list = [];
   for(let i = 0; i < rows.length; i++) {
-    if(rows[i][0] != "") { // ถ้ามีรหัส ID
+    if(rows[i][0] != "") {
       list.push({
         id: rows[i][0],
         name: rows[i][3],
         mosque: rows[i][2],
         address: rows[i][9],
         subdist: rows[i][10],
-        dist: rows[i][11]
+        dist: rows[i][11],
+        lat: rows[i][20],
+        lng: rows[i][21]
       });
     }
   }
   return {success: true, data: list};
 }
 
-// --- ขั้นตอนที่ 3: ดึงข้อมูลรายละเอียดของศูนย์ที่เลือก ---
+// --- ดึงข้อมูลรายละเอียดของศูนย์ที่เลือก ---
 function getTadikaData(id) {
   const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME2);
   const lastRow = sheet.getLastRow();
-  // ดึงข้อมูลตั้งแต่ A (1) ถึง T (20) เริ่มแถว 6
-  const rows = sheet.getRange(6, 1, lastRow - 5, 20).getValues(); 
+  const rows = sheet.getRange(6, 1, lastRow - 5, 22).getValues(); 
   
   for(let i = 0; i < rows.length; i++) {
     if(rows[i][0] == id) {
       return {
         success: true,
         data: {
-          row: i + 6, // เก็บเลขแถวไว้ใช้อัปเดตข้อมูล
+          row: i + 6,
           id: rows[i][0], status: rows[i][1], mosque: rows[i][2], name: rows[i][3], 
           head: rows[i][4], eduSec: rows[i][5], eduRel: rows[i][6], foundedDate: rows[i][7], 
           regNum: rows[i][8], address: rows[i][9], subdist: rows[i][10], dist: rows[i][11], 
           phone: rows[i][12], size: rows[i][13], tMale: rows[i][14], tFemale: rows[i][15], 
-          tTotal: rows[i][16], sMale: rows[i][17], sFemale: rows[i][18], sTotal: rows[i][19]
+          tTotal: rows[i][16], sMale: rows[i][17], sFemale: rows[i][18], sTotal: rows[i][19],
+          lat: rows[i][20], lng: rows[i][21]
         }
       };
     }
@@ -119,7 +140,7 @@ function getTadikaData(id) {
   return {success: false, message: "ไม่พบข้อมูลศูนย์"};
 }
 
-// --- เตรียมชีต DATA ให้มี Header ครบตาม DATA_HEADERS ---
+// --- เตรียมชีต DATA ให้มี Header ครบตาม DATA_HEADERS (15 คอลัมน์) ---
 function ensureDataSheet() {
   const ss = SpreadsheetApp.openById(SHEET_ID);
   let sheet = ss.getSheetByName(SHEET_NAME1);
@@ -128,15 +149,7 @@ function ensureDataSheet() {
     sheet.getRange(1, 1, 1, DATA_HEADERS.length).setValues([DATA_HEADERS]);
     return sheet;
   }
-  const headers = sheet.getRange(1, 1, 1, DATA_HEADERS.length).getValues()[0];
-  const isEmpty = headers.every(h => String(h).trim() == '');
-  if(isEmpty) {
-    sheet.getRange(1, 1, 1, DATA_HEADERS.length).setValues([DATA_HEADERS]);
-  } else {
-    // เติมคอลัมน์ติดตามการแก้ไข หากยังไม่มี (รองรับชีตเดิมที่ยังไม่มีคอลัมน์ 10-11)
-    if(headers[9] == undefined || String(headers[9]).trim() == '') sheet.getRange(1, 10).setValue('แก้ไขครั้งล่าสุด');
-    if(headers[10] == undefined || String(headers[10]).trim() == '') sheet.getRange(1, 11).setValue('ผู้แก้ไขล่าสุด');
-  }
+  sheet.getRange(1, 1, 1, DATA_HEADERS.length).setValues([DATA_HEADERS]);
   return sheet;
 }
 
@@ -148,7 +161,7 @@ function formatDate(d) {
          pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
 }
 
-// --- ขั้นตอนที่ 4: ดึงประวัติการนิเทศของศูนย์ที่เลือก (สำหรับกลับมาแก้ไขได้) ---
+// --- ดึงประวัติการนิเทศของศูนย์ที่เลือก (สำหรับกลับมาแก้ไขได้) ---
 function getEvaluations(tadikaId) {
   const sheet = ensureDataSheet();
   const lastRow = sheet.getLastRow();
@@ -158,19 +171,25 @@ function getEvaluations(tadikaId) {
   const list = [];
   for(let i = 0; i < rows.length; i++) {
     if(String(rows[i][1]).trim() == String(tadikaId).trim()) {
+      let details = null;
+      try { details = JSON.parse(rows[i][11] || 'null'); } catch(e) { details = null; }
       list.push({
-        row: i + 2, // เลขแถวจริงในชีต DATA ใช้อัปเดตเมื่อแก้ไข
+        row: i + 2,
         timestamp: formatDate(rows[i][0]),
         id: rows[i][1],
         name: rows[i][2],
         formType: rows[i][3],
         score1: rows[i][4],
         score2: rows[i][5],
-        totalScore: rows[i][6],
-        supervisor: rows[i][7],
-        comment: rows[i][8],
-        lastEdit: formatDate(rows[i][9]),
-        lastEditor: rows[i][10]
+        score3: rows[i][6],
+        score4: rows[i][7],
+        totalScore: rows[i][8],
+        pct: rows[i][9],
+        level: rows[i][10],
+        details: details,
+        supervisor: rows[i][12],
+        lastEdit: formatDate(rows[i][13]),
+        lastEditor: rows[i][14]
       });
     }
   }
@@ -178,7 +197,7 @@ function getEvaluations(tadikaId) {
   return {success: true, data: list};
 }
 
-// --- ขั้นตอนที่ 5: บันทึกอัปเดตข้อมูลศูนย์ และ บันทึก/แก้ไขผลนิเทศ (ประทับเวลา + ชื่อผู้แก้ไขทุกครั้ง) ---
+// --- บันทึก/แก้ไขผลนิเทศ + อัปเดตข้อมูลศูนย์ (ประทับเวลาและผู้แก้ไขทุกครั้ง) ---
 function saveEvaluation(payload) {
   const ss = SpreadsheetApp.openById(SHEET_ID);
   
@@ -188,10 +207,10 @@ function saveEvaluation(payload) {
   const updateValues = [[
     t.status, t.mosque, t.name, t.head, t.eduSec, t.eduRel, t.foundedDate, t.regNum,
     t.address, t.subdist, t.dist, t.phone, t.size, t.tMale, t.tFemale, t.tTotal,
-    t.sMale, t.sFemale, t.sTotal
+    t.sMale, t.sFemale, t.sTotal, t.lat, t.lng
   ]];
   if(addressSheet && t.row) {
-    addressSheet.getRange(t.row, 2, 1, 19).setValues(updateValues);
+    addressSheet.getRange(t.row, 2, 1, 21).setValues(updateValues);
   }
 
   // 5.2 บันทึก/แก้ไขผลนิเทศลงชีต DATA
@@ -199,17 +218,21 @@ function saveEvaluation(payload) {
   const e = payload.evalData;
   const supervisor = String(payload.supervisor);
   const now = new Date();
+  const detailsJSON = JSON.stringify({ answers: e.answers || {}, comment: e.comment || '', strengths: e.strengths || '', improve: e.improve || '' });
 
   if(payload.editRow && !isNaN(payload.editRow)) {
-    // แก้ไขบันทึกเดิม: อัปเดตค่าพร้อมประทับเวลาผู้แก้ไข (เก็บวันแรก/ผู้นิเทศคนแรกไว้)
     const row = Number(payload.editRow);
     dataSheet.getRange(row, 4).setValue(e.formType);
     dataSheet.getRange(row, 5).setValue(e.score1);
     dataSheet.getRange(row, 6).setValue(e.score2);
-    dataSheet.getRange(row, 7).setValue(e.totalScore);
-    dataSheet.getRange(row, 9).setValue(e.comment);
-    dataSheet.getRange(row, 10).setValue(now);
-    dataSheet.getRange(row, 11).setValue(supervisor);
+    dataSheet.getRange(row, 7).setValue(e.score3);
+    dataSheet.getRange(row, 8).setValue(e.score4);
+    dataSheet.getRange(row, 9).setValue(e.totalScore);
+    dataSheet.getRange(row, 10).setValue(e.pct);
+    dataSheet.getRange(row, 11).setValue(e.level);
+    dataSheet.getRange(row, 12).setValue(detailsJSON);
+    dataSheet.getRange(row, 14).setValue(now);
+    dataSheet.getRange(row, 15).setValue(supervisor);
     return {
       success: true,
       message: 'แก้ไขผลการนิเทศเรียบร้อยแล้ว!<br>แก้ไขครั้งล่าสุด: ' + formatDate(now) + ' โดย ' + supervisor,
@@ -218,15 +241,32 @@ function saveEvaluation(payload) {
     };
   }
 
-  // บันทึกใหม่: ประทับเวลา + ผู้นิเทศ (และใช้เป็นผู้แก้ไขครั้งแรกด้วย)
-  dataSheet.appendRow([now, t.id, t.name, e.formType, e.score1, e.score2, e.totalScore, supervisor, e.comment, now, supervisor]);
+  dataSheet.appendRow([now, t.id, t.name, e.formType, e.score1, e.score2, e.score3, e.score4, e.totalScore, e.pct, e.level, detailsJSON, supervisor, now, supervisor]);
   return {success: true, message: 'อัปเดตข้อมูลศูนย์ และบันทึกผลการนิเทศเรียบร้อยแล้ว!', lastEdit: formatDate(now), lastEditor: supervisor};
 }
 
 function processChatbot(userMessage) {
-  // บอทยังคงทำงานแบบเดิม
-  const msg = userMessage.toLowerCase();
-  let reply = "น้องศึกษาพร้อมให้คำแนะนำค่ะ";
-  if (msg.includes('เกณฑ์')) reply = "เกณฑ์การนิเทศมี 5 รูปแบบค่ะ...";
+  const msg = String(userMessage || '').toLowerCase();
+  let reply = "น้องศึกษาพร้อมให้คำแนะนำค่ะ ลองถามเรื่องเกณฑ์การประเมินหรือวิธีการกรอกคะแนนได้เลยนะคะ";
+  if (msg.includes('เกณฑ์')) {
+    reply = "เกณฑ์การประเมินมี 4 ด้าน รวมคะแนนเต็ม 150 คะแนนค่ะ:\n" +
+      "1) ด้านการบริหารจัดการศูนย์ (40 คะแนน)\n" +
+      "2) ด้านครูผู้สอน (40 คะแนน)\n" +
+      "3) ด้านผู้เรียน (35 คะแนน)\n" +
+      "4) ด้านอาคารสถานที่และสิ่งแวดล้อม (35 คะแนน)\n" +
+      "รวมแล้วคิดเป็นร้อยละและจัดระดับผลการนิเทศค่ะ";
+  } else if (msg.includes('ระดับ')) {
+    reply = "การจัดระดับผลการนิเทศ:\n" +
+      "- ร้อยละ 80 ขึ้นไป  → ดีมาก\n" +
+      "- ร้อยละ 60-79   → ดี\n" +
+      "- ร้อยละ 40-59   → พอใช้\n" +
+      "- ต่ำกว่าร้อยละ 40 → ต้องปรับปรุง";
+  } else if (msg.includes('คะแนน') || msg.includes('กรอก')) {
+    reply = "กรอกคะแนนโดยเลือกจำนวนคะแนนในแต่ละข้อ (สูงสุดข้อละ 5 คะแนน) ในแต่ละด้านค่ะ ระบบจะคำนวณคะแนนรวม ร้อยละ และระดับผลการนิเทศให้อัตโนมัติ";
+  } else if (msg.includes('แก้ไข')) {
+    reply = "สามารถกลับมาแก้ไขผลการนิเทศได้จากตารางประวัติการนิเทศของศูนย์นั้น โดยกดปุ่ม \"แก้ไข\" แล้วบันทึกใหม่ ระบบจะประทับเวลาและชื่อผู้แก้ไขล่าสุดให้ค่ะ";
+  } else if (msg.includes('สวัสดี') || msg.includes('hello') || msg.includes('hi')) {
+    reply = "สวัสดีค่ะ น้องศึกษาพร้อมช่วยเหลือ นิเทศออนไลน์ได้อย่างสบายใจนะคะ";
+  }
   return { reply: reply };
 }

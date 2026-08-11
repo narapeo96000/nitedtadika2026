@@ -3,250 +3,411 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ระบบนิเทศออนไลน์ตาดีกาและ ศอม.</title>
-  
-  <!-- โหลด Bootstrap 5 -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  
-  <!-- โหลด SweetAlert2 (CSS & JS) -->
+  <title>ระบบนิเทศออนไลน์ตาดีกาและศอม.</title>
+
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.20/dist/sweetalert2.min.css">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.20/dist/sweetalert2.all.min.js"></script>
-
-  <!-- แจ้งเบราว์เซอร์ไม่ให้หา favicon (ป้องกัน 404 Error ใน Console) -->
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="icon" href="data:,">
 
   <style>
     :root {
-      --primary: #0d6efd;
-      --primary-dark: #0b5ed7;
-      --primary-deep: #0a4da3;
-      --primary-light: #e7f1ff;
-      --ink: #1f2937;
-      --muted: #475569;
+      --primary: #059669;
+      --primary-dark: #047857;
+      --primary-deep: #065f46;
+      --primary-soft: #d1fae5;
+      --primary-light: #ecfdf5;
+      --blue: #2563eb;
+      --blue-dark: #1d4ed8;
+      --blue-soft: #dbeafe;
+      --blue-light: #eff6ff;
+      --accent: #2563eb;
+      --ink: #0f172a;
+      --muted: #64748b;
+      --border: #d5e0ea;
+      --white: #ffffff;
     }
-    * { -webkit-tap-highlight-color: transparent; }
-    body { background-color: #ffffff; font-family: 'Sarabun', sans-serif; color: var(--ink); }
+    * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+    body {
+      margin: 0; background: #f4f7fa; color: var(--ink);
+      font-family: 'Sarabun', sans-serif; font-size: 1rem;
+    }
+    .section-hidden { display: none !important; }
 
     .header-banner {
-      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-deep) 100%);
-      color: #ffffff;
-      padding: 18px 0;
-      border-radius: 0 0 20px 20px;
-      margin-bottom: 16px;
-      box-shadow: 0 4px 14px rgba(10,77,163,0.25);
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-deep) 55%, var(--blue-dark) 100%);
+      color: #fff; padding: 18px 16px; border-radius: 0 0 22px 22px;
+      box-shadow: 0 4px 16px rgba(5,150,105,.30);
+      display: flex; justify-content: space-between; align-items: center;
     }
-    .header-banner h3 { font-weight: 700; margin-bottom: 2px; }
-    .header-banner p { opacity: .92; font-size: .95rem; }
+    .header-banner h3 { margin: 0; font-size: 1.25rem; font-weight: 700; }
+    .header-banner p { margin: 2px 0 0; opacity: .92; font-size: .9rem; }
+    .header-user { display: flex; align-items: center; gap: 8px; }
+    .avatar {
+      width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,.22);
+      display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+    }
+    .logout-btn {
+      background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.4);
+      color: #fff; border-radius: 12px; padding: 6px 12px; font-size: .82rem; cursor: pointer;
+    }
 
-    .card { border: 1px solid #e2ebf7; border-radius: 16px; box-shadow: 0 2px 10px rgba(13,110,253,0.06); }
-    .section-hidden { display: none !important; }
-    .section-title { border-left: 5px solid var(--primary); padding-left: 10px; margin-bottom: 18px; font-weight: 700; color: var(--primary-deep); }
+    .container { padding: 16px 12px 90px; max-width: 860px; margin: 0 auto; }
 
-    label { font-weight: 600; color: var(--muted); margin-bottom: 4px; font-size: .95rem; }
-    .form-control, .form-select { border-radius: 10px; min-height: 46px; font-size: 1rem; border-color: #cbd8ea; }
-    .form-control:focus, .form-select:focus { border-color: var(--primary); box-shadow: 0 0 0 .25rem rgba(13,110,253,.15); }
-    .form-control.bg-light { background-color: #f1f5fb !important; }
+    .card {
+      background: #fff; border: 1px solid var(--border); border-radius: 18px;
+      box-shadow: 0 2px 12px rgba(6,95,70,.06); padding: 18px; margin-bottom: 16px;
+    }
+    .card-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .card-title h4 {
+      margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--primary-deep);
+      border-left: 5px solid var(--accent); padding-left: 10px;
+    }
+    .card-title .badge {
+      background: var(--primary-light); color: var(--primary-deep);
+      border-radius: 999px; padding: 4px 12px; font-size: .8rem; font-weight: 600;
+    }
 
-    .btn { border-radius: 12px; font-weight: 600; min-height: 46px; }
-    .btn-sm { min-height: auto; }
-    .btn-primary { background-color: var(--primary); border-color: var(--primary); }
-    .btn-primary:hover, .btn-primary:active { background-color: var(--primary-dark); border-color: var(--primary-dark); }
-    .btn-success { background-color: #157347; border-color: #157347; }
+    label { display: block; font-weight: 600; color: var(--muted); margin: 8px 0 4px; font-size: .9rem; }
+    .form-control, .form-select {
+      width: 100%; min-height: 46px; border-radius: 12px; border: 1.5px solid var(--border);
+      padding: 10px 14px; font-size: 1rem; font-family: inherit; color: var(--ink); background: #fff;
+    }
+    .form-control:focus, .form-select:focus {
+      outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(5,150,105,.15);
+    }
+    .form-control.bg-light { background: #f0f7f4; border-color: transparent; }
+    textarea.form-control { min-height: 90px; resize: vertical; }
+    .row { display: flex; flex-wrap: wrap; margin: 0 -6px; }
+    .col { padding: 0 6px; }
+    .col-3 { width: 25%; } .col-4 { width: 33.33%; } .col-6 { width: 50%; } .col-12 { width: 100%; }
+    @media (min-width: 768px) {
+      .col-md-3 { width: 25%; } .col-md-4 { width: 33.33%; } .col-md-6 { width: 50%; }
+    }
 
-    .table { font-size: .88rem; }
-    .table thead th { color: var(--primary-deep); background-color: var(--primary-light); white-space: nowrap; border-bottom: 2px solid var(--primary); }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      border: none; border-radius: 12px; font-weight: 600; font-family: inherit;
+      min-height: 46px; padding: 10px 18px; font-size: 1rem; cursor: pointer;
+      text-decoration: none;
+    }
+    .btn:disabled { opacity: .55; cursor: not-allowed; }
+    .btn-primary { background: linear-gradient(135deg, var(--primary), var(--blue-dark)); color: #fff; box-shadow: 0 4px 12px rgba(5,150,105,.25); }
+    .btn-success { background: #16a34a; color: #fff; }
+    .btn-outline { background: #fff; border: 1.5px solid var(--primary); color: var(--primary-deep); }
+    .btn-outline2 { background: #fff; border: 1.5px solid var(--border); color: var(--muted); }
+    .btn-danger { background: #ef4444; color: #fff; }
+    .btn-sm { min-height: 34px; padding: 4px 12px; font-size: .85rem; border-radius: 10px; }
+    .w-100 { width: 100%; }
+    .text-center { text-align: center; }
+    .text-muted { color: var(--muted); }
+    .text-success { color: var(--primary) !important; }
+    .small { font-size: .82rem; }
+    .mt-1 { margin-top: 4px; } .mt-2 { margin-top: 8px; } .mt-3 { margin-top: 14px; } .mt-4 { margin-top: 18px; }
+    .mb-0 { margin-bottom: 0; } .mb-1 { margin-bottom: 4px; } .mb-2 { margin-bottom: 8px; } .mb-3 { margin-bottom: 14px; } .mb-4 { margin-bottom: 18px; }
+    .d-none { display: none !important; }
+    .position-relative { position: relative; }
+    .rounded { border-radius: 12px; }
+    .bg-soft { background: var(--primary-light); }
 
-    .swal2-popup { font-family: 'Sarabun', sans-serif; border-radius: 16px; }
+    .suggest-box {
+      position: absolute; z-index: 1050; width: 100%; max-height: 300px; overflow-y: auto;
+      border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 10px 24px rgba(0,0,0,.14);
+      background: #fff;
+    }
+    .suggest-item {
+      display: block; width: 100%; text-align: left; border: none; background: #fff;
+      border-bottom: 1px solid #eef5f1; padding: 10px 14px; cursor: pointer; font-family: inherit;
+    }
+    .suggest-item:hover, .suggest-item.active { background: var(--primary-light); }
+    .info-box {
+      background: var(--primary-light); border: 1px solid var(--primary-soft);
+      border-radius: 12px; padding: 10px 14px; margin-top: 8px;
+    }
 
-    /* Chatbot Styles */
-    #chat-widget { position: fixed; bottom: 20px; right: 20px; width: 350px; max-width: 90vw; background: white; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); display: none; flex-direction: column; z-index: 1000; overflow: hidden; border: 1px solid #e2ebf7; }
-    #chat-header { background: linear-gradient(135deg, var(--primary), var(--primary-deep)); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
-    #chat-body { height: 300px; overflow-y: auto; padding: 15px; background: #f8fbff; }
-    .msg-user { background: var(--primary); color: white; padding: 8px 12px; border-radius: 15px 15px 0 15px; margin-bottom: 10px; align-self: flex-end; width: fit-content; margin-left: auto;}
-    .msg-bot { background: #e9ecef; color: black; padding: 8px 12px; border-radius: 15px 15px 15px 0; margin-bottom: 10px; width: fit-content;}
-    #chat-footer { padding: 10px; border-top: 1px solid #dbe7f5; display: flex; background: #fff; }
-    #chat-footer .btn { min-height: 38px; }
-    #chat-fab { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--primary-deep)); color: white; font-size: 24px; border: none; box-shadow: 0 4px 14px rgba(13,110,253,.45); cursor: pointer; z-index: 999; }
+    .alert { border-radius: 12px; padding: 12px 14px; margin: 10px 0; font-size: .92rem; }
+    .alert-warn { background: #fef3c7; border: 1px solid #fde68a; color: #92400e; }
+    .alert-info { background: var(--primary-light); border: 1px solid var(--primary-soft); color: var(--primary-deep); }
 
-    /* Mobile-first: ปรับให้ใช้งานภาคสนามบนมือถือสะดวก */
-    @media (max-width: 767.98px) {
-      .container { padding-left: 10px; padding-right: 10px; }
-      .header-banner { padding: 14px 0; border-radius: 0 0 16px 16px; }
-      .card { padding: 1rem !important; border-radius: 14px; }
-      #chat-widget { width: 100%; max-width: 100vw; bottom: 0; right: 0; border-radius: 16px 16px 0 0; max-height: 85vh; }
+    .tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 14px; }
+    .tab {
+      flex: 1; min-width: 92px; white-space: nowrap; text-align: center; padding: 10px 8px;
+      border-radius: 12px; border: 1.5px solid var(--border); background: #fff;
+      font-weight: 600; font-size: .86rem; color: var(--muted); cursor: pointer; font-family: inherit;
+    }
+    .tab.active { background: linear-gradient(135deg, var(--primary), var(--blue-dark)); color: #fff; border-color: transparent; }
+    .tab .tab-pts { display: block; font-size: .72rem; font-weight: 500; opacity: .85; }
+
+    .q-item { border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; background: #fff; }
+    .q-text { font-weight: 600; margin-bottom: 8px; font-size: .95rem; }
+    .q-scale { display: flex; gap: 6px; flex-wrap: wrap; }
+    .q-scale button {
+      flex: 1; min-width: 42px; padding: 8px 4px; border-radius: 10px; border: 1.5px solid var(--border);
+      background: #fff; font-weight: 700; font-size: .95rem; color: var(--muted); cursor: pointer; font-family: inherit;
+    }
+    .q-scale button.sel { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+    .total-box {
+      background: linear-gradient(135deg, var(--primary), var(--blue-dark)); color: #fff;
+      border-radius: 16px; padding: 16px; text-align: center; margin-top: 14px;
+    }
+    .total-box .big { font-size: 2rem; font-weight: 700; line-height: 1.1; }
+    .total-box .lvl { display: inline-block; margin-top: 6px; background: rgba(255,255,255,.2); border-radius: 999px; padding: 4px 16px; font-weight: 600; }
+
+    table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+    th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #eef5f1; vertical-align: top; }
+    thead th { color: var(--blue-dark); background: var(--blue-soft); font-weight: 600; white-space: nowrap; }
+    .table-wrap { overflow-x: auto; }
+
+    .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .stat-card { background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 14px; }
+    .stat-card .val { font-size: 1.7rem; font-weight: 700; color: var(--primary-deep); }
+    .stat-card .lbl { font-size: .8rem; color: var(--muted); font-weight: 600; }
+    .stat-card .lv { display: inline-block; margin-top: 6px; border-radius: 999px; padding: 3px 12px; font-size: .85rem; font-weight: 700; }
+
+    .lv-green { background: #d1fae5; color: #065f46; }
+    .lv-blue  { background: #dbeafe; color: #1e40af; }
+    .lv-amber { background: #fef3c7; color: #92400e; }
+    .lv-red   { background: #fee2e2; color: #991b1b; }
+    .lv {
+      display: inline-block; border-radius: 999px; padding: 3px 12px;
+      font-size: .8rem; font-weight: 700; white-space: nowrap;
+    }
+
+    /* Chat */
+    #chat-fab { position: fixed; bottom: 18px; right: 18px; width: 58px; height: 58px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--blue-dark)); color: #fff; font-size: 26px;
+      border: none; box-shadow: 0 4px 16px rgba(5,150,105,.45); cursor: pointer; z-index: 999; }
+    #chat-widget { position: fixed; bottom: 18px; right: 18px; width: 350px; max-width: 92vw; background: #fff;
+      border-radius: 16px; box-shadow: 0 8px 28px rgba(0,0,0,.22); display: none; flex-direction: column;
+      z-index: 1000; overflow: hidden; border: 1px solid var(--border); }
+    #chat-header { background: linear-gradient(135deg, var(--primary), var(--blue-dark)); color: #fff;
+      padding: 13px 16px; display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
+    #chat-close { background: none; border: none; color: #fff; font-size: 1.2rem; cursor: pointer; }
+    #chat-body { height: 280px; overflow-y: auto; padding: 14px; background: #f7faf9; }
+    .msg-user { background: var(--primary); color: #fff; padding: 8px 12px; border-radius: 14px 14px 0 14px;
+      margin-bottom: 8px; width: fit-content; margin-left: auto; max-width: 85%; }
+    .msg-bot { background: #e9efec; color: #1f2937; padding: 8px 12px; border-radius: 14px 14px 14px 0;
+      margin-bottom: 8px; width: fit-content; max-width: 85%; white-space: pre-line; }
+    #chat-footer { padding: 10px; border-top: 1px solid #e4ece8; display: flex; gap: 8px; background: #fff; }
+    #chat-footer input { flex: 1; }
+
+    .auth-card { max-width: 460px; margin: 24px auto 0; }
+    .brand {
+      text-align: center; margin: 18px auto 6px; color: var(--primary-deep);
+    }
+    .brand .logo {
+      width: 68px; height: 68px; margin: 0 auto 8px; border-radius: 22px;
+      background: linear-gradient(135deg, var(--primary), var(--blue-dark));
+      color: #fff; font-size: 2rem; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 6px 18px rgba(5,150,105,.35);
+    }
+    .brand h1 { margin: 0; font-size: 1.35rem; font-weight: 700; }
+    .brand p { margin: 4px 0 0; color: var(--muted); font-size: .92rem; }
+
+    @media (max-width: 480px) {
+      .col-3, .col-md-3 { width: 50%; }
+      .stat-grid { grid-template-columns: repeat(2, 1fr); }
+      #chat-widget { width: 100%; max-width: 100vw; bottom: 0; right: 0; border-radius: 16px 16px 0 0; }
       #chat-body { height: 45vh; }
-      #chat-fab { bottom: 14px; right: 14px; width: 56px; height: 56px; }
-      #chatInput { font-size: 1rem; min-height: 38px; }
-      .table { font-size: .8rem; }
     }
   </style>
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
 
-  <div class="header-banner text-center">
-    <h3>ระบบนิเทศออนไลน์</h3>
-    <p class="mb-0" id="headerUserText">กรุณาเข้าสู่ระบบ</p>
+  <div class="header-banner section-hidden" id="appHeader">
+    <div>
+      <h3>ระบบนิเทศออนไลน์ตาดีกา</h3>
+      <p id="headerUserText">กรุณาเข้าสู่ระบบ</p>
+    </div>
+    <div class="header-user">
+      <span id="headerUserText2" class="small"></span>
+      <button class="logout-btn" onclick="doLogout()">ออกจากระบบ</button>
+    </div>
   </div>
 
-  <div class="container mb-5">
-    
-    <!-- ส่วนที่ 1: Login + เลือกศูนย์ตาดีกา -->
-    <div id="loginSection" class="row justify-content-center">
-      <div class="col-md-7 col-lg-6">
-        <div class="card p-4">
-          <h4 class="mb-4 text-center text-primary">ล็อกอินเข้าสู่ระบบ</h4>
-          <form onsubmit="handleLogin(event)">
-            <div class="mb-3">
-              <label>Username</label>
-              <input type="text" id="loginUser" class="form-control" required>
-            </div>
-            <div class="mb-3">
-              <label>Password</label>
-              <input type="password" id="loginPass" class="form-control" required>
-            </div>
-            <div class="mb-4">
-              <label>เลือกศูนย์ตาดีกาที่จะนิเทศ (พิมพ์ค้นหาได้)</label>
-              <div class="position-relative">
-                <input type="text" id="lgTadikaSearch" class="form-control" placeholder="พิมพ์ชื่อตาดีกา / มัสยิด / ตำบล / อำเภอ..." autocomplete="off" oninput="filterTadika('lg')" onkeydown="tadikaKey('lg', event)">
-                <div id="lgTadikaSuggest" class="d-none position-absolute w-100" style="z-index: 1050; max-height: 300px; overflow-y: auto; border-radius: 10px; box-shadow: 0 8px 20px rgba(0,0,0,.18);"></div>
-              </div>
-              <div id="lgSelInfo" class="alert alert-primary d-none mt-2 mb-0 py-2">
-                <b id="lgSelName"></b><br>
-                <span id="lgSelDetail" class="small text-muted"></span>
-              </div>
-            </div>
-            <button type="submit" class="btn btn-primary w-100" id="loginBtn">เข้าสู่ระบบ</button>
-          </form>
+  <div class="container">
+
+    <!-- ===== หน้า Login ===== -->
+    <div id="loginSection">
+      <div class="brand">
+        <div class="logo">🎓</div>
+        <h1>ระบบนิเทศออนไลน์</h1>
+        <p>ตาดีกาและศูนย์อบรมอิสลามประจำมัสยิด (ศอม.)</p>
+      </div>
+      <div class="card auth-card">
+        <h4 class="text-center mb-3" style="color:var(--primary-deep); margin-top:0;">เข้าสู่ระบบ</h4>
+        <label>Username</label>
+        <input type="text" id="loginUser" class="form-control mb-3">
+        <label>Password</label>
+        <input type="password" id="loginPass" class="form-control mb-3" onkeypress="if(event.key==='Enter') handleLogin(event)">
+        <label>เลือกศูนย์ตาดีกาที่จะนิเทศ <span class="small text-muted">(พิมพ์ค้นหาได้)</span></label>
+        <div class="position-relative">
+          <input type="text" id="lgTadikaSearch" class="form-control" placeholder="ชื่อตาดีกา / มัสยิด / ตำบล / อำเภอ..."
+                 autocomplete="off" oninput="filterTadika('lg')" onkeydown="tadikaKey('lg', event)">
+          <div id="lgTadikaSuggest" class="suggest-box d-none"></div>
         </div>
+        <div id="lgSelInfo" class="info-box d-none">
+          <b id="lgSelName"></b><br>
+          <span id="lgSelDetail" class="small text-muted"></span>
+        </div>
+        <button class="btn btn-primary w-100 mt-3" id="loginBtn" onclick="handleLogin(event)">เข้าสู่ระบบ</button>
+        <p class="text-center mt-3 mb-0 small">
+          ยังไม่มีบัญชี? <a href="javascript:void(0)" style="color:var(--primary); font-weight:600;" onclick="showRegister()">สมัครสมาชิก</a>
+        </p>
       </div>
     </div>
 
-    <!-- ส่วนที่ 2: เลือกศูนย์ตาดีกา (สำหรับเปลี่ยนศูนย์ภายหลัง) -->
-    <div id="selectSection" class="row justify-content-center section-hidden">
-      <div class="col-md-8">
-        <div class="card p-4">
-          <h4 class="mb-1 text-primary">เลือกศูนย์ตาดีกา / ศอม. ที่ต้องการนิเทศ</h4>
-          <p class="text-muted mb-3">พิมพ์ชื่อตาดีกา ชื่อมัสยิด ที่อยู่ ตำบล หรืออำเภอ เพื่อค้นหา</p>
-          <div class="mb-3 position-relative">
-            <input type="text" id="tadikaSearch" class="form-control" placeholder="พิมพ์เพื่อค้นหา..." autocomplete="off" oninput="filterTadika('sel')" onkeydown="tadikaKey('sel', event)">
-            <div id="tadikaSuggest" class="d-none position-absolute w-100" style="z-index: 1050; max-height: 340px; overflow-y: auto; border-radius: 10px; box-shadow: 0 8px 20px rgba(0,0,0,.18);"></div>
-          </div>
-          <div id="selectedTadikaInfo" class="alert alert-primary d-none mb-3">
-            <b id="selName"></b><br>
-            <span id="selDetail" class="small text-muted"></span>
-          </div>
-          <button class="btn btn-success w-100" id="selectBtn" onclick="fetchTadikaData()" disabled>เริ่มการนิเทศ</button>
-        </div>
+    <!-- ===== หน้าสมัครสมาชิก ===== -->
+    <div id="registerSection" class="section-hidden">
+      <div class="card auth-card">
+        <h4 class="text-center mb-3" style="color:var(--primary-deep); margin-top:0;">สมัครสมาชิก</h4>
+        <label>ชื่อ-นามสกุล</label>
+        <input type="text" id="regFname" class="form-control mb-3">
+        <label>เบอร์โทรศัพท์</label>
+        <input type="text" id="regTel" class="form-control mb-3">
+        <label>Username</label>
+        <input type="text" id="regUser" class="form-control mb-3">
+        <label>Password</label>
+        <input type="password" id="regPass" class="form-control mb-3">
+        <button class="btn btn-primary w-100" onclick="doRegister()">สมัครสมาชิก</button>
+        <p class="text-center mt-3 mb-0 small">
+          มีบัญชีแล้ว? <a href="javascript:void(0)" style="color:var(--primary); font-weight:600;" onclick="showLogin()">กลับไปเข้าสู่ระบบ</a>
+        </p>
       </div>
     </div>
 
-    <!-- ส่วนที่ 3 และ 4: ข้อมูลศูนย์(แก้ไขได้) + แบบประเมิน -->
-    <div id="evaluationSection" class="row justify-content-center section-hidden">
-      <div class="col-lg-10">
+    <!-- ===== หน้าหลัก (หลังล็อกอิน) ===== -->
+    <div id="appSection" class="section-hidden">
+
+      <!-- เลือกศูนย์ -->
+      <div class="card">
+        <div class="card-title"><h4>เลือกศูนย์ตาดีกา / ศอม.</h4><span class="badge" id="selTadikaBadge">ยังไม่ได้เลือก</span></div>
+        <div class="position-relative">
+          <input type="text" id="tadikaSearch" class="form-control" placeholder="พิมพ์ชื่อตาดีกา / มัสยิด / ที่อยู่ / ตำบล / อำเภอ..."
+                 autocomplete="off" oninput="filterTadika('sel')" onkeydown="tadikaKey('sel', event)">
+          <div id="tadikaSuggest" class="suggest-box d-none"></div>
+        </div>
+        <div id="selectedTadikaInfo" class="info-box d-none">
+          <b id="selName"></b><br>
+          <span id="selDetail" class="small text-muted"></span>
+        </div>
+        <button class="btn btn-success w-100 mt-3" id="selectBtn" onclick="fetchTadikaData()" disabled>เริ่มการนิเทศ</button>
+      </div>
+
+      <!-- Dashboard สถิติ -->
+      <div id="dashCard" class="card section-hidden">
+        <div class="card-title"><h4>สถิติการนิเทศ</h4><span class="badge" id="dashTadikaName"></span></div>
+        <div class="stat-grid">
+          <div class="stat-card"><div class="lbl">จำนวนครั้ง</div><div class="val" id="dash_count">0</div></div>
+          <div class="stat-card"><div class="lbl">คะแนนรวมล่าสุด</div><div class="val" id="dash_total">—</div></div>
+          <div class="stat-card"><div class="lbl">ร้อยละล่าสุด</div><div class="val" id="dash_pct">—</div></div>
+          <div class="stat-card"><div class="lbl">ระดับล่าสุด</div><div class="val" id="dash_level" style="font-size:1.2rem; padding-top:6px;">—</div></div>
+        </div>
+      </div>
+
+      <!-- แบบประเมิน -->
+      <div id="evaluationSection" class="section-hidden">
         <form id="mainForm" onsubmit="submitFinal(event)">
-          
-          <!-- Section 3: ข้อมูลศูนย์ -->
-          <div class="card p-4 mb-4">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-               <h4 class="section-title mb-0">ข้อมูลศูนย์ (สามารถแก้ไขได้)</h4>
-               <button type="button" class="btn btn-outline-secondary btn-sm" onclick="backToSelect()">กลับไปเลือกศูนย์อื่น</button>
+
+          <!-- ข้อมูลศูนย์ -->
+          <div class="card">
+            <div class="card-title">
+              <h4>ข้อมูลศูนย์ (แก้ไขได้)</h4>
+              <button type="button" class="btn btn-outline2 btn-sm" onclick="backToSelect()">เปลี่ยนศูนย์</button>
             </div>
-            
             <input type="hidden" id="t_row">
-            
             <div class="row">
-              <div class="col-md-4 mb-2"><label>รหัส ID</label><input type="text" id="t_id" class="form-control bg-light" readonly></div>
-              <div class="col-md-4 mb-2"><label>สถานะ</label><input type="text" id="t_status" class="form-control"></div>
-              <div class="col-md-4 mb-2"><label>ขนาดศูนย์</label><input type="text" id="t_size" class="form-control"></div>
-              
-              <div class="col-md-6 mb-2"><label>ชื่อศูนย์ (ตาดีกา)</label><input type="text" id="t_name" class="form-control" required></div>
-              <div class="col-md-6 mb-2"><label>ชื่อมัสยิด</label><input type="text" id="t_mosque" class="form-control"></div>
-              
-              <div class="col-md-4 mb-2"><label>ประธานศูนย์ฯ / โต๊ะครู</label><input type="text" id="t_head" class="form-control"></div>
-              <div class="col-md-4 mb-2"><label>วุฒิ(สามัญ)</label><input type="text" id="t_eduSec" class="form-control"></div>
-              <div class="col-md-4 mb-2"><label>วุฒิ(ศาสนา)</label><input type="text" id="t_eduRel" class="form-control"></div>
-
-              <div class="col-md-6 mb-2"><label>วันเดือนปี ที่ก่อตั้ง</label><input type="text" id="t_founded" class="form-control"></div>
-              <div class="col-md-6 mb-2"><label>เลขที่จดทะเบียน</label><input type="text" id="t_regNum" class="form-control"></div>
-
-              <div class="col-md-12 mb-2"><label>สถานที่ตั้ง (เลขที่ หมู่ ถนน)</label><input type="text" id="t_address" class="form-control"></div>
-              <div class="col-md-4 mb-2"><label>ตำบล</label><input type="text" id="t_subdist" class="form-control"></div>
-              <div class="col-md-4 mb-2"><label>อำเภอ</label><input type="text" id="t_dist" class="form-control"></div>
-              <div class="col-md-4 mb-2"><label>โทรศัพท์</label><input type="text" id="t_phone" class="form-control"></div>
-            </div>
-
-            <hr>
-            <div class="row">
-              <div class="col-md-4"><label>ครู ชาย/หญิง/รวม</label>
-                <div class="input-group">
-                  <input type="number" id="t_tMale" class="form-control" placeholder="ชาย">
-                  <input type="number" id="t_tFemale" class="form-control" placeholder="หญิง">
-                  <input type="number" id="t_tTotal" class="form-control" placeholder="รวม">
+              <div class="col-6 col-md-3"><label>รหัส ID</label><input type="text" id="t_id" class="form-control bg-light" readonly></div>
+              <div class="col-6 col-md-3"><label>สถานะ</label><input type="text" id="t_status" class="form-control"></div>
+              <div class="col-6 col-md-3"><label>ขนาดศูนย์</label><input type="text" id="t_size" class="form-control"></div>
+              <div class="col-6 col-md-3"><label>โทรศัพท์</label><input type="text" id="t_phone" class="form-control"></div>
+              <div class="col-12 col-md-6"><label>ชื่อศูนย์ (ตาดีกา)</label><input type="text" id="t_name" class="form-control" required></div>
+              <div class="col-12 col-md-6"><label>ชื่อมัสยิด</label><input type="text" id="t_mosque" class="form-control"></div>
+              <div class="col-6 col-md-4"><label>ประธานศูนย์ฯ / โต๊ะครู</label><input type="text" id="t_head" class="form-control"></div>
+              <div class="col-6 col-md-4"><label>วุฒิ(สามัญ)</label><input type="text" id="t_eduSec" class="form-control"></div>
+              <div class="col-6 col-md-4"><label>วุฒิ(ศาสนา)</label><input type="text" id="t_eduRel" class="form-control"></div>
+              <div class="col-6 col-md-4"><label>ก่อตั้ง</label><input type="text" id="t_founded" class="form-control"></div>
+              <div class="col-6 col-md-4"><label>เลขทะเบียน</label><input type="text" id="t_regNum" class="form-control"></div>
+              <div class="col-12"><label>สถานที่ตั้ง</label><input type="text" id="t_address" class="form-control"></div>
+              <div class="col-6 col-md-4"><label>ตำบล</label><input type="text" id="t_subdist" class="form-control"></div>
+              <div class="col-6 col-md-4"><label>อำเภอ</label><input type="text" id="t_dist" class="form-control"></div>
+              <div class="col-12 col-md-4">
+                <label>พิกัด GPS (ปักหมุด)</label>
+                <div style="display:flex; gap:6px;">
+                  <input type="text" id="t_lat" class="form-control" placeholder="ละติจูด" readonly>
+                  <input type="text" id="t_lng" class="form-control" placeholder="ลองจิจูด" readonly>
                 </div>
               </div>
-              <div class="col-md-4"><label>นักเรียน ชาย/หญิง/รวม</label>
-                <div class="input-group">
-                  <input type="number" id="t_sMale" class="form-control" placeholder="ชาย">
-                  <input type="number" id="t_sFemale" class="form-control" placeholder="หญิง">
-                  <input type="number" id="t_sTotal" class="form-control" placeholder="รวม">
+              <div class="col-12 col-md-8" style="display:flex; align-items:flex-end;">
+                <button type="button" class="btn btn-outline w-100" id="pinBtn" onclick="pinLocation()">📍 ปักหมุดตำแหน่งปัจจุบัน</button>
+              </div>
+              <div class="col-12">
+                <div id="pinStatus" class="info-box d-none mt-1"></div>
+                <div id="pinMapWrap" class="d-none mt-2">
+                  <iframe id="pinMap" width="100%" height="220" style="border:0; border-radius:12px;"
+                          loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
                 </div>
+              </div>
+            </div>
+            <div class="row mt-3">
+              <div class="col-6"><label>ครู ชาย/หญิง/รวม</label>
+                <div class="row"><div class="col"><input type="number" id="t_tMale" class="form-control" placeholder="ชาย"></div>
+                <div class="col"><input type="number" id="t_tFemale" class="form-control" placeholder="หญิง"></div>
+                <div class="col"><input type="number" id="t_tTotal" class="form-control" placeholder="รวม"></div></div>
+              </div>
+              <div class="col-6"><label>นักเรียน ชาย/หญิง/รวม</label>
+                <div class="row"><div class="col"><input type="number" id="t_sMale" class="form-control" placeholder="ชาย"></div>
+                <div class="col"><input type="number" id="t_sFemale" class="form-control" placeholder="หญิง"></div>
+                <div class="col"><input type="number" id="t_sTotal" class="form-control" placeholder="รวม"></div></div>
               </div>
             </div>
           </div>
 
-          <!-- Section 3.5: ประวัติการนิเทศ (แก้ไขได้) -->
-          <div class="card p-4 mb-4">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <h4 class="section-title mb-0">ประวัติการนิเทศของศูนย์นี้</h4>
-              <span id="historyCount" class="badge bg-secondary">0 รายการ</span>
-            </div>
-            <div class="table-responsive">
-              <table class="table table-hover align-middle">
-                <thead class="table-light">
-                  <tr>
-                    <th>#</th><th>บันทึกเมื่อ</th><th>รูปแบบ</th><th>คะแนน 1</th><th>คะแนน 2</th><th>รวม</th><th>ผู้นิเทศ</th><th>แก้ไขล่าสุด</th><th>ผู้แก้ไขล่าสุด</th><th></th>
-                  </tr>
+          <!-- ประวัติ -->
+          <div class="card">
+            <div class="card-title"><h4>ประวัติการนิเทศของศูนย์นี้</h4><span class="badge" id="historyCount">0 รายการ</span></div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>#</th><th>บันทึกเมื่อ</th><th>แบบ</th><th>คะแนน</th><th>ร้อยละ</th><th>ระดับ</th><th>ผู้นิเทศ</th><th></th></tr>
                 </thead>
                 <tbody id="historyBody">
-                  <tr><td colspan="10" class="text-center text-muted py-3">ยังไม่มีประวัติการนิเทศ</td></tr>
+                  <tr><td colspan="8" class="text-center text-muted py-3">ยังไม่มีประวัติการนิเทศ</td></tr>
                 </tbody>
               </table>
             </div>
           </div>
 
-          <!-- Section 4: บันทึกการนิเทศ -->
-          <div class="card p-4 mb-4">
-            <h4 class="section-title">แบบบันทึกการนิเทศ</h4>
-
-            <div class="alert alert-warning d-none" id="editBanner">
-              <i class="bi bi-pencil-square"></i> <b>กำลังแก้ไขบันทึก</b> เมื่อ <span id="editInfo"></span>
-              <button type="button" class="btn btn-sm btn-outline-secondary ms-2" onclick="cancelEdit()">ยกเลิกการแก้ไข</button>
+          <!-- บันทึกการนิเทศ -->
+          <div class="card">
+            <div class="card-title">
+              <h4>แบบบันทึกการนิเทศ (5 ด้าน)</h4>
+            </div>
+            <div id="editBanner" class="alert alert-warn d-none">
+              <b>กำลังแก้ไขบันทึก</b> เมื่อ <span id="editInfo"></span>
+              <button type="button" class="btn btn-outline2 btn-sm mt-2" onclick="cancelEdit()">ยกเลิกการแก้ไข</button>
             </div>
             <input type="hidden" id="editRow">
 
-            <div class="mb-3">
-              <label>รูปแบบการประเมิน (5 รูปแบบ)</label>
-              <select class="form-select" id="formType" required>
-                <option value="">-- เลือกรูปแบบ --</option>
-                <option value="รูปแบบที่ 1">รูปแบบที่ 1 - การบริหารจัดการ</option>
-                <option value="รูปแบบที่ 2">รูปแบบที่ 2 - การจัดการเรียนการสอน</option>
-                <option value="รูปแบบที่ 3">รูปแบบที่ 3 - สื่อและนวัตกรรม</option>
-                <option value="รูปแบบที่ 4">รูปแบบที่ 4 - การวัดและประเมินผล</option>
-                <option value="รูปแบบที่ 5">รูปแบบที่ 5 - การมีส่วนร่วมชุมชน</option>
-              </select>
+            <div class="tabs" id="formTabs"></div>
+            <div id="formPanels"></div>
+
+            <div class="total-box">
+              <div class="small">คะแนนรวมทั้งสิ้น</div>
+              <div class="big"><span id="totalDisplay">0</span> / 150</div>
+              <div class="lvl" id="levelDisplay">ยังไม่กรอก</div>
             </div>
-            <div class="row">
-              <div class="col-md-6 mb-3"><label>คะแนนส่วนที่ 1 (เต็ม 50)</label><input type="number" id="score1" class="form-control score-input" value="0" min="0" max="50"></div>
-              <div class="col-md-6 mb-3"><label>คะแนนส่วนที่ 2 (เต็ม 50)</label><input type="number" id="score2" class="form-control score-input" value="0" min="0" max="50"></div>
+            <input type="hidden" id="totalScore">
+            <input type="hidden" id="pctScore">
+            <input type="hidden" id="levelScore">
+
+            <div class="alert alert-info mt-3">
+              <b>ระดับผลการนิเทศ</b><br>
+              80% ขึ้นไป = ดีมาก · 60–79% = ดี · 40–59% = พอใช้ · ต่ำกว่า 40% = ต้องปรับปรุง
             </div>
-            <div class="mb-3 p-3 bg-light rounded text-center">
-              <h5 class="mb-0">คะแนนรวม: <span id="totalDisplay" class="text-success fw-bold">0</span> / 100</h5>
-              <input type="hidden" id="totalScore" value="0">
-            </div>
-            <div class="mb-4"><label>ข้อเสนอแนะเพิ่มเติม</label><textarea id="comment" class="form-control" rows="3"></textarea></div>
-            
-            <button type="submit" class="btn btn-primary w-100 py-3 fw-bold" id="finalSubmitBtn">💾 บันทึกการนิเทศและอัปเดตข้อมูลศูนย์</button>
+
+            <button type="submit" class="btn btn-primary w-100 mt-3 py-3" id="finalSubmitBtn">💾 บันทึกการนิเทศและอัปเดตข้อมูลศูนย์</button>
           </div>
         </form>
       </div>
@@ -256,141 +417,189 @@
   <!-- แชทบอท -->
   <button id="chat-fab" onclick="toggleChat()">💬</button>
   <div id="chat-widget">
-    <div id="chat-header"><span>👧🏻 น้องศึกษา</span><button type="button" class="btn-close btn-close-white" onclick="toggleChat()"></button></div>
+    <div id="chat-header"><span>👧🏻 น้องศึกษา</span><button id="chat-close" onclick="toggleChat()">✕</button></div>
     <div id="chat-body"></div>
-    <div id="chat-footer"><input type="text" id="chatInput" class="form-control me-2" onkeypress="if(event.key==='Enter') sendChat()"><button type="button" class="btn btn-primary" onclick="sendChat()">ส่ง</button></div>
+    <div id="chat-footer">
+      <input type="text" id="chatInput" class="form-control" placeholder="พิมพ์ข้อความ..." onkeypress="if(event.key==='Enter') sendChat()">
+      <button class="btn btn-primary" onclick="sendChat()">ส่ง</button>
+    </div>
   </div>
 
   <script>
-    // 👇 ตรวจสอบให้แน่ใจว่า URL มีเครื่องหมาย ' ครอบอยู่ถูกต้องแล้ว
-    const API_URL = 'https://script.google.com/macros/s/AKfycbxHLuOAJvHuBa3xTWe0FNZEilRxsFl_XVhQAJTo9U2uzcHfS384QM7GnVdTgB9c6UUP/exec';
-    
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxA9i_YG_Kiuy-P4VQjZdoseN26_nG_HsIqs3qQ0INF/exec';
+    const TOTAL_FULL = 150;
+
+    // ---- Schema 5 ด้าน (แก้ไขข้อคำถาม / คะแนนเต็มได้ที่นี่) ----
+    const FORMS = [
+      { no: 1, name: 'การบริหารจัดการ',    pts: 40,
+        questions: [
+          'ศูนย์มีคณะกรรมการบริหารและมีการประชุมอย่างสม่ำเสมอ',
+          'ศูนย์มีแผนพัฒนาคุณภาพและนโยบายที่ชัดเจน',
+          'ศูนย์มีหลักสูตรและเอกสารประกอบหลักสูตรครบถ้วน',
+          'ศูนย์มีระบบทะเบียนนักเรียนและเอกสารราชการเป็นระเบียบ',
+          'ศูนย์มีการบริหารจัดการด้านการเงินและบัญชีโปร่งใสตรวจสอบได้',
+          'ศูนย์มีการรายงานผลการดำเนินงานต่อหน่วยงานต้นสังกัด',
+          'ศูนย์มีการจัดหาทรัพยากรและงบประมาณมาสนับสนุนการเรียนการสอน',
+          'ศูนย์มีระบบการดูแลความปลอดภัยของนักเรียน'
+        ] },
+      { no: 2, name: 'ด้านครูผู้สอน',      pts: 40,
+        questions: [
+          'ครูมีวุฒิการศึกษาและความรู้ตรงตามเกณฑ์ที่กำหนด',
+          'ครูจัดทำแผนการจัดการเรียนรู้และนำไปใช้จริง',
+          'ครูใช้สื่อ/เทคนิคการสอนที่หลากหลายเหมาะสมกับวัย',
+          'ครูจัดกิจกรรมอบรมจริยธรรมและอิสลามศึกษา',
+          'ครูมีการประเมินผลและรายงานความก้าวหน้าของนักเรียน',
+          'ครูมีมนุษยสัมพันธ์และดูแลเอาใจใส่นักเรียน',
+          'ครูได้รับการพัฒนาตนเองและอบรมต่อเนื่อง',
+          'ครูจัดบรรยากาศห้องเรียนที่เอื้อต่อการเรียนรู้'
+        ] },
+      { no: 3, name: 'ด้านผู้เรียน',       pts: 35,
+        questions: [
+          'นักเรียนมีพัฒนาการทางร่างกายตามวัย',
+          'นักเรียนมีพัฒนาการด้านอารมณ์และสังคม',
+          'นักเรียนมีพัฒนาการด้านสติปัญญาและการคิด',
+          'นักเรียนสามารถอ่าน/ท่องจำซูเราะฮ์และดุอาอ์พื้นฐานได้',
+          'นักเรียนมีสุขนิสัยและวินัยที่ดี',
+          'นักเรียนมีความรับผิดชอบและใฝ่เรียนรู้',
+          'นักเรียนเข้าเรียนสม่ำเสมอและมีผู้ปกครองส่งเสริม'
+        ] },
+      { no: 4, name: 'ด้านอาคารสถานที่',   pts: 35,
+        questions: [
+          'อาคารเรียนมีความมั่นคงแข็งแรงและปลอดภัย',
+          'ห้องเรียนมีแสงสว่างและอากาศถ่ายเทสะดวก',
+          'มีพื้นที่เล่นและอุปกรณ์ที่ปลอดภัยเหมาะสม',
+          'มีห้องน้ำสะอาดและเพียงพอต่อจำนวนนักเรียน',
+          'มีการจัดสภาพแวดล้อมให้เอื้อต่อการเรียนรู้',
+          'มีมุมความรู้/ป้ายนิเทศที่ส่งเสริมการเรียนรู้',
+          'มีความสะอาดเป็นระเบียบเรียบร้อยโดยรวม'
+        ] }
+    ];
+    // ทุกด้าน: คะแนนเต็ม 150 = 40+40+35+35 (ข้อละ 5 คะแนนเท่ากัน)
+
+    const LEVELS = [
+      { min: 80, name: 'ดีมาก',        cls: 'lv-green' },
+      { min: 60, name: 'ดี',           cls: 'lv-blue'  },
+      { min: 40, name: 'พอใช้',        cls: 'lv-amber' },
+      { min: 0,  name: 'ต้องปรับปรุง', cls: 'lv-red'   }
+    ];
+
     let currentUser = {};
     let evalHistory = [];
     let tadikaList = [];
     let selectedTadika = null;
+    let activeTab = 1;
+
+    // ---- API helper ----
+    async function api(action, payload) {
+      return fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action, payload })
+      }).then(r => r.json());
+    }
 
     function showLoading(text) {
-      Swal.fire({
-        title: text,
-        allowOutsideClick: false,
-        didOpen: () => { Swal.showLoading(); }
-      });
+      Swal.fire({ title: text, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     }
-
-    // 1. ระบบ Login (พร้อม SweetAlert หน่วงเวลา 5 วินาที)
-    async function handleLogin(e) {
-      e.preventDefault();
-      const btn = document.getElementById('loginBtn');
-      btn.disabled = true;
-      
-      showLoading('กำลังตรวจสอบข้อมูลผู้ใช้...');
-
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          headers: {'Content-Type': 'text/plain;charset=utf-8'},
-          body: JSON.stringify({
-            action: 'login',
-            payload: {
-              username: document.getElementById('loginUser').value,
-              password: document.getElementById('loginPass').value
-            }
-          })
-        }).then(r => r.json());
-
-        if(res.success) {
-          currentUser = res.userData;
-          document.getElementById('headerUserText').innerText = `ผู้นิเทศ: ${currentUser.fname}`;
-          
-          Swal.close();
-
-          let timerInterval;
-          Swal.fire({
-            icon: 'success',
-            title: 'เข้าสู่ระบบสำเร็จ!',
-            html: `ยินดีต้อนรับ <b>${currentUser.fname}</b><br>ระบบจะพาท่านเข้าสู่หน้าจอหลักใน <b></b> วินาที.`,
-            timer: 5000,
-            timerProgressBar: true,
-            allowOutsideClick: false,
-            showConfirmButton: false,
-            didOpen: () => {
-              const timer = Swal.getPopup().querySelector("b:nth-of-type(2)");
-              timerInterval = setInterval(() => {
-                timer.textContent = Math.ceil(Swal.getTimerLeft() / 1000);
-              }, 100);
-            },
-            willClose: () => {
-              clearInterval(timerInterval);
-            }
-          }).then((result) => {
-            if (result.dismiss === Swal.DismissReason.timer) {
-              document.getElementById('loginSection').classList.add('section-hidden');
-              selectedTadika = autoReg.lg.selected;
-              if(selectedTadika) {
-                fetchTadikaData();
-              } else {
-                document.getElementById('selectSection').classList.remove('section-hidden');
-              }
-            }
-          });
-
-        } else {
-          let timerInterval;
-          Swal.fire({ 
-            icon: 'error', 
-            title: 'เข้าสู่ระบบล้มเหลว', 
-            html: `${res.message}<br>กรุณาลองใหม่อีกครั้ง ระบบจะปิดข้อความใน <b></b> วินาที.`,
-            timer: 5000,
-            timerProgressBar: true,
-            didOpen: () => {
-              const timer = Swal.getPopup().querySelector("b");
-              timerInterval = setInterval(() => {
-                timer.textContent = Math.ceil(Swal.getTimerLeft() / 1000);
-              }, 100);
-            },
-            willClose: () => {
-              clearInterval(timerInterval);
-            }
-          });
-        }
-      } catch (err) { 
-        Swal.fire({ icon: 'error', title: 'เครือข่ายขัดข้อง', text: 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้' });
-      }
-      
-      btn.disabled = false;
-    }
-
-    // 2. โหลดรายชื่อศูนย์ (สำหรับ Autocomplete)
-    async function loadTadikaList() {
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'},
-          body: JSON.stringify({ action: 'getTadikaList' })
-        }).then(r => r.json());
-
-        if(res.success) {
-          tadikaList = res.data || [];
-        } else {
-          tadikaList = [];
-        }
-      } catch(err) { tadikaList = []; }
-    }
-
     function escHtml(s) {
-      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
     }
-
     function tadikaLabel(t) {
-      const mosque = (t.mosque && String(t.mosque).trim()) ? ' [' + t.mosque + ']' : '';
-      return String(t.name || t.id) + mosque;
+      const m = (t.mosque && String(t.mosque).trim()) ? ' [' + t.mosque + ']' : '';
+      return String(t.name || t.id) + m;
     }
-
     function tadikaAddr(t) {
       return [t.address, t.subdist, t.dist].filter(Boolean).join(', ');
     }
 
-    // กลุ่ม Autocomplete: 'lg' = หน้าล็อกอิน, 'sel' = หน้าหลังล็อกอิน
+    // ---- โหลดรายชื่อศูนย์ (Autocomplete) ----
+    async function loadTadikaList() {
+      try {
+        const res = await api('getTadikaList');
+        tadikaList = (res && res.success) ? (res.data || []) : [];
+      } catch (err) { tadikaList = []; }
+    }
+
+    // ---- หน้า Login / Register ----
+    function showLogin() {
+      document.getElementById('loginSection').classList.remove('section-hidden');
+      document.getElementById('registerSection').classList.add('section-hidden');
+    }
+    function showRegister() {
+      document.getElementById('loginSection').classList.add('section-hidden');
+      document.getElementById('registerSection').classList.remove('section-hidden');
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const btn = document.getElementById('loginBtn');
+      btn.disabled = true;
+      showLoading('กำลังตรวจสอบข้อมูลผู้ใช้...');
+      try {
+        const res = await api('login', {
+          username: document.getElementById('loginUser').value,
+          password: document.getElementById('loginPass').value
+        });
+        if (res.success) {
+          currentUser = res.userData;
+          Swal.close();
+          Swal.fire({ icon: 'success', title: 'เข้าสู่ระบบสำเร็จ!', html: 'ยินดีต้อนรับ <b>' + escHtml(currentUser.fname) + '</b>', timer: 1800, showConfirmButton: false });
+          document.getElementById('headerUserText').innerText = 'ผู้นิเทศ: ' + currentUser.fname;
+          document.getElementById('loginSection').classList.add('section-hidden');
+          document.getElementById('appHeader').classList.remove('section-hidden');
+          document.getElementById('appSection').classList.remove('section-hidden');
+          const sel = autoReg.lg.selected;
+          if (sel) { selectByObj('sel', sel); }
+        } else {
+          Swal.fire({ icon: 'error', title: 'เข้าสู่ระบบล้มเหลว', html: escHtml(res.message) });
+        }
+      } catch (err) {
+        Swal.fire({ icon: 'error', title: 'เครือข่ายขัดข้อง', text: 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้' });
+      }
+      btn.disabled = false;
+    }
+
+    async function doRegister() {
+      const fname = document.getElementById('regFname').value.trim();
+      const tel = document.getElementById('regTel').value.trim();
+      const username = document.getElementById('regUser').value.trim();
+      const password = document.getElementById('regPass').value.trim();
+      if (!fname || !username || !password) {
+        return Swal.fire({ icon: 'warning', title: 'กรอกข้อมูลไม่ครบ', text: 'กรุณากรอกชื่อ-นามสกุล, Username และ Password' });
+      }
+      showLoading('กำลังสมัครสมาชิก...');
+      try {
+        const res = await api('register', { fname, tel, username, password });
+        Swal.close();
+        if (res.success) {
+          Swal.fire({ icon: 'success', title: 'สมัครสำเร็จ', text: res.message }).then(() => {
+            showLogin();
+            document.getElementById('regUser').value = username;
+            document.getElementById('loginUser').value = username;
+          });
+        } else {
+          Swal.fire({ icon: 'error', title: 'สมัครไม่สำเร็จ', html: escHtml(res.message) });
+        }
+      } catch (err) {
+        Swal.close();
+        Swal.fire({ icon: 'error', title: 'เครือข่ายขัดข้อง', text: 'ไม่สามารถสมัครได้' });
+      }
+    }
+
+    function doLogout() {
+      currentUser = {};
+      selectedTadika = null;
+      document.getElementById('appHeader').classList.add('section-hidden');
+      document.getElementById('appSection').classList.add('section-hidden');
+      document.getElementById('evaluationSection').classList.add('section-hidden');
+      document.getElementById('dashCard').classList.add('section-hidden');
+      clearTadikaSelection();
+      document.getElementById('loginUser').value = '';
+      document.getElementById('loginPass').value = '';
+      showLogin();
+    }
+
+    // ---- Autocomplete กลุ่ม: 'lg' = หน้าล็อกอิน, 'sel' = หน้าหลัก ----
     const autoReg = {
       lg:  { search:'lgTadikaSearch', suggest:'lgTadikaSuggest', info:'lgSelInfo', selName:'lgSelName', selDetail:'lgSelDetail', btn:null, selected:null, matches:[] },
       sel: { search:'tadikaSearch', suggest:'tadikaSuggest', info:'selectedTadikaInfo', selName:'selName', selDetail:'selDetail', btn:'selectBtn', selected:null, matches:[] }
@@ -402,8 +611,8 @@
       const box = document.getElementById(c.suggest);
       c.selected = null;
       document.getElementById(c.info).classList.add('d-none');
-      if(c.btn) document.getElementById(c.btn).disabled = true;
-      if(!q) { box.classList.add('d-none'); box.innerHTML = ''; return; }
+      if (c.btn) document.getElementById(c.btn).disabled = true;
+      if (!q) { box.classList.add('d-none'); box.innerHTML = ''; return; }
 
       c.matches = tadikaList.filter(t => {
         const hay = [t.id, t.name, t.mosque, t.address, t.subdist, t.dist].filter(Boolean).join(' ').toLowerCase();
@@ -411,13 +620,14 @@
       }).slice(0, 12);
 
       box.classList.remove('d-none');
-      if(c.matches.length === 0) {
-        box.innerHTML = '<div class="list-group-item text-center text-muted py-3 bg-white">ไม่พบข้อมูลศูนย์ที่ค้นหา</div>';
+      if (c.matches.length === 0) {
+        box.innerHTML = '<button class="suggest-item" disabled>ไม่พบข้อมูลศูนย์ที่ค้นหา</button>';
         return;
       }
       box.innerHTML = c.matches.map((t, i) => `
-        <button type="button" class="list-group-item list-group-item-action text-start bg-white border-bottom" onclick="selectTadika('${key}', ${i})">
-          <b class="text-primary">${escHtml(tadikaLabel(t))}</b><br>
+        <button type="button" class="suggest-item" onclick="selectTadika('${key}', ${i})">
+          <b style="color:var(--primary-deep);">${escHtml(tadikaLabel(t))}</b>
+          ${t.lat && t.lng ? '<span style="color:var(--blue-dark);"> 📍</span>' : ''}<br>
           <span class="small text-muted">${escHtml(tadikaAddr(t)) || '—'}</span>
         </button>`).join('');
     }
@@ -425,28 +635,42 @@
     function selectTadika(key, i) {
       const c = autoReg[key];
       const t = c.matches[i];
-      if(!t) return;
+      if (!t) return;
       c.selected = t;
+      if (key === 'sel') selectedTadika = t;
       document.getElementById(c.search).value = tadikaLabel(t);
       document.getElementById(c.suggest).classList.add('d-none');
       document.getElementById(c.selName).innerText = tadikaLabel(t);
-      document.getElementById(c.selDetail).innerText = tadikaAddr(t) || '—';
+      document.getElementById(c.selDetail).innerText = (tadikaAddr(t) || '—') + (t.lat && t.lng ? ' 📍' : '');
       document.getElementById(c.info).classList.remove('d-none');
-      if(c.btn) document.getElementById(c.btn).disabled = false;
+      if (c.btn) document.getElementById(c.btn).disabled = false;
+    }
+    function selectByObj(key, t) {
+      const c = autoReg[key];
+      c.matches = [t];
+      c.selected = t;
+      if (key === 'sel') selectedTadika = t;
+      document.getElementById(c.search).value = tadikaLabel(t);
+      document.getElementById(c.suggest).classList.add('d-none');
+      document.getElementById(c.selName).innerText = tadikaLabel(t);
+      document.getElementById(c.selDetail).innerText = (tadikaAddr(t) || '—') + (t.lat && t.lng ? ' 📍' : '');
+      document.getElementById(c.info).classList.remove('d-none');
+      if (c.btn) document.getElementById(c.btn).disabled = false;
+      return 0;
     }
 
     function tadikaKey(key, e) {
       const c = autoReg[key];
       const box = document.getElementById(c.suggest);
-      if(e.key === 'Enter') {
-        if(!box.classList.contains('d-none') && c.matches.length > 0) {
+      if (e.key === 'Enter') {
+        if (!box.classList.contains('d-none') && c.matches.length > 0) {
           e.preventDefault();
           selectTadika(key, 0);
-        } else if(key === 'sel' && c.selected) {
+        } else if (key === 'sel' && c.selected) {
           e.preventDefault();
           fetchTadikaData();
         }
-      } else if(e.key === 'Escape') {
+      } else if (e.key === 'Escape') {
         box.classList.add('d-none');
       }
     }
@@ -454,35 +678,151 @@
     function clearTadikaSelection() {
       const c = autoReg.sel;
       c.selected = null;
+      selectedTadika = null;
       document.getElementById(c.search).value = '';
       document.getElementById(c.suggest).classList.add('d-none');
       document.getElementById(c.info).classList.add('d-none');
-      if(c.btn) document.getElementById(c.btn).disabled = true;
+      if (c.btn) document.getElementById(c.btn).disabled = true;
     }
 
     document.addEventListener('click', (e) => {
       Object.values(autoReg).forEach(c => {
         const box = document.getElementById(c.suggest);
-        if(!document.getElementById(c.search).parentElement.contains(e.target)) box.classList.add('d-none');
+        if (box && !box.contains(e.target) &&
+            !document.getElementById(c.search).contains(e.target)) box.classList.add('d-none');
       });
     });
 
-    // 3. ดึงข้อมูลศูนย์
+    // ---- สร้างฟอร์ม 5 ด้าน (Tabs + คำถาม + ปุ่มคะแนน 0-5) ----
+    function renderFormSchema() {
+      const tabs = document.getElementById('formTabs');
+      const panels = document.getElementById('formPanels');
+      tabs.innerHTML = FORMS.map(f => `
+        <button type="button" class="tab${f.no === activeTab ? ' active' : ''}" onclick="switchTab(${f.no})">
+          แบบที่ ${f.no}<span class="tab-pts">${f.name} (${f.pts})</span>
+        </button>`).join('');
+
+      panels.innerHTML = FORMS.map(f => `
+        <div class="form-panel${f.no === activeTab ? '' : ' d-none'}" data-form="${f.no}">
+          ${f.questions.map((q, qi) => `
+            <div class="q-item">
+              <div class="q-text">${f.no}.${qi + 1} ${escHtml(q)} <span class="small text-muted">(เต็ม ${pointsPerQ(f)})</span></div>
+              <div class="q-scale" data-q="${qi}">
+                ${scaleButtons(f, qi)}
+              </div>
+            </div>`).join('')}
+        </div>`).join('');
+    }
+
+    function pointsPerQ(f) {
+      return Math.round(f.pts / f.questions.length);
+    }
+    function scaleButtons(f, qi) {
+      const max = pointsPerQ(f);
+      let s = '';
+      for (let v = 0; v <= max; v++) {
+        s += `<button type="button" data-v="${v}" onclick="setScore(${f.no}, ${qi}, ${v})">${v}</button>`;
+      }
+      return s;
+    }
+
+    function switchTab(no) {
+      activeTab = no;
+      document.querySelectorAll('.tab').forEach((b, i) => b.classList.toggle('active', i === no - 1));
+      document.querySelectorAll('.form-panel').forEach(p => p.classList.toggle('d-none', Number(p.dataset.form) !== no));
+    }
+
+    function setScore(formNo, qi, v) {
+      const panel = document.querySelector(`.form-panel[data-form="${formNo}"]`);
+      const btn = panel.querySelector(`.q-scale[data-q="${qi}"] button[data-v="${v}"]`);
+      panel.querySelectorAll(`.q-scale[data-q="${qi}"] button`).forEach(b => b.classList.remove('sel'));
+      btn.classList.add('sel');
+      recalcTotal();
+    }
+
+    function getFormScores(formNo) {
+      const panel = document.querySelector(`.form-panel[data-form="${formNo}"]`);
+      const qs = panel.querySelectorAll('.q-item');
+      const scores = [];
+      let sum = 0;
+      qs.forEach(qi => {
+        const sel = qi.querySelector('.q-scale button.sel');
+        const v = sel ? Number(sel.dataset.v) : 0;
+        scores.push(v); sum += v;
+      });
+      return { scores, sum };
+    }
+
+    function recalcTotal() {
+      let total = 0;
+      FORMS.forEach(f => { total += getFormScores(f.no).sum; });
+      const pct = Math.round((total / TOTAL_FULL) * 100);
+      const lvl = LEVELS.find(l => pct >= l.min) || LEVELS[LEVELS.length - 1];
+      document.getElementById('totalDisplay').innerText = total;
+      document.getElementById('totalScore').value = total;
+      document.getElementById('pctScore').value = pct;
+      document.getElementById('levelScore').value = lvl.name;
+      const ld = document.getElementById('levelDisplay');
+      ld.innerText = `${lvl.name} (${pct}%)`;
+      ld.className = 'lvl ' + lvl.cls;
+    }
+
+    // ---- พิกัด GPS (ปักหมุดตาดีกา) ----
+    function showPinMap(lat, lng, label) {
+      const url = 'https://www.google.com/maps?q=' + encodeURIComponent(lat + ',' + lng) + '&z=17';
+      const embed = 'https://maps.google.com/maps?q=' + encodeURIComponent(lat + ',' + lng) + '&z=17&output=embed';
+      document.getElementById('pinMap').src = embed;
+      document.getElementById('pinMapWrap').classList.remove('d-none');
+      const st = document.getElementById('pinStatus');
+      st.innerHTML = '<b>📍 พิกัด:</b> ' + escHtml(lat) + ', ' + escHtml(lng) +
+        ' <a href="' + url + '" target="_blank" rel="noopener" style="color:var(--blue-dark); font-weight:600;">เปิดแผนที่ ↗</a>';
+      st.classList.remove('d-none');
+      if (label) document.getElementById('dashTadikaName').innerText = label;
+    }
+    function hidePinMap() {
+      document.getElementById('pinMapWrap').classList.add('d-none');
+      document.getElementById('pinMap').src = '';
+      document.getElementById('pinStatus').classList.add('d-none');
+    }
+
+    function pinLocation() {
+      if (!navigator.geolocation) {
+        return Swal.fire({ icon: 'error', title: 'ไม่รองรับ', text: 'เบราว์เซอร์นี้ไม่รองรับการระบุตำแหน่ง (GPS)' });
+      }
+      const btn = document.getElementById('pinBtn');
+      btn.disabled = true;
+      btn.innerText = '⏳ กำลังหาตำแหน่ง...';
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude.toFixed(6);
+          const lng = pos.coords.longitude.toFixed(6);
+          document.getElementById('t_lat').value = lat;
+          document.getElementById('t_lng').value = lng;
+          showPinMap(lat, lng);
+          Swal.fire({ icon: 'success', title: 'ปักหมุดสำเร็จ!', text: 'ละติจูด: ' + lat + ', ลองจิจูด: ' + lng, timer: 1800, showConfirmButton: false });
+          btn.disabled = false;
+          btn.innerText = '📍 ปักหมุดตำแหน่งใหม่';
+        },
+        (err) => {
+          btn.disabled = false;
+          btn.innerText = '📍 ปักหมุดตำแหน่งปัจจุบัน';
+          const msgs = { 1: 'คุณไม่อนุญาตให้เข้าถึงตำแหน่ง', 2: 'ระบบไม่สามารถรับสัญญาณตำแหน่งได้', 3: 'การค้นหาตำแหน่งหมดเวลา' };
+          Swal.fire({ icon: 'warning', title: 'ไม่สามารถปักหมุดได้', text: msgs[err.code] || 'เกิดข้อผิดพลาดในการระบุตำแหน่ง' });
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
+      );
+    }
+
+    // ---- ดึงข้อมูลศูนย์ ----
     async function fetchTadikaData() {
       const t = selectedTadika;
-      if(!t) return Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณาเลือกศูนย์ตาดีกาที่ต้องการนิเทศ' });
-      const id = t.id;
+      if (!t) return Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณาเลือกศูนย์ตาดีกาที่ต้องการนิเทศ' });
       const btn = document.getElementById('selectBtn');
       btn.disabled = true;
       showLoading('กำลังดึงข้อมูลศูนย์...');
-
       try {
-        const res = await fetch(API_URL, {
-          method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'},
-          body: JSON.stringify({ action: 'getTadikaData', payload: id })
-        }).then(r => r.json());
-
-        if(res.success) {
+        const res = await api('getTadikaData', t.id);
+        if (res.success) {
           const d = res.data;
           document.getElementById('t_row').value = d.row;
           document.getElementById('t_id').value = d.id;
@@ -499,6 +839,10 @@
           document.getElementById('t_dist').value = d.dist;
           document.getElementById('t_phone').value = d.phone;
           document.getElementById('t_size').value = d.size;
+          document.getElementById('t_lat').value = d.lat || '';
+          document.getElementById('t_lng').value = d.lng || '';
+          if (d.lat && d.lng) showPinMap(d.lat, d.lng, tadikaLabel(t));
+          else hidePinMap();
           document.getElementById('t_tMale').value = d.tMale;
           document.getElementById('t_tFemale').value = d.tFemale;
           document.getElementById('t_tTotal').value = d.tTotal;
@@ -506,73 +850,140 @@
           document.getElementById('t_sFemale').value = d.sFemale;
           document.getElementById('t_sTotal').value = d.sTotal;
 
-          Swal.close(); 
-          document.getElementById('selectSection').classList.add('section-hidden');
+          document.getElementById('selTadikaBadge').innerText = tadikaLabel(t);
+          document.getElementById('dashTadikaName').innerText = tadikaLabel(t);
+          Swal.close();
+          document.getElementById('dashCard').classList.remove('section-hidden');
           document.getElementById('evaluationSection').classList.remove('section-hidden');
           resetEditState();
           loadEvalHistory(d.id);
-        } else { 
+        } else {
           Swal.fire({ icon: 'error', title: 'ผิดพลาด', text: res.message });
         }
-      } catch(err) { Swal.fire({ icon: 'error', title: 'ล้มเหลว', text: 'ไม่สามารถดึงข้อมูลได้' }); }
-      
+      } catch (err) {
+        Swal.fire({ icon: 'error', title: 'ล้มเหลว', text: 'ไม่สามารถดึงข้อมูลได้' });
+      }
       btn.disabled = false;
     }
-    
+
     function backToSelect() {
       resetEditState();
       clearTadikaSelection();
       document.getElementById('evaluationSection').classList.add('section-hidden');
-      document.getElementById('selectSection').classList.remove('section-hidden');
+      document.getElementById('dashCard').classList.add('section-hidden');
     }
 
-    // 5. โหลดประวัติการนิเทศของศูนย์ (สำหรับกลับมาแก้ไข)
+    // ---- ประวัติการนิเทศ ----
     async function loadEvalHistory(id) {
       const body = document.getElementById('historyBody');
       const count = document.getElementById('historyCount');
-      body.innerHTML = '<tr><td colspan="10" class="text-center text-muted py-3">กำลังโหลดประวัติ...</td></tr>';
+      body.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-3">กำลังโหลดประวัติ...</td></tr>';
       try {
-        const res = await fetch(API_URL, {
-          method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'},
-          body: JSON.stringify({ action: 'getEvaluations', payload: id })
-        }).then(r => r.json());
-
-        if(res.success && res.data) {
+        const res = await api('getEvaluations', id);
+        if (res.success && res.data) {
           evalHistory = res.data;
           count.innerText = evalHistory.length + ' รายการ';
-          if(evalHistory.length === 0) {
-            body.innerHTML = '<tr><td colspan="10" class="text-center text-muted py-3">ยังไม่มีประวัติการนิเทศ</td></tr>';
-            return;
+          if (evalHistory.length === 0) {
+            body.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-3">ยังไม่มีประวัติการนิเทศ</td></tr>';
+          } else {
+            body.innerHTML = '';
+            evalHistory.forEach((h, idx) => {
+              const pct = Number(h.pct) || 0;
+              const lvl = LEVELS.find(l => pct >= l.min) || LEVELS[LEVELS.length - 1];
+              const tr = document.createElement('tr');
+              tr.innerHTML = `
+                <td>${idx + 1}</td>
+                <td>${escHtml(h.timestamp)}</td>
+                <td>${escHtml(h.formType)}</td>
+                <td><b class="text-success">${Number(h.totalScore) || 0}</b></td>
+                <td>${pct}%</td>
+                <td><span class="lv ${lvl.cls}">${lvl.name}</span></td>
+                <td class="small">${escHtml(h.supervisor)}</td>
+                <td><button class="btn btn-outline btn-sm" onclick="editEvaluation(${idx})">✏️ แก้ไข</button></td>`;
+              body.appendChild(tr);
+            });
           }
-          body.innerHTML = '';
-          evalHistory.forEach((h, idx) => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-              <td>${idx + 1}</td>
-              <td>${h.timestamp}</td>
-              <td>${h.formType}</td>
-              <td>${h.score1}</td>
-              <td>${h.score2}</td>
-              <td><b class="text-success">${h.totalScore}</b></td>
-              <td>${h.supervisor}</td>
-              <td>${h.lastEdit || '—'}</td>
-              <td>${h.lastEditor || '—'}</td>
-              <td><button class="btn btn-sm btn-outline-primary" onclick="editEvaluation(${idx})">✏️ แก้ไข</button></td>`;
-            body.appendChild(tr);
-          });
+          updateDashboard();
         }
-      } catch(e) {
-        body.innerHTML = '<tr><td colspan="10" class="text-center text-danger py-3">โหลดประวัติล้มเหลว</td></tr>';
+      } catch (e) {
+        body.innerHTML = '<tr><td colspan="8" class="text-center text-danger py-3">โหลดประวัติล้มเหลว</td></tr>';
       }
     }
 
+    function updateDashboard() {
+      const len = evalHistory.length;
+      document.getElementById('dash_count').innerText = len;
+      if (len === 0) {
+        document.getElementById('dash_total').innerText = '—';
+        document.getElementById('dash_pct').innerText = '—';
+        const dl = document.getElementById('dash_level');
+        dl.innerText = '—';
+        dl.className = 'val';
+        return;
+      }
+      const latest = evalHistory[0];
+      const pct = Number(latest.pct) || 0;
+      document.getElementById('dash_total').innerText = (Number(latest.totalScore) || 0) + '/150';
+      document.getElementById('dash_pct').innerText = pct + '%';
+      const lvl = LEVELS.find(l => pct >= l.min) || LEVELS[LEVELS.length - 1];
+      const dl = document.getElementById('dash_level');
+      dl.innerText = lvl.name;
+      dl.className = 'val ' + lvl.cls;
+    }
+
+    // ---- แก้ไขบันทึกเดิม ----
+    function editEvaluation(idx) {
+      const h = evalHistory[idx];
+      if (!h) return;
+      document.getElementById('editRow').value = h.row;
+      document.getElementById('editBanner').classList.remove('d-none');
+      document.getElementById('editInfo').innerText = h.timestamp + ' (ผู้นิเทศ: ' + h.supervisor + ')';
+      document.getElementById('finalSubmitBtn').innerText = '💾 บันทึกการแก้ไขและอัปเดตข้อมูลศูนย์';
+
+      // โหลดคะแนนจาก details.answers (ถ้ามี) หรือแจกจากคอลัมน์ score1-4 (บันทึกเก่าที่ไม่มี details)
+      const answers = (h.details && h.details.answers) || null;
+      const colScores = [h.score1, h.score2, h.score3, h.score4];
+      FORMS.forEach((f, fi) => {
+        const qs = document.querySelectorAll(`.form-panel[data-form="${f.no}"] .q-item`);
+        let src = null;
+        if (answers && answers[f.no]) src = answers[f.no];
+        if (!src) src = distributePoints(Number(colScores[fi]) || 0, qs.length, pointsPerQ(f));
+        qs.forEach((qi, qii) => {
+          let v = 0;
+          if (src && src[qii] != null) v = src[qii];
+          const btn = qi.querySelector(`.q-scale button[data-v="${v}"]`);
+          if (btn) {
+            qi.querySelectorAll('.q-scale button').forEach(b => b.classList.remove('sel'));
+            btn.classList.add('sel');
+          }
+        });
+      });
+      recalcTotal();
+      document.getElementById('mainForm').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // แจกคะแนนรวมรายด้านลงรายข้อ (สำหรับบันทึกเก่าที่ไม่มีรายละเอียดข้อ) — ข้อละ max ไม่เกิน
+    function distributePoints(sum, qCount, max) {
+      if (!qCount || sum <= 0) return Array(qCount).fill(0);
+      let remaining = Math.min(sum, qCount * max);
+      const out = [];
+      for (let i = 0; i < qCount; i++) {
+        const v = Math.min(max, remaining);
+        out.push(v);
+        remaining -= v;
+      }
+      return out;
+    }
+
     function resetEvalForm() {
-      document.getElementById('formType').value = '';
-      document.getElementById('score1').value = 0;
-      document.getElementById('score2').value = 0;
-      document.getElementById('comment').value = '';
-      document.getElementById('totalDisplay').innerText = 0;
+      document.querySelectorAll('.q-scale button').forEach(b => b.classList.remove('sel'));
       document.getElementById('totalScore').value = 0;
+      document.getElementById('pctScore').value = 0;
+      document.getElementById('levelScore').value = '';
+      document.getElementById('totalDisplay').innerText = 0;
+      const ld = document.getElementById('levelDisplay');
+      ld.innerText = 'ยังไม่กรอก';
+      ld.className = 'lvl';
     }
 
     function resetEditState() {
@@ -583,46 +994,45 @@
       resetEvalForm();
     }
 
-    function editEvaluation(idx) {
-      const h = evalHistory[idx];
-      if(!h) return;
-      document.getElementById('editRow').value = h.row;
-      document.getElementById('formType').value = h.formType || '';
-      document.getElementById('score1').value = h.score1;
-      document.getElementById('score2').value = h.score2;
-      document.getElementById('comment').value = h.comment || '';
-      const t = (parseInt(h.score1)||0) + (parseInt(h.score2)||0);
-      document.getElementById('totalDisplay').innerText = t;
-      document.getElementById('totalScore').value = t;
-      document.getElementById('editBanner').classList.remove('d-none');
-      document.getElementById('editInfo').innerText = h.timestamp + ' (ผู้นิเทศ: ' + h.supervisor + ')';
-      document.getElementById('finalSubmitBtn').innerText = '💾 บันทึกการแก้ไขและอัปเดตข้อมูลศูนย์';
-      document.getElementById('mainForm').scrollIntoView({ behavior: 'smooth' });
+    function cancelEdit() { resetEditState(); }
+
+    // ---- บันทึก ----
+    function collectAnswers() {
+      const answers = {};
+      FORMS.forEach(f => { answers[f.no] = getFormScores(f.no).scores; });
+      return answers;
     }
 
-    function cancelEdit() {
-      document.getElementById('editRow').value = '';
-      document.getElementById('editBanner').classList.add('d-none');
-      document.getElementById('editInfo').innerText = '';
-      document.getElementById('finalSubmitBtn').innerText = '💾 บันทึกการนิเทศและอัปเดตข้อมูลศูนย์';
-      resetEvalForm();
-    }
-
-    // 4. บันทึกข้อมูล
     async function submitFinal(e) {
       e.preventDefault();
-      
+
+      // ตรวจสอบว่ามีข้อที่ยังไม่ได้ให้คะแนน (คะแนน 0) หรือไม่ — แจ้งเตือนแต่ยังบันทึกต่อได้
+      const zeroList = [];
+      FORMS.forEach(f => {
+        const scores = getFormScores(f.no).scores;
+        scores.forEach((v, qi) => {
+          if (v <= 0) zeroList.push(`${f.no}.${qi + 1}`);
+        });
+      });
+      if (zeroList.length > 0) {
+        const c = await Swal.fire({
+          icon: 'warning',
+          title: 'มีข้อที่ยังไม่ได้ให้คะแนน',
+          html: 'ข้อที่ได้ 0 คะแนน:<br><b>' + zeroList.join(', ') + '</b><br><br>ต้องการบันทึกต่อหรือไม่?',
+          showCancelButton: true,
+          confirmButtonColor: '#059669', cancelButtonColor: '#d33',
+          confirmButtonText: 'บันทึกต่อ', cancelButtonText: 'กลับไปตรวจสอบ'
+        });
+        if (!c.isConfirmed) return;
+      }
+
       const result = await Swal.fire({
         title: 'ยืนยันการบันทึก?',
-        text: "คุณตรวจสอบข้อมูลและคะแนนถูกต้องแล้วใช่หรือไม่",
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'ใช่, บันทึกเลย!',
-        cancelButtonText: 'ยกเลิก'
+        text: 'คุณตรวจสอบข้อมูลและคะแนนถูกต้องแล้วใช่หรือไม่',
+        icon: 'question', showCancelButton: true,
+        confirmButtonColor: '#059669', cancelButtonColor: '#d33',
+        confirmButtonText: 'ใช่, บันทึกเลย!', cancelButtonText: 'ยกเลิก'
       });
-
       if (!result.isConfirmed) return;
 
       const btn = document.getElementById('finalSubmitBtn');
@@ -647,6 +1057,8 @@
           subdist: document.getElementById('t_subdist').value,
           dist: document.getElementById('t_dist').value,
           phone: document.getElementById('t_phone').value,
+          lat: document.getElementById('t_lat').value,
+          lng: document.getElementById('t_lng').value,
           size: document.getElementById('t_size').value,
           tMale: document.getElementById('t_tMale').value,
           tFemale: document.getElementById('t_tFemale').value,
@@ -656,67 +1068,62 @@
           sTotal: document.getElementById('t_sTotal').value
         },
         evalData: {
-          formType: document.getElementById('formType').value,
-          score1: document.getElementById('score1').value,
-          score2: document.getElementById('score2').value,
+          formType: 'แบบที่ 1-5 (ครบทุกด้าน)',
+          score1: getFormScores(1).sum,
+          score2: getFormScores(2).sum,
+          score3: getFormScores(3).sum,
+          score4: getFormScores(4).sum,
           totalScore: document.getElementById('totalScore').value,
-          comment: document.getElementById('comment').value
+          pct: document.getElementById('pctScore').value,
+          level: document.getElementById('levelScore').value,
+          answers: collectAnswers(),
+          comment: '',
+          strengths: '',
+          improve: ''
         }
       };
 
       try {
-        const res = await fetch(API_URL, {
-          method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'},
-          body: JSON.stringify({ action: 'saveEvaluation', payload: payload })
-        }).then(r => r.json());
-
-        if(res.success) {
+        const res = await api('saveEvaluation', payload);
+        if (res.success) {
           const tadikaId = document.getElementById('t_id').value;
-          Swal.fire({
-            icon: 'success',
-            title: 'บันทึกสำเร็จ!',
-            html: res.message,
-            confirmButtonText: 'ตกลง'
-          }).then(() => {
+          Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ!', html: res.message, confirmButtonText: 'ตกลง' }).then(() => {
             resetEditState();
             loadEvalHistory(tadikaId);
           });
-        } else { Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', html: res.message }); }
-      } catch(err) { Swal.fire({ icon: 'error', title: 'ล้มเหลว', text: 'เครือข่ายขัดข้อง ไม่สามารถบันทึกได้' }); }
-      
+        } else {
+          Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', html: escHtml(res.message) });
+        }
+      } catch (err) {
+        Swal.fire({ icon: 'error', title: 'ล้มเหลว', text: 'เครือข่ายขัดข้อง ไม่สามารถบันทึกได้' });
+      }
       btn.disabled = false;
     }
 
-    // คำนวณคะแนน
-    document.querySelectorAll('.score-input').forEach(i => i.addEventListener('input', () => {
-      const t = (parseInt(document.getElementById('score1').value)||0) + (parseInt(document.getElementById('score2').value)||0);
-      document.getElementById('totalDisplay').innerText = t;
-      document.getElementById('totalScore').value = t;
-    }));
-
-    // บอท
+    // ---- แชทบอท ----
     function toggleChat() {
       const c = document.getElementById('chat-widget');
-      c.style.display = (c.style.display==='flex') ? 'none' : 'flex';
+      c.style.display = (c.style.display === 'flex') ? 'none' : 'flex';
     }
     async function sendChat() {
       const i = document.getElementById('chatInput');
-      const m = i.value.trim(); if(!m) return;
+      const m = i.value.trim(); if (!m) return;
       const b = document.getElementById('chat-body');
-      b.innerHTML += `<div class="msg-user">${m}</div>`; i.value='';
-      const id = 'ld-'+Date.now(); b.innerHTML += `<div class="msg-bot" id="${id}">...</div>`; b.scrollTop = b.scrollHeight;
+      b.innerHTML += `<div class="msg-user">${escHtml(m)}</div>`; i.value = '';
+      const id = 'ld-' + Date.now();
+      b.innerHTML += `<div class="msg-bot" id="${id}">...</div>`; b.scrollTop = b.scrollHeight;
       try {
-        const r = await fetch(API_URL, {
-          method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'},
-          body: JSON.stringify({action: 'chat', payload: m})
-        }).then(x => x.json());
+        const r = await api('chat', m);
         document.getElementById(id).remove();
-        b.innerHTML += `<div class="msg-bot">${r.reply}</div>`;
-      } catch(e) { document.getElementById(id).innerText = 'Error'; }
+        b.innerHTML += `<div class="msg-bot">${escHtml(r.reply || '')}</div>`;
+      } catch (e) {
+        document.getElementById(id).innerText = 'เครือข่ายขัดข้อง';
+      }
       b.scrollTop = b.scrollHeight;
     }
 
-    // โหลดรายชื่อศูนย์ตั้งแต่เปิดหน้าเว็บ (สำหรับ Autocomplete หน้าล็อกอิน)
+    // ---- Init ----
+    renderFormSchema();
     loadTadikaList();
   </script>
 </body>
