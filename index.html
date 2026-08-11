@@ -132,9 +132,36 @@
             </div>
           </div>
 
+          <!-- Section 3.5: ประวัติการนิเทศ (แก้ไขได้) -->
+          <div class="card p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h4 class="section-title mb-0">ประวัติการนิเทศของศูนย์นี้</h4>
+              <span id="historyCount" class="badge bg-secondary">0 รายการ</span>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>#</th><th>บันทึกเมื่อ</th><th>รูปแบบ</th><th>คะแนน 1</th><th>คะแนน 2</th><th>รวม</th><th>ผู้นิเทศ</th><th>แก้ไขล่าสุด</th><th>ผู้แก้ไขล่าสุด</th><th></th>
+                  </tr>
+                </thead>
+                <tbody id="historyBody">
+                  <tr><td colspan="10" class="text-center text-muted py-3">ยังไม่มีประวัติการนิเทศ</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           <!-- Section 4: บันทึกการนิเทศ -->
           <div class="card p-4 mb-4">
             <h4 class="section-title">แบบบันทึกการนิเทศ</h4>
+
+            <div class="alert alert-warning d-none" id="editBanner">
+              <i class="bi bi-pencil-square"></i> <b>กำลังแก้ไขบันทึก</b> เมื่อ <span id="editInfo"></span>
+              <button type="button" class="btn btn-sm btn-outline-secondary ms-2" onclick="cancelEdit()">ยกเลิกการแก้ไข</button>
+            </div>
+            <input type="hidden" id="editRow">
+
             <div class="mb-3">
               <label>รูปแบบการประเมิน (5 รูปแบบ)</label>
               <select class="form-select" id="formType" required>
@@ -176,6 +203,7 @@
     const API_URL = 'https://script.google.com/macros/s/AKfycbxHLuOAJvHuBa3xTWe0FNZEilRxsFl_XVhQAJTo9U2uzcHfS384QM7GnVdTgB9c6UUP/exec';
     
     let currentUser = {};
+    let evalHistory = [];
 
     function showLoading(text) {
       Swal.fire({
@@ -325,6 +353,8 @@
           Swal.close(); 
           document.getElementById('selectSection').classList.add('section-hidden');
           document.getElementById('evaluationSection').classList.remove('section-hidden');
+          resetEditState();
+          loadEvalHistory(d.id);
         } else { 
           Swal.fire({ icon: 'error', title: 'ผิดพลาด', text: res.message });
         }
@@ -334,8 +364,91 @@
     }
     
     function backToSelect() {
+      resetEditState();
       document.getElementById('evaluationSection').classList.add('section-hidden');
       document.getElementById('selectSection').classList.remove('section-hidden');
+    }
+
+    // 5. โหลดประวัติการนิเทศของศูนย์ (สำหรับกลับมาแก้ไข)
+    async function loadEvalHistory(id) {
+      const body = document.getElementById('historyBody');
+      const count = document.getElementById('historyCount');
+      body.innerHTML = '<tr><td colspan="10" class="text-center text-muted py-3">กำลังโหลดประวัติ...</td></tr>';
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'},
+          body: JSON.stringify({ action: 'getEvaluations', payload: id })
+        }).then(r => r.json());
+
+        if(res.success && res.data) {
+          evalHistory = res.data;
+          count.innerText = evalHistory.length + ' รายการ';
+          if(evalHistory.length === 0) {
+            body.innerHTML = '<tr><td colspan="10" class="text-center text-muted py-3">ยังไม่มีประวัติการนิเทศ</td></tr>';
+            return;
+          }
+          body.innerHTML = '';
+          evalHistory.forEach((h, idx) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${idx + 1}</td>
+              <td>${h.timestamp}</td>
+              <td>${h.formType}</td>
+              <td>${h.score1}</td>
+              <td>${h.score2}</td>
+              <td><b class="text-success">${h.totalScore}</b></td>
+              <td>${h.supervisor}</td>
+              <td>${h.lastEdit || '—'}</td>
+              <td>${h.lastEditor || '—'}</td>
+              <td><button class="btn btn-sm btn-outline-primary" onclick="editEvaluation(${idx})">✏️ แก้ไข</button></td>`;
+            body.appendChild(tr);
+          });
+        }
+      } catch(e) {
+        body.innerHTML = '<tr><td colspan="10" class="text-center text-danger py-3">โหลดประวัติล้มเหลว</td></tr>';
+      }
+    }
+
+    function resetEvalForm() {
+      document.getElementById('formType').value = '';
+      document.getElementById('score1').value = 0;
+      document.getElementById('score2').value = 0;
+      document.getElementById('comment').value = '';
+      document.getElementById('totalDisplay').innerText = 0;
+      document.getElementById('totalScore').value = 0;
+    }
+
+    function resetEditState() {
+      document.getElementById('editRow').value = '';
+      document.getElementById('editBanner').classList.add('d-none');
+      document.getElementById('editInfo').innerText = '';
+      document.getElementById('finalSubmitBtn').innerText = '💾 บันทึกการนิเทศและอัปเดตข้อมูลศูนย์';
+      resetEvalForm();
+    }
+
+    function editEvaluation(idx) {
+      const h = evalHistory[idx];
+      if(!h) return;
+      document.getElementById('editRow').value = h.row;
+      document.getElementById('formType').value = h.formType || '';
+      document.getElementById('score1').value = h.score1;
+      document.getElementById('score2').value = h.score2;
+      document.getElementById('comment').value = h.comment || '';
+      const t = (parseInt(h.score1)||0) + (parseInt(h.score2)||0);
+      document.getElementById('totalDisplay').innerText = t;
+      document.getElementById('totalScore').value = t;
+      document.getElementById('editBanner').classList.remove('d-none');
+      document.getElementById('editInfo').innerText = h.timestamp + ' (ผู้นิเทศ: ' + h.supervisor + ')';
+      document.getElementById('finalSubmitBtn').innerText = '💾 บันทึกการแก้ไขและอัปเดตข้อมูลศูนย์';
+      document.getElementById('mainForm').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function cancelEdit() {
+      document.getElementById('editRow').value = '';
+      document.getElementById('editBanner').classList.add('d-none');
+      document.getElementById('editInfo').innerText = '';
+      document.getElementById('finalSubmitBtn').innerText = '💾 บันทึกการนิเทศและอัปเดตข้อมูลศูนย์';
+      resetEvalForm();
     }
 
     // 4. บันทึกข้อมูล
@@ -360,7 +473,8 @@
       showLoading('กำลังบันทึกข้อมูลการนิเทศ...');
 
       const payload = {
-        supervisor: currentUser.fname, 
+        supervisor: currentUser.fname,
+        editRow: document.getElementById('editRow').value,
         tadikaData: {
           row: document.getElementById('t_row').value,
           id: document.getElementById('t_id').value,
@@ -400,19 +514,17 @@
         }).then(r => r.json());
 
         if(res.success) {
+          const tadikaId = document.getElementById('t_id').value;
           Swal.fire({
             icon: 'success',
             title: 'บันทึกสำเร็จ!',
-            text: res.message,
+            html: res.message,
             confirmButtonText: 'ตกลง'
           }).then(() => {
-            document.getElementById('mainForm').reset();
-            document.getElementById('totalDisplay').innerText = 0;
-            document.getElementById('totalScore').value = 0;
-            document.getElementById('evaluationSection').classList.add('section-hidden');
-            document.getElementById('selectSection').classList.remove('section-hidden');
+            resetEditState();
+            loadEvalHistory(tadikaId);
           });
-        } else { Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', text: res.message }); }
+        } else { Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', html: res.message }); }
       } catch(err) { Swal.fire({ icon: 'error', title: 'ล้มเหลว', text: 'เครือข่ายขัดข้อง ไม่สามารถบันทึกได้' }); }
       
       btn.disabled = false;
