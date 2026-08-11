@@ -1,8 +1,168 @@
-<script>
-    // 👇 เอา URL ของเว็บแอปที่คัดลอกไว้จาก Step 1 มาวางตรงนี้!
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>ระบบนิเทศออนไลน์ตาดีกาและ ศอม.</title>
+  <!-- โหลด Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f4f6f9;
+      font-family: 'Sarabun', sans-serif;
+    }
+    .header-banner {
+      background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+      color: white;
+      padding: 30px 0;
+      border-radius: 0 0 20px 20px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .card {
+      border: none;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+    #chat-widget {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 350px;
+      max-width: 90vw;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+      display: none;
+      flex-direction: column;
+      z-index: 1000;
+    }
+    #chat-header {
+      background: #007bff;
+      color: white;
+      padding: 15px;
+      border-radius: 15px 15px 0 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #chat-body {
+      height: 300px;
+      overflow-y: auto;
+      padding: 15px;
+      background: #f8f9fa;
+    }
+    .msg-user { background: #007bff; color: white; padding: 8px 12px; border-radius: 15px 15px 0 15px; margin-bottom: 10px; align-self: flex-end; width: fit-content; margin-left: auto;}
+    .msg-bot { background: #e9ecef; color: black; padding: 8px 12px; border-radius: 15px 15px 15px 0; margin-bottom: 10px; width: fit-content;}
+    #chat-footer { padding: 10px; border-top: 1px solid #ddd; display: flex; }
+    
+    #chat-fab {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: #007bff;
+      color: white;
+      font-size: 24px;
+      border: none;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      cursor: pointer;
+      z-index: 999;
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- ส่วนหัว -->
+  <div class="header-banner text-center">
+    <h2>ระบบนิเทศออนไลน์</h2>
+    <p class="mb-0">ศูนย์ตาดีกาและศูนย์ ศอม. จังหวัดนราธิวาส</p>
+  </div>
+
+  <!-- ส่วนฟอร์มข้อมูล -->
+  <div class="container mb-5">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <div class="card p-4">
+          <h4 class="mb-4 text-primary">📝 แบบบันทึกการนิเทศ</h4>
+          <form id="evaluationForm" onsubmit="submitForm(event)">
+            
+            <div class="mb-3">
+              <label class="form-label">ชื่อศูนย์ตาดีกา / ศอม.</label>
+              <input type="text" class="form-control" id="centerName" required placeholder="ระบุชื่อศูนย์">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">รูปแบบการประเมิน (5 รูปแบบ)</label>
+              <select class="form-select" id="formType" required>
+                <option value="">-- เลือกรูปแบบ --</option>
+                <option value="รูปแบบที่ 1 - การบริหารจัดการ">รูปแบบที่ 1 - การบริหารจัดการ</option>
+                <option value="รูปแบบที่ 2 - การจัดการเรียนการสอน">รูปแบบที่ 2 - การจัดการเรียนการสอน</option>
+                <option value="รูปแบบที่ 3 - สื่อและนวัตกรรม">รูปแบบที่ 3 - สื่อและนวัตกรรม</option>
+                <option value="รูปแบบที่ 4 - การวัดและประเมินผล">รูปแบบที่ 4 - การวัดและประเมินผล</option>
+                <option value="รูปแบบที่ 5 - การมีส่วนร่วมชุมชน">รูปแบบที่ 5 - การมีส่วนร่วมชุมชน</option>
+              </select>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">คะแนนส่วนที่ 1 (เต็ม 50)</label>
+                <input type="number" class="form-control score-input" id="score1" min="0" max="50" value="0" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">คะแนนส่วนที่ 2 (เต็ม 50)</label>
+                <input type="number" class="form-control score-input" id="score2" min="0" max="50" value="0" required>
+              </div>
+            </div>
+
+            <!-- ระบบคำนวณคะแนนอัตโนมัติ -->
+            <div class="mb-3 p-3 bg-light rounded text-center">
+              <h5 class="mb-0">คะแนนรวม: <span id="totalDisplay" class="text-success fw-bold">0</span> / 100</h5>
+              <input type="hidden" id="totalScore" value="0">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">ข้อเสนอแนะเพิ่มเติม</label>
+              <textarea class="form-control" id="comment" rows="3" placeholder="ข้อค้นพบหรือข้อเสนอแนะ..."></textarea>
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label">ชื่อผู้นิเทศ</label>
+              <input type="text" class="form-control" id="supervisor" required placeholder="ระบุชื่อ-นามสกุล">
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 py-2" id="submitBtn">บันทึกข้อมูลการนิเทศ</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ปุ่มเปิด Chatbot -->
+  <button id="chat-fab" onclick="toggleChat()">💬</button>
+
+  <!-- หน้าต่าง Chatbot น้องศึกษา -->
+  <div id="chat-widget">
+    <div id="chat-header">
+      <span>👧🏻 ผู้ช่วยอัจฉริยะ "น้องศึกษา"</span>
+      <button type="button" class="btn-close btn-close-white" onclick="toggleChat()"></button>
+    </div>
+    <div id="chat-body">
+      <div class="msg-bot">สวัสดีค่ะ "น้องศึกษา" ยินดีให้คำแนะนำเกี่ยวกับเกณฑ์การนิเทศค่ะ ถามมาได้เลย!</div>
+    </div>
+    <div id="chat-footer">
+      <input type="text" id="chatInput" class="form-control me-2" placeholder="พิมพ์ข้อความ..." onkeypress="handleChatEnter(event)">
+      <button type="button" class="btn btn-primary" onclick="sendMessage()">ส่ง</button>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script>
+    // URL ของ Web App ที่ถูกต้อง
     const API_URL = 'https://script.google.com/macros/s/AKfycbxHLuOAJvHuBa3xTWe0FNZEilRxsFl_XVhQAJTo9U2uzcHfS384QM7GnVdTgB9c6UUP/exec';
 
-    // คำนวณคะแนนอัตโนมัติ (เหมือนเดิม)
     const scoreInputs = document.querySelectorAll('.score-input');
     scoreInputs.forEach(input => {
       input.addEventListener('input', calculateTotal);
@@ -16,7 +176,6 @@
       document.getElementById('totalScore').value = total;
     }
 
-    // ฟังก์ชันส่งฟอร์มไปยัง Google Apps Script
     async function submitForm(event) {
       event.preventDefault();
       
@@ -35,10 +194,9 @@
       };
 
       try {
-        // ใช้ fetch ส่งข้อมูลไปที่ Apps Script
         const response = await fetch(API_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // ใช้ text/plain เพื่อเลี่ยงปัญหา CORS
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: 'saveForm', payload: formData })
         });
         
@@ -50,17 +208,17 @@
           calculateTotal();
         }
       } catch (error) {
-        alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+        alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์ กรุณาลองใหม่อีกครั้ง");
+        console.error('Submit Error:', error);
       } finally {
         btn.disabled = false;
         btn.innerText = 'บันทึกข้อมูลการนิเทศ';
       }
     }
 
-    // --- ระบบ Chatbot "น้องศึกษา" ---
     function toggleChat() {
       const chat = document.getElementById('chat-widget');
-      chat.style.display = chat.style.display === 'flex' ? 'none' : 'flex';
+      chat.style.display = (chat.style.display === 'flex' || chat.style.display === 'block') ? 'none' : 'flex';
     }
 
     function handleChatEnter(event) {
@@ -91,13 +249,20 @@
         
         const result = await response.json();
         
-        document.getElementById(loadingId).remove();
+        const loadingElement = document.getElementById(loadingId);
+        if(loadingElement) loadingElement.remove();
+        
         chatBody.innerHTML += `<div class="msg-bot">${result.reply}</div>`;
         chatBody.scrollTop = chatBody.scrollHeight;
         
       } catch (error) {
-        document.getElementById(loadingId).remove();
+        const loadingElement = document.getElementById(loadingId);
+        if(loadingElement) loadingElement.remove();
+        
         chatBody.innerHTML += `<div class="msg-bot" style="color:red;">ระบบขัดข้อง กรุณาลองใหม่ค่ะ</div>`;
+        console.error('Chat Error:', error);
       }
     }
   </script>
+</body>
+</html>
