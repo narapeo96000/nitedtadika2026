@@ -7,6 +7,8 @@
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.20/dist/sweetalert2.min.css">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.20/dist/sweetalert2.all.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="icon" href="data:,">
 
@@ -295,6 +297,26 @@
         <button class="btn btn-success w-100 mt-3" id="selectBtn" onclick="fetchTadikaData()" disabled>เริ่มการนิเทศ</button>
       </div>
 
+      <!-- แผนที่ปักหมุดพิกัด (แสดงหลังล็อกอิน, ไม่บังคับ) -->
+      <div class="card">
+        <div class="card-title">
+          <h4>📍 แผนที่และพิกัดศูนย์</h4>
+          <span class="badge" id="pinBadge">ยังไม่ได้เลือกศูนย์</span>
+        </div>
+        <div id="pinMapBox" style="height:280px; border-radius:14px; border:1.5px solid var(--border); z-index:0;"></div>
+        <div class="row mt-2">
+          <div class="col-6"><label>ละติจูด</label><input type="text" id="pinLatIn" class="form-control bg-light" readonly placeholder="-"></div>
+          <div class="col-6"><label>ลองจิจูด</label><input type="text" id="pinLngIn" class="form-control bg-light" readonly placeholder="-"></div>
+        </div>
+        <div class="row mt-2">
+          <div class="col-6"><button type="button" class="btn btn-primary w-100" id="savePinBtn" onclick="savePinToSheet()" disabled>💾 บันทึกพิกัด</button></div>
+          <div class="col-6"><button type="button" class="btn btn-outline w-100" onclick="pinByGPS()">📍 ตำแหน่งปัจจุบัน</button></div>
+        </div>
+        <div class="info-box mt-2 small" style="margin-bottom:0;">
+          👉 คลิกบนแผนที่ (หรือกด <b>📍 ตำแหน่งปัจจุบัน</b>) แล้วกด <b>💾 บันทึกพิกัด</b> — ไม่บังคับ แต่แนะนำให้ปักหมุดเพื่อใช้เดินทางนิเทศ บันทึกลงชีต ADDRESS (U=ละติจูด, V=ลองจิจูด)
+        </div>
+      </div>
+
       <!-- Dashboard สถิติ -->
       <div id="dashCard" class="card section-hidden">
         <div class="card-title"><h4>สถิติการนิเทศ</h4><span class="badge" id="dashTadikaName"></span></div>
@@ -550,6 +572,7 @@
           document.getElementById('appSection').classList.remove('section-hidden');
           const sel = autoReg.lg.selected;
           if (sel) { selectByObj('sel', sel); }
+          initPinMap();
         } else {
           Swal.fire({ icon: 'error', title: 'เข้าสู่ระบบล้มเหลว', html: escHtml(res.message) });
         }
@@ -637,7 +660,7 @@
       const t = c.matches[i];
       if (!t) return;
       c.selected = t;
-      if (key === 'sel') selectedTadika = t;
+      if (key === 'sel') { selectedTadika = t; updatePinMap(); }
       document.getElementById(c.search).value = tadikaLabel(t);
       document.getElementById(c.suggest).classList.add('d-none');
       document.getElementById(c.selName).innerText = tadikaLabel(t);
@@ -649,7 +672,7 @@
       const c = autoReg[key];
       c.matches = [t];
       c.selected = t;
-      if (key === 'sel') selectedTadika = t;
+      if (key === 'sel') { selectedTadika = t; updatePinMap(); }
       document.getElementById(c.search).value = tadikaLabel(t);
       document.getElementById(c.suggest).classList.add('d-none');
       document.getElementById(c.selName).innerText = tadikaLabel(t);
@@ -679,6 +702,7 @@
       const c = autoReg.sel;
       c.selected = null;
       selectedTadika = null;
+      updatePinMap();
       document.getElementById(c.search).value = '';
       document.getElementById(c.suggest).classList.add('d-none');
       document.getElementById(c.info).classList.add('d-none');
@@ -811,6 +835,133 @@
         },
         { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
       );
+    }
+
+    // ---- แผนที่ปักหมุด (Leaflet + OpenStreetMap — เลือกพิกัดจากแผนที่ได้) ----
+    let pinMapObj = null;
+    let pinMarker = null;
+    let pinCoords = null;
+
+    function initPinMap() {
+      const box = document.getElementById('pinMapBox');
+      if (!box || typeof L === 'undefined') return;
+      if (pinMapObj) { pinMapObj.invalidateSize(); updatePinMap(); return; }
+      pinMapObj = L.map(box).setView([6.425, 101.822], 9);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(pinMapObj);
+      pinMapObj.on('click', (e) => {
+        if (!selectedTadika) return Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณาเลือกศูนย์ตาดีกาก่อนปักหมุด' });
+        setPinCoords(e.latlng.lat, e.latlng.lng);
+      });
+      updatePinMap();
+    }
+
+    function setPinCoords(lat, lng) {
+      const la = Number(lat).toFixed(6);
+      const lo = Number(lng).toFixed(6);
+      pinCoords = { lat: la, lng: lo };
+      document.getElementById('pinLatIn').value = la;
+      document.getElementById('pinLngIn').value = lo;
+      document.getElementById('pinBadge').innerText = 'พิกัด: ' + la + ', ' + lo;
+      if (!pinMarker) {
+        pinMarker = L.marker([la, lo], { draggable: true }).addTo(pinMapObj);
+        pinMarker.on('dragend', (e) => {
+          const p = e.target.getLatLng();
+          setPinCoords(p.lat, p.lng);
+        });
+      } else {
+        pinMarker.setLatLng([la, lo]);
+      }
+      document.getElementById('savePinBtn').disabled = !selectedTadika;
+      const tl = document.getElementById('t_lat'), tg = document.getElementById('t_lng');
+      if (tl) tl.value = la;
+      if (tg) tg.value = lo;
+    }
+
+    function updatePinMap() {
+      if (!pinMapObj) return;
+      const t = selectedTadika;
+      const badge = document.getElementById('pinBadge');
+      if (!t) {
+        if (pinMarker) { pinMapObj.removeLayer(pinMarker); pinMarker = null; }
+        pinCoords = null;
+        document.getElementById('pinLatIn').value = '';
+        document.getElementById('pinLngIn').value = '';
+        document.getElementById('savePinBtn').disabled = true;
+        badge.innerText = 'ยังไม่ได้เลือกศูนย์';
+        pinMapObj.setView([6.425, 101.822], 9);
+        return;
+      }
+      if (t.lat && t.lng) {
+        setPinCoords(t.lat, t.lng);
+        pinMapObj.setView([Number(t.lat), Number(t.lng)], 16);
+        badge.innerText = '📍 มีพิกัดแล้ว — คลิกบนแผนที่เพื่อแก้ไข';
+      } else {
+        badge.innerText = 'ยังไม่มีพิกัด — คลิกบนแผนที่เพื่อปักหมุด';
+        document.getElementById('savePinBtn').disabled = false;
+      }
+    }
+
+    function pinByGPS() {
+      if (!selectedTadika) {
+        return Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณาเลือกศูนย์ตาดีกาก่อนปักหมุด' });
+      }
+      if (!navigator.geolocation) {
+        return Swal.fire({ icon: 'error', title: 'ไม่รองรับ', text: 'เบราว์เซอร์นี้ไม่รองรับการระบุตำแหน่ง (GPS)' });
+      }
+      Swal.fire({ title: 'กำลังค้นหาตำแหน่งปัจจุบัน...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          Swal.close();
+          const lat = pos.coords.latitude, lng = pos.coords.longitude;
+          setPinCoords(lat, lng);
+          pinMapObj.setView([lat, lng], 17);
+          Swal.fire({ icon: 'success', title: 'ปักหมุดตำแหน่งปัจจุบัน', text: 'ละติจูด: ' + lat.toFixed(6) + ', ลองจิจูด: ' + lng.toFixed(6) + ' — กด 💾 บันทึกพิกัด เพื่อบันทึก', timer: 2200, showConfirmButton: false });
+        },
+        (err) => {
+          Swal.close();
+          const msgs = { 1: 'คุณไม่อนุญาตให้เข้าถึงตำแหน่ง', 2: 'ระบบไม่สามารถรับสัญญาณตำแหน่งได้', 3: 'การค้นหาตำแหน่งหมดเวลา' };
+          Swal.fire({ icon: 'warning', title: 'ไม่สามารถปักหมุดได้', text: msgs[err.code] || 'เกิดข้อผิดพลาดในการระบุตำแหน่ง' });
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
+      );
+    }
+
+    async function savePinToSheet() {
+      const t = selectedTadika;
+      if (!t) return;
+      if (!pinCoords) {
+        return Swal.fire({ icon: 'warning', title: 'ยังไม่ได้เลือกตำแหน่ง', text: 'คลิกบนแผนที่หรือกด 📍 ตำแหน่งปัจจุบัน ก่อนบันทึก' });
+      }
+      const btn = document.getElementById('savePinBtn');
+      btn.disabled = true;
+      showLoading('กำลังบันทึกพิกัด...');
+      try {
+        const res = await api('savePin', { id: t.id, lat: pinCoords.lat, lng: pinCoords.lng });
+        Swal.close();
+        if (res.success) {
+          t.lat = pinCoords.lat;
+          t.lng = pinCoords.lng;
+          Object.values(autoReg).forEach(c => {
+            if (c.selected && c.selected.id === t.id) {
+              c.selected.lat = t.lat;
+              c.selected.lng = t.lng;
+              const d = document.getElementById(c.selDetail);
+              if (d) d.innerText = (tadikaAddr(c.selected) || '—') + ' 📍';
+            }
+          });
+          document.getElementById('pinBadge').innerText = '📍 บันทึกแล้ว: ' + pinCoords.lat + ', ' + pinCoords.lng;
+          Swal.fire({ icon: 'success', title: 'บันทึกพิกัดเรียบร้อย', html: 'บันทึกลงชีต ADDRESS แล้ว (U=ละติจูด, V=ลองจิจูด)', confirmButtonText: 'ตกลง' });
+        } else {
+          Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', html: escHtml(res.message) });
+        }
+      } catch (err) {
+        Swal.close();
+        Swal.fire({ icon: 'error', title: 'ล้มเหลว', text: 'เครือข่ายขัดข้อง ไม่สามารถบันทึกพิกัดได้' });
+      }
+      btn.disabled = false;
     }
 
     // ---- ดึงข้อมูลศูนย์ ----

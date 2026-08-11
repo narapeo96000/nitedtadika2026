@@ -25,6 +25,8 @@ function doPost(e) {
       res = getEvaluations(payload);
     } else if (action === 'saveEvaluation') {
       res = saveEvaluation(payload);
+    } else if (action === 'savePin') {
+      res = savePin(payload);
     } else if (action === 'chat') {
       res = processChatbot(payload);
     }
@@ -138,6 +140,31 @@ function getTadikaData(id) {
     }
   }
   return {success: false, message: "ไม่พบข้อมูลศูนย์"};
+}
+
+// --- บันทึกพิกัด GPS ของศูนย์ (ชีต ADDRESS: คอลัมน์ U=ละติจูด, V=ลองจิจูด) ---
+function savePin(data) {
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME2);
+  if(!sheet) return {success: false, message: "ไม่พบชีต ADDRESS"};
+  const id = String(data && data.id ? data.id : '').trim();
+  const lat = String(data && data.lat != null ? data.lat : '').trim();
+  const lng = String(data && data.lng != null ? data.lng : '').trim();
+  if(!id) return {success: false, message: "ไม่พบรหัสศูนย์ (ID)"};
+  if(!lat || !lng || isNaN(Number(lat)) || isNaN(Number(lng))) {
+    return {success: false, message: "พิกัดไม่ถูกต้อง (ต้องเป็นตัวเลขละติจูด/ลองจิจูด)"};
+  }
+  const lastRow = sheet.getLastRow();
+  if(lastRow < 6) return {success: false, message: "ชีต ADDRESS ยังไม่มีข้อมูลศูนย์"};
+  const rows = sheet.getRange(6, 1, lastRow - 5, 22).getValues();
+  for(let i = 0; i < rows.length; i++) {
+    if(String(rows[i][0]).trim() === id) {
+      const row = i + 6;
+      sheet.getRange(row, 21).setValue(Number(lat));
+      sheet.getRange(row, 22).setValue(Number(lng));
+      return {success: true, message: "บันทึกพิกัดเรียบร้อย (U=ละติจูด, V=ลองจิจูด)", row: row};
+    }
+  }
+  return {success: false, message: "ไม่พบข้อมูลศูนย์นี้ในชีต ADDRESS"};
 }
 
 // --- เตรียมชีต DATA ให้มี Header ครบตาม DATA_HEADERS (15 คอลัมน์) ---
