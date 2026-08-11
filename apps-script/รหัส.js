@@ -734,10 +734,12 @@ function callGeminiAPI(userMessage, contextData) {
     const data = JSON.parse(response.getContentText());
     if (data.candidates && data.candidates.length > 0) {
       return data.candidates[0].content.parts[0].text;
+    } else if (data.error) {
+      return "AI แจ้งข้อผิดพลาด (รหัส " + (data.error.code || '?') + "): " + (data.error.message || 'ไม่ทราบสาเหตุ');
     } else {
       return "ขออภัยค่ะ ขณะนี้น้องศึกษาไม่สามารถดึงข้อมูลได้ค่ะ";
     }
   } catch (error) {
-    return "ขออภัยค่ะ ระบบ AI ของน้องศึกษาขัดข้องชั่วคราวค่ะ";
+    return "AI ขัดข้องชั่วคราว: " + error;
   }
 }
