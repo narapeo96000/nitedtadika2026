@@ -68,7 +68,7 @@ function loginUser(data) {
   };
 }
 
-// --- ขั้นตอนที่ 2: ดึงรายชื่อศูนย์มาให้เลือก ---
+// --- ขั้นตอนที่ 2: ดึงรายชื่อศูนย์มาให้เลือก (สำหรับ Autocomplete) ---
 function getTadikaList() {
   const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME2);
   if(!sheet) return {success: false, message: "ไม่พบชีต ADDRESS"};
@@ -76,12 +76,19 @@ function getTadikaList() {
   const lastRow = sheet.getLastRow();
   if(lastRow < 6) return {success: true, data: []};
   
-  // ดึงข้อมูลคอลัมน์ A ถึง D เริ่มจากแถวที่ 6
-  const rows = sheet.getRange(6, 1, lastRow - 5, 4).getValues(); 
+  // คอลัมน์: A=ID, C=มัสยิด, D=ชื่อศูนย์, J=ที่อยู่, K=ตำบล, L=อำเภอ
+  const rows = sheet.getRange(6, 1, lastRow - 5, 12).getValues(); 
   let list = [];
   for(let i = 0; i < rows.length; i++) {
     if(rows[i][0] != "") { // ถ้ามีรหัส ID
-      list.push({ id: rows[i][0], name: rows[i][3] }); // A=ID, D=ชื่อศูนย์
+      list.push({
+        id: rows[i][0],
+        name: rows[i][3],
+        mosque: rows[i][2],
+        address: rows[i][9],
+        subdist: rows[i][10],
+        dist: rows[i][11]
+      });
     }
   }
   return {success: true, data: list};

@@ -115,13 +115,17 @@
     <div id="selectSection" class="row justify-content-center section-hidden">
       <div class="col-md-8">
         <div class="card p-4">
-          <h4 class="mb-4 text-primary">เลือกศูนย์ตาดีกา / ศอม. ที่ต้องการนิเทศ</h4>
-          <div class="mb-3">
-            <select id="tadikaDropdown" class="form-select">
-              <option value="">กำลังโหลดข้อมูล...</option>
-            </select>
+          <h4 class="mb-1 text-primary">เลือกศูนย์ตาดีกา / ศอม. ที่ต้องการนิเทศ</h4>
+          <p class="text-muted mb-3">พิมพ์ชื่อตาดีกา ชื่อมัสยิด ที่อยู่ ตำบล หรืออำเภอ เพื่อค้นหา</p>
+          <div class="mb-3 position-relative">
+            <input type="text" id="tadikaSearch" class="form-control" placeholder="พิมพ์เพื่อค้นหา..." autocomplete="off" oninput="filterTadika()" onkeydown="tadikaKey(event)">
+            <div id="tadikaSuggest" class="d-none position-absolute w-100" style="z-index: 1050; max-height: 340px; overflow-y: auto; border-radius: 10px; box-shadow: 0 8px 20px rgba(0,0,0,.18);"></div>
           </div>
-          <button class="btn btn-success w-100" id="selectBtn" onclick="fetchTadikaData()">เริ่มการนิเทศ</button>
+          <div id="selectedTadikaInfo" class="alert alert-primary d-none mb-3">
+            <b id="selName"></b><br>
+            <span id="selDetail" class="small text-muted"></span>
+          </div>
+          <button class="btn btn-success w-100" id="selectBtn" onclick="fetchTadikaData()" disabled>เริ่มการนิเทศ</button>
         </div>
       </div>
     </div>
@@ -252,6 +256,9 @@
     
     let currentUser = {};
     let evalHistory = [];
+    let tadikaList = [];
+    let selectedTadika = null;
+    let suggestMatches = [];
 
     function showLoading(text) {
       Swal.fire({
@@ -340,10 +347,8 @@
       btn.disabled = false;
     }
 
-    // 2. โหลดรายชื่อศูนย์
+    // 2. โหลดรายชื่อศูนย์ (สำหรับ Autocomplete)
     async function loadTadikaList() {
-      const select = document.getElementById('tadikaDropdown');
-      select.innerHTML = '<option value="">กำลังโหลด...</option>';
       try {
         const res = await fetch(API_URL, {
           method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'},
@@ -351,19 +356,94 @@
         }).then(r => r.json());
 
         if(res.success) {
-          select.innerHTML = '<option value="">-- เลือกศูนย์ตาดีกา --</option>';
-          res.data.forEach(t => {
-            select.innerHTML += `<option value="${t.id}">${t.id} - ${t.name}</option>`;
-          });
+          tadikaList = res.data || [];
+        } else {
+          tadikaList = [];
         }
-      } catch(err) { select.innerHTML = '<option value="">โหลดข้อมูลล้มเหลว</option>'; }
+      } catch(err) { tadikaList = []; }
     }
+
+    function escHtml(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    function tadikaLabel(t) {
+      const mosque = (t.mosque && String(t.mosque).trim()) ? ' [' + t.mosque + ']' : '';
+      return String(t.name || t.id) + mosque;
+    }
+
+    function tadikaAddr(t) {
+      return [t.address, t.subdist, t.dist].filter(Boolean).join(', ');
+    }
+
+    function filterTadika() {
+      const q = document.getElementById('tadikaSearch').value.trim().toLowerCase();
+      const box = document.getElementById('tadikaSuggest');
+      selectedTadika = null;
+      document.getElementById('selectedTadikaInfo').classList.add('d-none');
+      document.getElementById('selectBtn').disabled = true;
+      if(!q) { box.classList.add('d-none'); box.innerHTML = ''; return; }
+
+      suggestMatches = tadikaList.filter(t => {
+        const hay = [t.id, t.name, t.mosque, t.address, t.subdist, t.dist].filter(Boolean).join(' ').toLowerCase();
+        return hay.includes(q);
+      }).slice(0, 12);
+
+      box.classList.remove('d-none');
+      if(suggestMatches.length === 0) {
+        box.innerHTML = '<div class="list-group-item text-center text-muted py-3 bg-white">ไม่พบข้อมูลศูนย์ที่ค้นหา</div>';
+        return;
+      }
+      box.innerHTML = suggestMatches.map((t, i) => `
+        <button type="button" class="list-group-item list-group-item-action text-start bg-white border-bottom" onclick="selectTadika(${i})">
+          <b class="text-primary">${escHtml(tadikaLabel(t))}</b><br>
+          <span class="small text-muted">${escHtml(tadikaAddr(t)) || '—'}</span>
+        </button>`).join('');
+    }
+
+    function selectTadika(i) {
+      const t = suggestMatches[i];
+      if(!t) return;
+      selectedTadika = t;
+      document.getElementById('tadikaSearch').value = tadikaLabel(t);
+      document.getElementById('tadikaSuggest').classList.add('d-none');
+      document.getElementById('selName').innerText = tadikaLabel(t);
+      document.getElementById('selDetail').innerText = tadikaAddr(t) || '—';
+      document.getElementById('selectedTadikaInfo').classList.remove('d-none');
+      document.getElementById('selectBtn').disabled = false;
+    }
+
+    function tadikaKey(e) {
+      if(e.key === 'Enter') {
+        e.preventDefault();
+        if(document.getElementById('tadikaSuggest').classList.contains('d-none')) {
+          if(selectedTadika) fetchTadikaData();
+        } else if(suggestMatches.length > 0) {
+          selectTadika(0);
+        }
+      } else if(e.key === 'Escape') {
+        document.getElementById('tadikaSuggest').classList.add('d-none');
+      }
+    }
+
+    function clearTadikaSelection() {
+      selectedTadika = null;
+      document.getElementById('tadikaSearch').value = '';
+      document.getElementById('tadikaSuggest').classList.add('d-none');
+      document.getElementById('selectedTadikaInfo').classList.add('d-none');
+      document.getElementById('selectBtn').disabled = true;
+    }
+
+    document.addEventListener('click', (e) => {
+      const box = document.getElementById('tadikaSuggest');
+      if(!document.getElementById('tadikaSearch').parentElement.contains(e.target)) box.classList.add('d-none');
+    });
 
     // 3. ดึงข้อมูลศูนย์
     async function fetchTadikaData() {
-      const id = document.getElementById('tadikaDropdown').value;
-      if(!id) return Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณาเลือกศูนย์ตาดีกาที่ต้องการนิเทศ' });
-      
+      const t = selectedTadika;
+      if(!t) return Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณาเลือกศูนย์ตาดีกาที่ต้องการนิเทศ' });
+      const id = t.id;
       const btn = document.getElementById('selectBtn');
       btn.disabled = true;
       showLoading('กำลังดึงข้อมูลศูนย์...');
@@ -413,6 +493,7 @@
     
     function backToSelect() {
       resetEditState();
+      clearTadikaSelection();
       document.getElementById('evaluationSection').classList.add('section-hidden');
       document.getElementById('selectSection').classList.remove('section-hidden');
     }
