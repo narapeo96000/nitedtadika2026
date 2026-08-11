@@ -374,7 +374,6 @@
           <b id="selName"></b><br>
           <span id="selDetail" class="small text-muted"></span>
         </div>
-        <button class="btn btn-success w-100 mt-3" id="selectBtn" onclick="fetchTadikaData()" disabled>เริ่มการนิเทศ</button>
       </div>
 
       <!-- แผนที่ปักหมุดพิกัด (แสดงหลังล็อกอิน, ไม่บังคับ) -->
@@ -395,6 +394,7 @@
         <div class="info-box mt-2 small" style="margin-bottom:0;">
           👉 คลิกบนแผนที่ (หรือกด <b>📍 ตำแหน่งปัจจุบัน</b>) แล้วกด <b>💾 บันทึกพิกัด</b> — ไม่บังคับ แต่แนะนำให้ปักหมุดเพื่อใช้เดินทางนิเทศ บันทึกลงชีต ADDRESS (U=ละติจูด, V=ลองจิจูด)
         </div>
+        <button class="btn btn-success w-100 mt-3" id="selectBtn" onclick="fetchTadikaData()" disabled>เริ่มการนิเทศ</button>
       </div>
 
       <!-- Dashboard สถิติ -->
@@ -698,13 +698,21 @@
 
     async function handleLogin(e) {
       e.preventDefault();
+      const user = document.getElementById('loginUser').value.trim();
+      const pass = document.getElementById('loginPass').value;
+      if (!user || !pass) {
+        return Swal.fire({ icon: 'warning', title: 'กรอกข้อมูลไม่ครบ', text: 'กรุณากรอก Username และ Password ให้ครบ' });
+      }
+      if (!autoReg.lg.selected) {
+        return Swal.fire({ icon: 'warning', title: 'ยังไม่ได้เลือกศูนย์ตาดีกา', text: 'กรุณาพิมพ์ค้นหาและเลือกศูนย์ตาดีกาที่จะนิเทศก่อนเข้าสู่ระบบ' });
+      }
       const btn = document.getElementById('loginBtn');
       btn.disabled = true;
       showLoading('กำลังตรวจสอบข้อมูลผู้ใช้...');
       try {
         const res = await api('login', {
-          username: document.getElementById('loginUser').value,
-          password: document.getElementById('loginPass').value
+          username: user,
+          password: pass
         });
         if (res.success) {
           currentUser = res.userData;
