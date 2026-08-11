@@ -3,265 +3,427 @@
 <head>
   <meta charset="UTF-8">
   <title>ระบบนิเทศออนไลน์ตาดีกาและ ศอม.</title>
+  
   <!-- โหลด Bootstrap 5 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <!-- โหลด SweetAlert2 (CSS & JS) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.20/dist/sweetalert2.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.20/dist/sweetalert2.all.min.js"></script>
+
   <style>
-    body {
-      background-color: #f4f6f9;
-      font-family: 'Sarabun', sans-serif;
-    }
-    .header-banner {
-      background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
-      color: white;
-      padding: 30px 0;
-      border-radius: 0 0 20px 20px;
-      margin-bottom: 30px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-    .card {
-      border: none;
-      border-radius: 15px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    }
-    #chat-widget {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 350px;
-      max-width: 90vw;
-      background: white;
-      border-radius: 15px;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-      display: none;
-      flex-direction: column;
-      z-index: 1000;
-    }
-    #chat-header {
-      background: #007bff;
-      color: white;
-      padding: 15px;
-      border-radius: 15px 15px 0 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    #chat-body {
-      height: 300px;
-      overflow-y: auto;
-      padding: 15px;
-      background: #f8f9fa;
-    }
+    body { background-color: #f4f6f9; font-family: 'Sarabun', sans-serif; }
+    .header-banner { background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%); color: white; padding: 25px 0; border-radius: 0 0 20px 20px; margin-bottom: 25px; }
+    .card { border: none; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .section-hidden { display: none !important; }
+    .section-title { border-left: 4px solid #007bff; padding-left: 10px; margin-bottom: 20px; font-weight: bold; color: #333; }
+    
+    /* ปรับแต่ง SweetAlert เล็กน้อยให้เข้ากับฟอนต์ Sarabun */
+    .swal2-popup { font-family: 'Sarabun', sans-serif; border-radius: 15px; }
+    
+    /* Chatbot Styles */
+    #chat-widget { position: fixed; bottom: 20px; right: 20px; width: 350px; max-width: 90vw; background: white; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); display: none; flex-direction: column; z-index: 1000; }
+    #chat-header { background: #007bff; color: white; padding: 15px; border-radius: 15px 15px 0 0; display: flex; justify-content: space-between; align-items: center; }
+    #chat-body { height: 300px; overflow-y: auto; padding: 15px; background: #f8f9fa; }
     .msg-user { background: #007bff; color: white; padding: 8px 12px; border-radius: 15px 15px 0 15px; margin-bottom: 10px; align-self: flex-end; width: fit-content; margin-left: auto;}
     .msg-bot { background: #e9ecef; color: black; padding: 8px 12px; border-radius: 15px 15px 15px 0; margin-bottom: 10px; width: fit-content;}
     #chat-footer { padding: 10px; border-top: 1px solid #ddd; display: flex; }
-    
-    #chat-fab {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      background: #007bff;
-      color: white;
-      font-size: 24px;
-      border: none;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-      cursor: pointer;
-      z-index: 999;
-    }
+    #chat-fab { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: #007bff; color: white; font-size: 24px; border: none; box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; z-index: 999; }
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
 
-  <!-- ส่วนหัว -->
   <div class="header-banner text-center">
-    <h2>ระบบนิเทศออนไลน์</h2>
-    <p class="mb-0">ศูนย์ตาดีกาและศูนย์ ศอม. จังหวัดนราธิวาส</p>
+    <h3>ระบบนิเทศออนไลน์</h3>
+    <p class="mb-0" id="headerUserText">กรุณาเข้าสู่ระบบ</p>
   </div>
 
-  <!-- ส่วนฟอร์มข้อมูล -->
   <div class="container mb-5">
-    <div class="row justify-content-center">
-      <div class="col-lg-8">
+    
+    <!-- ส่วนที่ 1: Login -->
+    <div id="loginSection" class="row justify-content-center">
+      <div class="col-md-6 col-lg-5">
         <div class="card p-4">
-          <h4 class="mb-4 text-primary">📝 แบบบันทึกการนิเทศ</h4>
-          <form id="evaluationForm" onsubmit="submitForm(event)">
-            
+          <h4 class="mb-4 text-center text-primary">ล็อกอินเข้าสู่ระบบ</h4>
+          <form onsubmit="handleLogin(event)">
             <div class="mb-3">
-              <label class="form-label">ชื่อศูนย์ตาดีกา / ศอม.</label>
-              <input type="text" class="form-control" id="centerName" required placeholder="ระบุชื่อศูนย์">
+              <label>Username</label>
+              <input type="text" id="loginUser" class="form-control" required>
             </div>
-
-            <div class="mb-3">
-              <label class="form-label">รูปแบบการประเมิน (5 รูปแบบ)</label>
-              <select class="form-select" id="formType" required>
-                <option value="">-- เลือกรูปแบบ --</option>
-                <option value="รูปแบบที่ 1 - การบริหารจัดการ">รูปแบบที่ 1 - การบริหารจัดการ</option>
-                <option value="รูปแบบที่ 2 - การจัดการเรียนการสอน">รูปแบบที่ 2 - การจัดการเรียนการสอน</option>
-                <option value="รูปแบบที่ 3 - สื่อและนวัตกรรม">รูปแบบที่ 3 - สื่อและนวัตกรรม</option>
-                <option value="รูปแบบที่ 4 - การวัดและประเมินผล">รูปแบบที่ 4 - การวัดและประเมินผล</option>
-                <option value="รูปแบบที่ 5 - การมีส่วนร่วมชุมชน">รูปแบบที่ 5 - การมีส่วนร่วมชุมชน</option>
-              </select>
-            </div>
-
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label class="form-label">คะแนนส่วนที่ 1 (เต็ม 50)</label>
-                <input type="number" class="form-control score-input" id="score1" min="0" max="50" value="0" required>
-              </div>
-              <div class="col-md-6 mb-3">
-                <label class="form-label">คะแนนส่วนที่ 2 (เต็ม 50)</label>
-                <input type="number" class="form-control score-input" id="score2" min="0" max="50" value="0" required>
-              </div>
-            </div>
-
-            <!-- ระบบคำนวณคะแนนอัตโนมัติ -->
-            <div class="mb-3 p-3 bg-light rounded text-center">
-              <h5 class="mb-0">คะแนนรวม: <span id="totalDisplay" class="text-success fw-bold">0</span> / 100</h5>
-              <input type="hidden" id="totalScore" value="0">
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label">ข้อเสนอแนะเพิ่มเติม</label>
-              <textarea class="form-control" id="comment" rows="3" placeholder="ข้อค้นพบหรือข้อเสนอแนะ..."></textarea>
-            </div>
-
             <div class="mb-4">
-              <label class="form-label">ชื่อผู้นิเทศ</label>
-              <input type="text" class="form-control" id="supervisor" required placeholder="ระบุชื่อ-นามสกุล">
+              <label>Password</label>
+              <input type="password" id="loginPass" class="form-control" required>
             </div>
-
-            <button type="submit" class="btn btn-primary w-100 py-2" id="submitBtn">บันทึกข้อมูลการนิเทศ</button>
+            <button type="submit" class="btn btn-primary w-100" id="loginBtn">เข้าสู่ระบบ</button>
           </form>
         </div>
       </div>
     </div>
+
+    <!-- ส่วนที่ 2: เลือกศูนย์ตาดีกา -->
+    <div id="selectSection" class="row justify-content-center section-hidden">
+      <div class="col-md-8">
+        <div class="card p-4">
+          <h4 class="mb-4 text-primary">เลือกศูนย์ตาดีกา / ศอม. ที่ต้องการนิเทศ</h4>
+          <div class="mb-3">
+            <select id="tadikaDropdown" class="form-select">
+              <option value="">กำลังโหลดข้อมูล...</option>
+            </select>
+          </div>
+          <button class="btn btn-success w-100" id="selectBtn" onclick="fetchTadikaData()">เริ่มการนิเทศ</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ส่วนที่ 3 และ 4: ข้อมูลศูนย์(แก้ไขได้) + แบบประเมิน -->
+    <div id="evaluationSection" class="row justify-content-center section-hidden">
+      <div class="col-lg-10">
+        <form id="mainForm" onsubmit="submitFinal(event)">
+          
+          <!-- Section 3: ข้อมูลศูนย์ -->
+          <div class="card p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+               <h4 class="section-title mb-0">ข้อมูลศูนย์ (สามารถแก้ไขได้)</h4>
+               <button type="button" class="btn btn-outline-secondary btn-sm" onclick="backToSelect()">กลับไปเลือกศูนย์อื่น</button>
+            </div>
+            
+            <input type="hidden" id="t_row">
+            
+            <div class="row">
+              <div class="col-md-4 mb-2"><label>รหัส ID</label><input type="text" id="t_id" class="form-control bg-light" readonly></div>
+              <div class="col-md-4 mb-2"><label>สถานะ</label><input type="text" id="t_status" class="form-control"></div>
+              <div class="col-md-4 mb-2"><label>ขนาดศูนย์</label><input type="text" id="t_size" class="form-control"></div>
+              
+              <div class="col-md-6 mb-2"><label>ชื่อศูนย์ (ตาดีกา)</label><input type="text" id="t_name" class="form-control" required></div>
+              <div class="col-md-6 mb-2"><label>ชื่อมัสยิด</label><input type="text" id="t_mosque" class="form-control"></div>
+              
+              <div class="col-md-4 mb-2"><label>ประธานศูนย์ฯ / โต๊ะครู</label><input type="text" id="t_head" class="form-control"></div>
+              <div class="col-md-4 mb-2"><label>วุฒิ(สามัญ)</label><input type="text" id="t_eduSec" class="form-control"></div>
+              <div class="col-md-4 mb-2"><label>วุฒิ(ศาสนา)</label><input type="text" id="t_eduRel" class="form-control"></div>
+
+              <div class="col-md-6 mb-2"><label>วันเดือนปี ที่ก่อตั้ง</label><input type="text" id="t_founded" class="form-control"></div>
+              <div class="col-md-6 mb-2"><label>เลขที่จดทะเบียน</label><input type="text" id="t_regNum" class="form-control"></div>
+
+              <div class="col-md-12 mb-2"><label>สถานที่ตั้ง (เลขที่ หมู่ ถนน)</label><input type="text" id="t_address" class="form-control"></div>
+              <div class="col-md-4 mb-2"><label>ตำบล</label><input type="text" id="t_subdist" class="form-control"></div>
+              <div class="col-md-4 mb-2"><label>อำเภอ</label><input type="text" id="t_dist" class="form-control"></div>
+              <div class="col-md-4 mb-2"><label>โทรศัพท์</label><input type="text" id="t_phone" class="form-control"></div>
+            </div>
+
+            <hr>
+            <div class="row">
+              <div class="col-md-4"><label>ครู ชาย/หญิง/รวม</label>
+                <div class="input-group">
+                  <input type="number" id="t_tMale" class="form-control" placeholder="ชาย">
+                  <input type="number" id="t_tFemale" class="form-control" placeholder="หญิง">
+                  <input type="number" id="t_tTotal" class="form-control" placeholder="รวม">
+                </div>
+              </div>
+              <div class="col-md-4"><label>นักเรียน ชาย/หญิง/รวม</label>
+                <div class="input-group">
+                  <input type="number" id="t_sMale" class="form-control" placeholder="ชาย">
+                  <input type="number" id="t_sFemale" class="form-control" placeholder="หญิง">
+                  <input type="number" id="t_sTotal" class="form-control" placeholder="รวม">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 4: บันทึกการนิเทศ -->
+          <div class="card p-4 mb-4">
+            <h4 class="section-title">แบบบันทึกการนิเทศ</h4>
+            <div class="mb-3">
+              <label>รูปแบบการประเมิน (5 รูปแบบ)</label>
+              <select class="form-select" id="formType" required>
+                <option value="">-- เลือกรูปแบบ --</option>
+                <option value="รูปแบบที่ 1">รูปแบบที่ 1 - การบริหารจัดการ</option>
+                <option value="รูปแบบที่ 2">รูปแบบที่ 2 - การจัดการเรียนการสอน</option>
+                <option value="รูปแบบที่ 3">รูปแบบที่ 3 - สื่อและนวัตกรรม</option>
+                <option value="รูปแบบที่ 4">รูปแบบที่ 4 - การวัดและประเมินผล</option>
+                <option value="รูปแบบที่ 5">รูปแบบที่ 5 - การมีส่วนร่วมชุมชน</option>
+              </select>
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-3"><label>คะแนนส่วนที่ 1 (เต็ม 50)</label><input type="number" id="score1" class="form-control score-input" value="0" min="0" max="50"></div>
+              <div class="col-md-6 mb-3"><label>คะแนนส่วนที่ 2 (เต็ม 50)</label><input type="number" id="score2" class="form-control score-input" value="0" min="0" max="50"></div>
+            </div>
+            <div class="mb-3 p-3 bg-light rounded text-center">
+              <h5 class="mb-0">คะแนนรวม: <span id="totalDisplay" class="text-success fw-bold">0</span> / 100</h5>
+              <input type="hidden" id="totalScore" value="0">
+            </div>
+            <div class="mb-4"><label>ข้อเสนอแนะเพิ่มเติม</label><textarea id="comment" class="form-control" rows="3"></textarea></div>
+            
+            <button type="submit" class="btn btn-primary w-100 py-3 fw-bold" id="finalSubmitBtn">💾 บันทึกการนิเทศและอัปเดตข้อมูลศูนย์</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 
-  <!-- ปุ่มเปิด Chatbot -->
+  <!-- แชทบอท -->
   <button id="chat-fab" onclick="toggleChat()">💬</button>
-
-  <!-- หน้าต่าง Chatbot น้องศึกษา -->
   <div id="chat-widget">
-    <div id="chat-header">
-      <span>👧🏻 ผู้ช่วยอัจฉริยะ "น้องศึกษา"</span>
-      <button type="button" class="btn-close btn-close-white" onclick="toggleChat()"></button>
-    </div>
-    <div id="chat-body">
-      <div class="msg-bot">สวัสดีค่ะ "น้องศึกษา" ยินดีให้คำแนะนำเกี่ยวกับเกณฑ์การนิเทศค่ะ ถามมาได้เลย!</div>
-    </div>
-    <div id="chat-footer">
-      <input type="text" id="chatInput" class="form-control me-2" placeholder="พิมพ์ข้อความ..." onkeypress="handleChatEnter(event)">
-      <button type="button" class="btn btn-primary" onclick="sendMessage()">ส่ง</button>
-    </div>
+    <div id="chat-header"><span>👧🏻 น้องศึกษา</span><button type="button" class="btn-close btn-close-white" onclick="toggleChat()"></button></div>
+    <div id="chat-body"></div>
+    <div id="chat-footer"><input type="text" id="chatInput" class="form-control me-2" onkeypress="if(event.key==='Enter') sendChat()"><button type="button" class="btn btn-primary" onclick="sendChat()">ส่ง</button></div>
   </div>
 
-  <!-- Scripts -->
   <script>
-    // URL ของ Web App ที่ถูกต้อง
-    const API_URL = 'https://script.google.com/macros/s/AKfycbxHLuOAJvHuBa3xTWe0FNZEilRxsFl_XVhQAJTo9U2uzcHfS384QM7GnVdTgB9c6UUP/exec';
+    // 👇👇 ใส่ URL ใหม่ที่ Deploy จาก Apps Script ตรงนี้!
+    const API_URL = ' const API_URL = 'https://script.google.com/macros/s/AKfycbxHLuOAJvHuBa3xTWe0FNZEilRxsFl_XVhQAJTo9U2uzcHfS384QM7GnVdTgB9c6UUP/exec';
+    
+    let currentUser = {};
 
-    const scoreInputs = document.querySelectorAll('.score-input');
-    scoreInputs.forEach(input => {
-      input.addEventListener('input', calculateTotal);
-    });
-
-    function calculateTotal() {
-      const s1 = parseInt(document.getElementById('score1').value) || 0;
-      const s2 = parseInt(document.getElementById('score2').value) || 0;
-      const total = s1 + s2;
-      document.getElementById('totalDisplay').innerText = total;
-      document.getElementById('totalScore').value = total;
+    // --- Loading UI สำหรับ SweetAlert ---
+    function showLoading(text) {
+      Swal.fire({
+        title: text,
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+      });
     }
 
-    async function submitForm(event) {
-      event.preventDefault();
-      
-      const btn = document.getElementById('submitBtn');
+    // 1. ระบบ Login
+    async function handleLogin(e) {
+      e.preventDefault();
+      const btn = document.getElementById('loginBtn');
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังบันทึก...';
+      
+      showLoading('กำลังตรวจสอบข้อมูลผู้ใช้...');
 
-      const formData = {
-        centerName: document.getElementById('centerName').value,
-        formType: document.getElementById('formType').value,
-        score1: document.getElementById('score1').value,
-        score2: document.getElementById('score2').value,
-        totalScore: document.getElementById('totalScore').value,
-        comment: document.getElementById('comment').value,
-        supervisor: document.getElementById('supervisor').value
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: {'Content-Type': 'text/plain;charset=utf-8'},
+          body: JSON.stringify({
+            action: 'login',
+            payload: {
+              username: document.getElementById('loginUser').value,
+              password: document.getElementById('loginPass').value
+            }
+          })
+        }).then(r => r.json());
+
+        if(res.success) {
+          currentUser = res.userData;
+          document.getElementById('headerUserText').innerText = `ผู้นิเทศ: ${currentUser.fname}`;
+          
+          Swal.fire({
+            icon: 'success',
+            title: 'เข้าสู่ระบบสำเร็จ!',
+            text: `ยินดีต้อนรับ ${currentUser.fname}`,
+            timer: 1500,
+            showConfirmButton: false
+          });
+
+          document.getElementById('loginSection').classList.add('section-hidden');
+          document.getElementById('selectSection').classList.remove('section-hidden');
+          loadTadikaList();
+        } else {
+          Swal.fire({ icon: 'error', title: 'เข้าสู่ระบบล้มเหลว', text: res.message });
+        }
+      } catch (err) { 
+        Swal.fire({ icon: 'error', title: 'เครือข่ายขัดข้อง', text: 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้' });
+      }
+      
+      btn.disabled = false;
+    }
+
+    // 2. โหลดรายชื่อศูนย์ลง Dropdown
+    async function loadTadikaList() {
+      const select = document.getElementById('tadikaDropdown');
+      select.innerHTML = '<option value="">กำลังโหลด...</option>';
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'},
+          body: JSON.stringify({ action: 'getTadikaList' })
+        }).then(r => r.json());
+
+        if(res.success) {
+          select.innerHTML = '<option value="">-- เลือกศูนย์ตาดีกา --</option>';
+          res.data.forEach(t => {
+            select.innerHTML += `<option value="${t.id}">${t.id} - ${t.name}</option>`;
+          });
+        }
+      } catch(err) { select.innerHTML = '<option value="">โหลดข้อมูลล้มเหลว</option>'; }
+    }
+
+    // 3. เลือกศูนย์และดึงข้อมูลมาแสดงในฟอร์ม
+    async function fetchTadikaData() {
+      const id = document.getElementById('tadikaDropdown').value;
+      if(!id) {
+        return Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณาเลือกศูนย์ตาดีกาที่ต้องการนิเทศ' });
+      }
+      
+      const btn = document.getElementById('selectBtn');
+      btn.disabled = true;
+      
+      showLoading('กำลังดึงข้อมูลศูนย์...');
+
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'},
+          body: JSON.stringify({ action: 'getTadikaData', payload: id })
+        }).then(r => r.json());
+
+        if(res.success) {
+          const d = res.data;
+          document.getElementById('t_row').value = d.row;
+          document.getElementById('t_id').value = d.id;
+          document.getElementById('t_status').value = d.status;
+          document.getElementById('t_mosque').value = d.mosque;
+          document.getElementById('t_name').value = d.name;
+          document.getElementById('t_head').value = d.head;
+          document.getElementById('t_eduSec').value = d.eduSec;
+          document.getElementById('t_eduRel').value = d.eduRel;
+          document.getElementById('t_founded').value = d.foundedDate;
+          document.getElementById('t_regNum').value = d.regNum;
+          document.getElementById('t_address').value = d.address;
+          document.getElementById('t_subdist').value = d.subdist;
+          document.getElementById('t_dist').value = d.dist;
+          document.getElementById('t_phone').value = d.phone;
+          document.getElementById('t_size').value = d.size;
+          document.getElementById('t_tMale').value = d.tMale;
+          document.getElementById('t_tFemale').value = d.tFemale;
+          document.getElementById('t_tTotal').value = d.tTotal;
+          document.getElementById('t_sMale').value = d.sMale;
+          document.getElementById('t_sFemale').value = d.sFemale;
+          document.getElementById('t_sTotal').value = d.sTotal;
+
+          Swal.close(); // ปิดหน้าจอโหลด
+          document.getElementById('selectSection').classList.add('section-hidden');
+          document.getElementById('evaluationSection').classList.remove('section-hidden');
+        } else { 
+          Swal.fire({ icon: 'error', title: 'ผิดพลาด', text: res.message });
+        }
+      } catch(err) { 
+        Swal.fire({ icon: 'error', title: 'ล้มเหลว', text: 'ไม่สามารถดึงข้อมูลได้' });
+      }
+      
+      btn.disabled = false;
+    }
+    
+    // ฟังก์ชันเพิ่มเติมสำหรับปุ่มกดกลับไปเลือกศูนย์
+    function backToSelect() {
+      document.getElementById('evaluationSection').classList.add('section-hidden');
+      document.getElementById('selectSection').classList.remove('section-hidden');
+    }
+
+    // 4. บันทึกข้อมูลกลับ (อัปเดตศูนย์ + ประเมิน)
+    async function submitFinal(e) {
+      e.preventDefault();
+      
+      // การยืนยันก่อนบันทึกด้วย SweetAlert
+      const result = await Swal.fire({
+        title: 'ยืนยันการบันทึก?',
+        text: "คุณตรวจสอบข้อมูลและคะแนนถูกต้องแล้วใช่หรือไม่",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'ใช่, บันทึกเลย!',
+        cancelButtonText: 'ยกเลิก'
+      });
+
+      if (!result.isConfirmed) return;
+
+      const btn = document.getElementById('finalSubmitBtn');
+      btn.disabled = true;
+      
+      showLoading('กำลังบันทึกข้อมูลการนิเทศ...');
+
+      const payload = {
+        supervisor: currentUser.fname, 
+        tadikaData: {
+          row: document.getElementById('t_row').value,
+          id: document.getElementById('t_id').value,
+          status: document.getElementById('t_status').value,
+          mosque: document.getElementById('t_mosque').value,
+          name: document.getElementById('t_name').value,
+          head: document.getElementById('t_head').value,
+          eduSec: document.getElementById('t_eduSec').value,
+          eduRel: document.getElementById('t_eduRel').value,
+          foundedDate: document.getElementById('t_founded').value,
+          regNum: document.getElementById('t_regNum').value,
+          address: document.getElementById('t_address').value,
+          subdist: document.getElementById('t_subdist').value,
+          dist: document.getElementById('t_dist').value,
+          phone: document.getElementById('t_phone').value,
+          size: document.getElementById('t_size').value,
+          tMale: document.getElementById('t_tMale').value,
+          tFemale: document.getElementById('t_tFemale').value,
+          tTotal: document.getElementById('t_tTotal').value,
+          sMale: document.getElementById('t_sMale').value,
+          sFemale: document.getElementById('t_sFemale').value,
+          sTotal: document.getElementById('t_sTotal').value
+        },
+        evalData: {
+          formType: document.getElementById('formType').value,
+          score1: document.getElementById('score1').value,
+          score2: document.getElementById('score2').value,
+          totalScore: document.getElementById('totalScore').value,
+          comment: document.getElementById('comment').value
+        }
       };
 
       try {
-        const response = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'saveForm', payload: formData })
-        });
-        
-        const result = await response.json();
-        
-        alert(result.message);
-        if(result.success) {
-          document.getElementById('evaluationForm').reset();
-          calculateTotal();
+        const res = await fetch(API_URL, {
+          method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'},
+          body: JSON.stringify({ action: 'saveEvaluation', payload: payload })
+        }).then(r => r.json());
+
+        if(res.success) {
+          Swal.fire({
+            icon: 'success',
+            title: 'บันทึกสำเร็จ!',
+            text: res.message,
+            confirmButtonText: 'ตกลง'
+          }).then(() => {
+            // เคลียร์ฟอร์ม และกลับไปหน้าเลือกศูนย์
+            document.getElementById('mainForm').reset();
+            document.getElementById('totalDisplay').innerText = 0;
+            document.getElementById('totalScore').value = 0;
+            document.getElementById('evaluationSection').classList.add('section-hidden');
+            document.getElementById('selectSection').classList.remove('section-hidden');
+          });
+        } else {
+          Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', text: res.message });
         }
-      } catch (error) {
-        alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์ กรุณาลองใหม่อีกครั้ง");
-        console.error('Submit Error:', error);
-      } finally {
-        btn.disabled = false;
-        btn.innerText = 'บันทึกข้อมูลการนิเทศ';
+      } catch(err) { 
+        Swal.fire({ icon: 'error', title: 'ล้มเหลว', text: 'เครือข่ายขัดข้อง ไม่สามารถบันทึกได้' });
       }
-    }
-
-    function toggleChat() {
-      const chat = document.getElementById('chat-widget');
-      chat.style.display = (chat.style.display === 'flex' || chat.style.display === 'block') ? 'none' : 'flex';
-    }
-
-    function handleChatEnter(event) {
-      if (event.key === 'Enter') sendMessage();
-    }
-
-    async function sendMessage() {
-      const input = document.getElementById('chatInput');
-      const msg = input.value.trim();
-      if (!msg) return;
-
-      const chatBody = document.getElementById('chat-body');
       
-      chatBody.innerHTML += `<div class="msg-user">${msg}</div>`;
-      input.value = '';
-      chatBody.scrollTop = chatBody.scrollHeight;
+      btn.disabled = false;
+    }
 
-      const loadingId = 'loading-' + Date.now();
-      chatBody.innerHTML += `<div class="msg-bot" id="${loadingId}">...กำลังพิมพ์...</div>`;
-      chatBody.scrollTop = chatBody.scrollHeight;
+    // คำนวณคะแนน
+    document.querySelectorAll('.score-input').forEach(i => i.addEventListener('input', () => {
+      const t = (parseInt(document.getElementById('score1').value)||0) + (parseInt(document.getElementById('score2').value)||0);
+      document.getElementById('totalDisplay').innerText = t;
+      document.getElementById('totalScore').value = t;
+    }));
 
+    // บอท (ไม่มีการเปลี่ยนแปลง)
+    function toggleChat() {
+      const c = document.getElementById('chat-widget');
+      c.style.display = (c.style.display==='flex') ? 'none' : 'flex';
+    }
+    async function sendChat() {
+      const i = document.getElementById('chatInput');
+      const m = i.value.trim(); if(!m) return;
+      const b = document.getElementById('chat-body');
+      b.innerHTML += `<div class="msg-user">${m}</div>`; i.value='';
+      const id = 'ld-'+Date.now(); b.innerHTML += `<div class="msg-bot" id="${id}">...</div>`; b.scrollTop = b.scrollHeight;
       try {
-        const response = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'chat', payload: msg })
-        });
-        
-        const result = await response.json();
-        
-        const loadingElement = document.getElementById(loadingId);
-        if(loadingElement) loadingElement.remove();
-        
-        chatBody.innerHTML += `<div class="msg-bot">${result.reply}</div>`;
-        chatBody.scrollTop = chatBody.scrollHeight;
-        
-      } catch (error) {
-        const loadingElement = document.getElementById(loadingId);
-        if(loadingElement) loadingElement.remove();
-        
-        chatBody.innerHTML += `<div class="msg-bot" style="color:red;">ระบบขัดข้อง กรุณาลองใหม่ค่ะ</div>`;
-        console.error('Chat Error:', error);
-      }
+        const r = await fetch(API_URL, {
+          method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'},
+          body: JSON.stringify({action: 'chat', payload: m})
+        }).then(x => x.json());
+        document.getElementById(id).remove();
+        b.innerHTML += `<div class="msg-bot">${r.reply}</div>`;
+      } catch(e) { document.getElementById(id).innerText = 'Error'; }
+      b.scrollTop = b.scrollHeight;
     }
   </script>
 </body>
