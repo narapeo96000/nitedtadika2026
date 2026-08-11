@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ระบบนิเทศออนไลน์ตาดีกาและศอม.</title>
+  <title>ระบบนิเทศออนไลน์จังหวัดนราธิวาส</title>
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.20/dist/sweetalert2.min.css">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.20/dist/sweetalert2.all.min.js"></script>
@@ -195,17 +195,44 @@
     #chat-footer input { flex: 1; }
 
     .auth-card { max-width: 460px; margin: 24px auto 0; }
+    .captcha-row { display: flex; gap: 8px; align-items: center; }
+    .captcha-q {
+      min-width: 90px; min-height: 46px; display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, var(--primary-light), var(--blue-light));
+      border: 1.5px dashed var(--primary); color: var(--primary-deep);
+      border-radius: 12px; font-weight: 700; font-size: 1.1rem; letter-spacing: 1px;
+    }
+    .captcha-refresh {
+      min-height: 46px; min-width: 52px; border-radius: 12px; border: 1.5px solid var(--border);
+      background: #fff; color: var(--primary-deep); font-size: 1.1rem; cursor: pointer;
+    }
     .brand {
       text-align: center; margin: 18px auto 6px; color: var(--primary-deep);
     }
     .brand .logo {
-      width: 68px; height: 68px; margin: 0 auto 8px; border-radius: 22px;
+      width: 72px; height: 72px; margin: 0 auto 10px; border-radius: 24px;
       background: linear-gradient(135deg, var(--primary), var(--blue-dark));
-      color: #fff; font-size: 2rem; display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 2.2rem; display: flex; align-items: center; justify-content: center;
       box-shadow: 0 6px 18px rgba(5,150,105,.35);
     }
-    .brand h1 { margin: 0; font-size: 1.35rem; font-weight: 700; }
-    .brand p { margin: 4px 0 0; color: var(--muted); font-size: .92rem; }
+    .brand h1 { margin: 0; font-size: 1.45rem; font-weight: 700; line-height: 1.3; }
+    .brand .sub-title { margin: 6px 0 0; color: var(--muted); font-size: .92rem; line-height: 1.55; }
+    .brand .highlight {
+      background: linear-gradient(135deg, var(--primary), var(--blue-dark));
+      color: #fff; border-radius: 14px; padding: 12px 14px; margin: 14px 0 6px;
+      font-size: 1.2rem; font-weight: 700; line-height: 1.4; box-shadow: 0 4px 14px rgba(5,150,105,.25);
+    }
+    .brand .highlight .hl-big { font-size: 1.25rem; }
+    .brand .version-badge {
+      display: inline-block; margin-top: 10px; background: var(--blue-light);
+      color: var(--blue-dark); border: 1px solid var(--blue-soft); border-radius: 999px;
+      padding: 5px 16px; font-size: .8rem; font-weight: 600;
+    }
+    .app-footer {
+      text-align: center; color: var(--muted); font-size: .78rem;
+      padding: 10px 14px 22px; line-height: 1.7;
+    }
+    .app-footer .org { font-weight: 600; color: var(--primary-deep); }
 
     @media (max-width: 480px) {
       .col-3, .col-md-3 { width: 50%; }
@@ -219,7 +246,7 @@
 
   <div class="header-banner section-hidden" id="appHeader">
     <div>
-      <h3>ระบบนิเทศออนไลน์ตาดีกา</h3>
+      <h3>🕌 ระบบนิเทศออนไลน์จังหวัดนราธิวาส</h3>
       <p id="headerUserText">กรุณาเข้าสู่ระบบ</p>
     </div>
     <div class="header-user">
@@ -233,9 +260,11 @@
     <!-- ===== หน้า Login ===== -->
     <div id="loginSection">
       <div class="brand">
-        <div class="logo">🎓</div>
-        <h1>ระบบนิเทศออนไลน์</h1>
-        <p>ตาดีกาและศูนย์อบรมอิสลามประจำมัสยิด (ศอม.)</p>
+        <div class="logo">🕌</div>
+        <h1>ระบบนิเทศออนไลน์จังหวัดนราธิวาส</h1>
+        <p class="sub-title">ศูนย์การศึกษาอิสลามประจำมัสยิด (ตาดีกา) และศูนย์อบรมศาสนาอิสลามและจริยธรรมประจำมัสยิด (ศอม.)</p>
+        <div class="highlight">✨ นิเทศตาดีกายุคใหม่<br><span class="hl-big">เข้าใจ เข้าถึง พัฒนาผู้เรียน</span> ✨</div>
+        <div class="version-badge">📱 รุ่นพร้อมใช้งานภาคสนาม (Mobile Optimized)</div>
       </div>
       <div class="card auth-card">
         <h4 class="text-center mb-3" style="color:var(--primary-deep); margin-top:0;">เข้าสู่ระบบ</h4>
@@ -272,7 +301,13 @@
         <input type="text" id="regUser" class="form-control mb-3">
         <label>Password</label>
         <input type="password" id="regPass" class="form-control mb-3">
-        <button class="btn btn-primary w-100" onclick="doRegister()">สมัครสมาชิก</button>
+        <label>ยืนยันตัวตน (กันสแปม)</label>
+        <div class="captcha-row">
+          <span id="regCaptchaQ" class="captcha-q"></span>
+          <input type="text" id="regCaptcha" class="form-control" placeholder="กรอกคำตอบ" autocomplete="off" inputmode="numeric">
+          <button type="button" class="captcha-refresh" onclick="newCaptcha()" title="เปลี่ยนคำถาม">🔄</button>
+        </div>
+        <button class="btn btn-primary w-100 mt-3" onclick="doRegister()">สมัครสมาชิก</button>
         <p class="text-center mt-3 mb-0 small">
           มีบัญชีแล้ว? <a href="javascript:void(0)" style="color:var(--primary); font-weight:600;" onclick="showLogin()">กลับไปเข้าสู่ระบบ</a>
         </p>
@@ -559,6 +594,16 @@
     function showRegister() {
       document.getElementById('loginSection').classList.add('section-hidden');
       document.getElementById('registerSection').classList.remove('section-hidden');
+      newCaptcha();
+    }
+
+    let captchaAnswer = 0;
+    function newCaptcha() {
+      const a = Math.floor(Math.random() * 8) + 3;
+      const b = Math.floor(Math.random() * 8) + 2;
+      captchaAnswer = a + b;
+      document.getElementById('regCaptchaQ').innerText = a + ' + ' + b + ' = ?';
+      document.getElementById('regCaptcha').value = '';
     }
 
     async function handleLogin(e) {
@@ -596,8 +641,13 @@
       const tel = document.getElementById('regTel').value.trim();
       const username = document.getElementById('regUser').value.trim();
       const password = document.getElementById('regPass').value.trim();
+      const captcha = document.getElementById('regCaptcha').value.trim();
       if (!fname || !username || !password) {
         return Swal.fire({ icon: 'warning', title: 'กรอกข้อมูลไม่ครบ', text: 'กรุณากรอกชื่อ-นามสกุล, Username และ Password' });
+      }
+      if (String(captcha) !== String(captchaAnswer)) {
+        newCaptcha();
+        return Swal.fire({ icon: 'warning', title: 'ยืนยันตัวตนไม่ถูกต้อง', text: 'กรุณากรอกคำตอบของแคปชาให้ถูกต้อง (เปลี่ยนคำถามใหม่แล้ว)' });
       }
       showLoading('กำลังสมัครสมาชิก...');
       try {
