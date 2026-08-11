@@ -195,45 +195,45 @@ function setUserStatus(data) {
   return {success: false, message: 'สถานะไม่ถูกต้อง'};
 }
 
-// --- ดึงรายชื่อศูนย์มาให้เลือก (Autocomplete) จากทั้งชีต ADDR_TADEKA + ADDR_PONDOK ---
+// --- ดึงรายชื่อศูนย์มาให้เลือก (Autocomplete) จากชีต ADDR_TADEKA เท่านั้น ---
 function getTadikaList() {
   const ss = SpreadsheetApp.openById(SHEET_ID);
   let list = [];
 
-  for(const cfg of ADDR_SHEETS) {
-    const sheet = ss.getSheetByName(cfg.name);
-    if(!sheet) continue;
+  const sheet = ss.getSheetByName(SHEET_ADDR_TADEKA);
+  if(sheet) {
     const lastRow = sheet.getLastRow();
-    if(lastRow < 6) continue;
-    // คอลัมน์: A=ID, B=สถานะ, C=มัสยิด, D=ชื่อศูนย์, E=ประธาน, J=ที่อยู่, K=ตำบล, L=อำเภอ,
-    // M=โทร, N=ขนาด, O/P/Q=ครู ช/ญ/รวม, R/S/T=นักเรียน ช/ญ/รวม, U=ละติจูด, V=ลองจิจูด
-    const rows = sheet.getRange(6, 1, lastRow - 5, 22).getValues();
-    for(let i = 0; i < rows.length; i++) {
-      if(rows[i][0] != "") {
-        list.push({
-          id: rows[i][0],
-          type: cfg.type,
-          status: rows[i][1],
-          name: rows[i][3],
-          mosque: rows[i][2],
-          head: rows[i][4],
-          phone: rows[i][12],
-          size: rows[i][13],
-          teachers: { male: rows[i][14], female: rows[i][15], total: rows[i][16] },
-          students: { male: rows[i][17], female: rows[i][18], total: rows[i][19] },
-          address: rows[i][9],
-          subdist: rows[i][10],
-          dist: rows[i][11],
-          lat: rows[i][20],
-          lng: rows[i][21]
-        });
+    if(lastRow >= 6) {
+      // คอลัมน์: A=ID, B=สถานะ, C=มัสยิด, D=ชื่อศูนย์, E=ประธาน, J=ที่อยู่, K=ตำบล, L=อำเภอ,
+      // M=โทร, N=ขนาด, O/P/Q=ครู ช/ญ/รวม, R/S/T=นักเรียน ช/ญ/รวม, U=ละติจูด, V=ลองจิจูด
+      const rows = sheet.getRange(6, 1, lastRow - 5, 22).getValues();
+      for(let i = 0; i < rows.length; i++) {
+        if(rows[i][0] != "") {
+          list.push({
+            id: rows[i][0],
+            type: TYPE_TADEKA,
+            status: rows[i][1],
+            name: rows[i][3],
+            mosque: rows[i][2],
+            head: rows[i][4],
+            phone: rows[i][12],
+            size: rows[i][13],
+            teachers: { male: rows[i][14], female: rows[i][15], total: rows[i][16] },
+            students: { male: rows[i][17], female: rows[i][18], total: rows[i][19] },
+            address: rows[i][9],
+            subdist: rows[i][10],
+            dist: rows[i][11],
+            lat: rows[i][20],
+            lng: rows[i][21]
+          });
+        }
       }
     }
   }
   return {success: true, data: list};
 }
 
-// --- สถิติระบบนิเทศออนไลน์ (นับเฉพาะตาดีกาจากชีต ADDR_TADEKA + DATA_TADEKA ไม่รวมปอเนาะ) ---
+// --- สถิติระบบนิเทศออนไลน์ (นับเฉพาะตาดีกาที่ได้รับการนิเทศ จาก ADDR_TADEKA + DATA_TADEKA) ---
 function getStats() {
   const ss = SpreadsheetApp.openById(SHEET_ID);
   let totalTadika = 0, totalEval = 0, totalUsers = 0, sumPct = 0;
@@ -241,7 +241,38 @@ function getStats() {
   let tMale = 0, tFemale = 0, tTotal = 0, sMale = 0, sFemale = 0, sTotal = 0;
   const levelCounts = { 'ดีมาก': 0, 'ดี': 0, 'พอใช้': 0, 'ต้องปรับปรุง': 0, 'ไม่ระบุ': 0 };
   const latest = [];
+  const evaluatedIds = {};
 
+  // 1) อ่าน DATA_TADEKA ก่อน: รวบรวม ID ศูนย์ที่ได้รับการนิเทศ + สถิติการนิเทศ
+  const data = ss.getSheetByName(SHEET_DATA_TADEKA);
+  if(data) {
+    const lastRow = data.getLastRow();
+    if(lastRow >= 2) {
+      // หาตำแหน่งคอลัมน์จาก header เพื่อกันข้อมูลเลื่อนคอลัมน์
+      const header = data.getRange(1, 1, 1, 15).getValues()[0];
+      const colOf = name => {
+        for(let i = 0; i < header.length; i++) if(String(header[i]).trim() === name) return i;
+        return -1;
+      };
+      const ciId = colOf('ID ศูนย์'), ciName = colOf('ชื่อศูนย์'), ciPct = colOf('ร้อยละ'), ciLvl = colOf('ระดับ'), ciTs = colOf('Timestamp');
+      const vals = data.getRange(2, 1, lastRow - 1, 15).getValues();
+      totalEval = vals.length;
+      vals.forEach(r => {
+        const id = String(r[ciId] || '').trim();
+        if(id) evaluatedIds[id] = true;
+        const pct = Number(r[ciPct]);
+        let lvl = String(r[ciLvl] || '').trim();
+        if(!lvl || !(lvl in levelCounts)) lvl = 'ไม่ระบุ';
+        levelCounts[lvl]++;
+        if(!isNaN(pct)) sumPct += pct;
+        latest.push({ name: String(r[ciName] || ''), timestamp: formatDate(r[ciTs]), pct: isNaN(pct) ? 0 : pct, level: lvl });
+      });
+    }
+  }
+  totalTadika = Object.keys(evaluatedIds).length;
+  latest.sort((a, b) => a.timestamp < b.timestamp ? 1 : -1);
+
+  // 2) นับข้อมูลศูนย์จาก ADDR_TADEKA เฉพาะศูนย์ที่ได้รับการนิเทศ
   // ADDRESS: A=ID, B=สถานะ, J=เลขที่/หมู่/ถนน, O/P/Q=ครู ช/ญ/รวม, R/S/T=นักเรียน ช/ญ/รวม
   const toNum = v => { const n = Number(String(v).replace(/,/g, '').trim()); return isNaN(n) ? 0 : n; };
   const addr = ss.getSheetByName(SHEET_ADDR_TADEKA);
@@ -250,8 +281,8 @@ function getStats() {
     if(lastRow >= 6) {
       const vals = addr.getRange(6, 1, lastRow - 5, 22).getValues();
       vals.forEach(r => {
-        if(String(r[0]).trim() === '') return;
-        totalTadika++;
+        const id = String(r[0]).trim();
+        if(id === '' || !evaluatedIds[id]) return;
         const status = String(r[1] || '').trim();
         if(status) {
           if(status.includes('จดทะเบียน') && !status.includes('ไม่')) registered++;
@@ -264,31 +295,6 @@ function getStats() {
       });
     }
   }
-
-  const data = ss.getSheetByName(SHEET_DATA_TADEKA);
-  if(data) {
-    const lastRow = data.getLastRow();
-    if(lastRow >= 2) {
-      // หาตำแหน่งคอลัมน์จาก header เพื่อกันข้อมูลเลื่อนคอลัมน์
-      const header = data.getRange(1, 1, 1, 15).getValues()[0];
-      const colOf = name => {
-        for(let i = 0; i < header.length; i++) if(String(header[i]).trim() === name) return i;
-        return -1;
-      };
-      const ciName = colOf('ชื่อศูนย์'), ciPct = colOf('ร้อยละ'), ciLvl = colOf('ระดับ'), ciTs = colOf('Timestamp');
-      const vals = data.getRange(2, 1, lastRow - 1, 15).getValues();
-      totalEval = vals.length;
-      vals.forEach(r => {
-        const pct = Number(r[ciPct]);
-        let lvl = String(r[ciLvl] || '').trim();
-        if(!lvl || !(lvl in levelCounts)) lvl = 'ไม่ระบุ';
-        levelCounts[lvl]++;
-        if(!isNaN(pct)) sumPct += pct;
-        latest.push({ name: String(r[ciName] || ''), timestamp: formatDate(r[ciTs]), pct: isNaN(pct) ? 0 : pct, level: lvl });
-      });
-    }
-  }
-  latest.sort((a, b) => a.timestamp < b.timestamp ? 1 : -1);
 
   const users = ss.getSheetByName(SHEET_USERS);
   if(users) {

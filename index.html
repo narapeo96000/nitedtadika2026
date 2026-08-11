@@ -178,13 +178,14 @@
     .lvl-row .bar { flex: 1; height: 10px; background: #eef2f6; border-radius: 999px; overflow: hidden; }
     .lvl-row .bar .fill { height: 100%; border-radius: 999px; }
     .lvl-row .num { min-width: 30px; text-align: right; font-weight: 700; color: var(--ink); }
-    .lvl-chart svg { width: 100%; height: auto; display: block; }
+    .lvl-chart { overflow: hidden; }
+    .lvl-chart svg { width: 100%; height: auto; display: block; max-width: 100%; }
     .lvl-chart .grid { stroke: #e6ecf2; stroke-width: 1; }
-    .lvl-chart .axis-label { fill: var(--muted); font-size: 11px; font-weight: 600; }
+    .lvl-chart .axis-label { fill: var(--muted); font-size: 9px; font-weight: 600; }
     .lvl-chart .line { fill: none; stroke: var(--primary); stroke-width: 2.5; stroke-linejoin: round; }
     .lvl-chart .area { fill: var(--primary-soft); opacity: .35; }
     .lvl-chart .dot { stroke: #fff; stroke-width: 2; }
-    .lvl-chart .dot-val { fill: var(--primary-deep); font-size: 12px; font-weight: 700; text-anchor: middle; }
+    .lvl-chart .dot-val { fill: var(--primary-deep); font-size: 10px; font-weight: 700; text-anchor: middle; }
     .chip { display: inline-block; border-radius: 999px; padding: 4px 10px; font-size: .75rem; font-weight: 600; margin: 2px 3px 2px 0; background: #eef2f6; color: var(--ink); }
     .chip .lv-green { background: var(--green-soft); color: var(--green-dark); }
 
@@ -751,8 +752,9 @@
     }
 
     // ---- กราฟเส้นระดับผลการนิเทศ (SVG) ----
+    const LABEL_BREAKS = { 'ต้องปรับปรุง': ['ต้อง', 'ปรับปรุง'], 'ไม่ระบุ': ['ไม่', 'ระบุ'] };
     function drawLevelChart(labels, pcts, colors) {
-      const W = 340, H = 150, padL = 30, padR = 10, padT = 18, padB = 26;
+      const W = 340, H = 165, padL = 30, padR = 72, padT = 20, padB = 36;
       const maxY = 100, minY = 0;
       const n = labels.length;
       const x = i => padL + (W - padL - padR) * (n <= 1 ? 0.5 : (i / (n - 1)));
@@ -770,9 +772,12 @@
         `<circle class="dot" cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="4" fill="${colors[i]}"></circle>` +
         `<text class="dot-val" x="${p[0].toFixed(1)}" y="${(p[1] - 9).toFixed(1)}" fill="${colors[i]}">${pcts[i]}</text>`
       ).join('');
-      const xLabels = labels.map((l, i) =>
-        `<text class="axis-label" x="${x(i).toFixed(1)}" y="${H - 8}" style="text-anchor:middle;">${l}</text>`
-      ).join('');
+      const xLabels = labels.map((l, i) => {
+        const parts = LABEL_BREAKS[l] || [l];
+        return `<text class="axis-label" x="${x(i).toFixed(1)}" y="${H - 10}" style="text-anchor:middle;">` +
+          parts.map((p, j) => `<tspan x="${x(i).toFixed(1)}" dy="${j ? 10 : 0}">${p}</tspan>`).join('') +
+          `</text>`;
+      }).join('');
       return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="กราฟระดับผลการนิเทศ">${grid}
         <path class="area" d="${area}"></path>
         <path class="line" d="${line}"></path>
@@ -865,7 +870,9 @@
           <td>${statusBadge(t.status)}</td>
           <td class="small">${fmtNum(t.teachers.male)} / ${fmtNum(t.teachers.female)}</td>
           <td class="small">${fmtNum(t.students.male)} / ${fmtNum(t.students.female)}</td>
-          <td>${t.lat && t.lng ? '📍' : '—'}</td>
+          <td>${t.lat && t.lng
+            ? `<a href="https://www.google.com/maps?q=${encodeURIComponent(t.lat + ',' + t.lng)}&z=17" target="_blank" rel="noopener" title="เปิดแผนที่ ${t.lat}, ${t.lng}">📍</a>`
+            : '—'}</td>
         </tr>`).join('') || '<tr><td colspan="8" class="text-center text-muted py-3">ไม่พบข้อมูลที่ค้นหา</td></tr>';
     }
 
