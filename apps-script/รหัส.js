@@ -19,6 +19,8 @@ function doPost(e) {
       res = registerUser(payload);
     } else if (action === 'getTadikaList') {
       res = getTadikaList();
+    } else if (action === 'getStats') {
+      res = getStats();
     } else if (action === 'getTadikaData') {
       res = getTadikaData(payload);
     } else if (action === 'getEvaluations') {
@@ -115,6 +117,60 @@ function getTadikaList() {
     }
   }
   return {success: true, data: list};
+}
+
+// --- สถิติระบบนิเทศออนไลน์ (นับจากชีต ADDRESS/DATA/USERS) ---
+function getStats() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  let totalTadika = 0, totalEval = 0, totalUsers = 0, sumPct = 0;
+  const levelCounts = { 'ดีมาก': 0, 'ดี': 0, 'พอใช้': 0, 'ต้องปรับปรุง': 0 };
+  const latest = [];
+
+  const addr = ss.getSheetByName(SHEET_NAME2);
+  if(addr) {
+    const lastRow = addr.getLastRow();
+    if(lastRow >= 6) {
+      const vals = addr.getRange(6, 1, lastRow - 5, 1).getValues();
+      totalTadika = vals.filter(r => String(r[0]).trim() !== '').length;
+    }
+  }
+
+  const data = ss.getSheetByName(SHEET_NAME1);
+  if(data) {
+    const lastRow = data.getLastRow();
+    if(lastRow >= 2) {
+      const vals = data.getRange(2, 1, lastRow - 1, 15).getValues();
+      totalEval = vals.length;
+      vals.forEach(r => {
+        const pct = Number(r[9]);
+        if(!isNaN(pct)) {
+          sumPct += pct;
+          const lvl = String(r[10] || '').trim();
+          if(lvl in levelCounts) levelCounts[lvl]++;
+        }
+        latest.push({ name: String(r[2] || ''), timestamp: formatDate(r[0]), pct: isNaN(pct) ? 0 : pct, level: r[10] });
+      });
+      latest.sort((a, b) => a.timestamp < b.timestamp ? 1 : -1);
+    }
+  }
+
+  const users = ss.getSheetByName(SHEET_NAME3);
+  if(users) {
+    const lastRow = users.getLastRow();
+    if(lastRow >= 2) totalUsers = lastRow - 1;
+  }
+
+  return {
+    success: true,
+    data: {
+      totalTadika: totalTadika,
+      totalEval: totalEval,
+      totalUsers: totalUsers,
+      avgPct: totalEval ? Math.round(sumPct / totalEval) : 0,
+      levelCounts: levelCounts,
+      latest: latest.slice(0, 5)
+    }
+  };
 }
 
 // --- ดึงข้อมูลรายละเอียดของศูนย์ที่เลือก ---
