@@ -120,19 +120,34 @@ function getTadikaList() {
 }
 
 // --- สถิติระบบนิเทศออนไลน์ (นับจากชีต ADDRESS/DATA/USERS) ---
-// --- สถิติระบบนิเทศออนไลน์ (นับจากชีต ADDRESS/DATA/USERS) ---
 function getStats() {
   const ss = SpreadsheetApp.openById(SHEET_ID);
   let totalTadika = 0, totalEval = 0, totalUsers = 0, sumPct = 0;
-  const levelCounts = { 'ดีมาก': 0, 'ดี': 0, 'พอใช้': 0, 'ต้องปรับปรุง': 0 };
+  let registered = 0, unregistered = 0;
+  let tMale = 0, tFemale = 0, tTotal = 0, sMale = 0, sFemale = 0, sTotal = 0;
+  const levelCounts = { 'ดีมาก': 0, 'ดี': 0, 'พอใช้': 0, 'ต้องปรับปรุง': 0, 'ไม่ระบุ': 0 };
   const latest = [];
 
+  // ADDRESS: A=ID, B=สถานะ, J=เลขที่/หมู่/ถนน, O/P/Q=ครู ช/ญ/รวม, R/S/T=นักเรียน ช/ญ/รวม
   const addr = ss.getSheetByName(SHEET_NAME2);
   if(addr) {
     const lastRow = addr.getLastRow();
     if(lastRow >= 6) {
-      const vals = addr.getRange(6, 1, lastRow - 5, 1).getValues();
-      totalTadika = vals.filter(r => String(r[0]).trim() !== '').length;
+      const vals = addr.getRange(6, 1, lastRow - 5, 22).getValues();
+      const toNum = v => { const n = Number(String(v).replace(/,/g, '').trim()); return isNaN(n) ? 0 : n; };
+      vals.forEach(r => {
+        if(String(r[0]).trim() === '') return;
+        totalTadika++;
+        const status = String(r[1] || '').trim();
+        if(status) {
+          if(status.includes('จดทะเบียน') && !status.includes('ไม่')) registered++;
+          else unregistered++;
+        }
+        const tm = toNum(r[14]), tf = toNum(r[15]), tt = toNum(r[16]);
+        tMale += tm; tFemale += tf; tTotal += tt || (tm + tf);
+        const sm = toNum(r[17]), sf = toNum(r[18]), st = toNum(r[19]);
+        sMale += sm; sFemale += sf; sTotal += st || (sm + sf);
+      });
     }
   }
 
@@ -151,12 +166,11 @@ function getStats() {
       totalEval = vals.length;
       vals.forEach(r => {
         const pct = Number(r[ciPct]);
-        if(!isNaN(pct)) {
-          sumPct += pct;
-          const lvl = String(r[ciLvl] || '').trim();
-          if(lvl in levelCounts) levelCounts[lvl]++;
-        }
-        latest.push({ name: String(r[ciName] || ''), timestamp: formatDate(r[ciTs]), pct: isNaN(pct) ? 0 : pct, level: r[ciLvl] });
+        let lvl = String(r[ciLvl] || '').trim();
+        if(!lvl || !(lvl in levelCounts)) lvl = 'ไม่ระบุ';
+        levelCounts[lvl]++;
+        if(!isNaN(pct)) sumPct += pct;
+        latest.push({ name: String(r[ciName] || ''), timestamp: formatDate(r[ciTs]), pct: isNaN(pct) ? 0 : pct, level: lvl });
       });
       latest.sort((a, b) => a.timestamp < b.timestamp ? 1 : -1);
     }
@@ -172,11 +186,15 @@ function getStats() {
     success: true,
     data: {
       totalTadika: totalTadika,
+      registered: registered,
+      unregistered: unregistered,
+      teachers: { male: tMale, female: tFemale, total: tTotal },
+      students: { male: sMale, female: sFemale, total: sTotal },
       totalEval: totalEval,
       totalUsers: totalUsers,
       avgPct: totalEval ? Math.round(sumPct / totalEval) : 0,
       levelCounts: levelCounts,
-      latest: latest.slice(0, 5)
+      latest: latest.slice(0, 10)
     }
   };
 }
