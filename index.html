@@ -428,6 +428,10 @@
           </table>
         </div>
       </div>
+
+      <div class="app-footer">
+        <span class="org">สำนักงานจังหวัดนราธิวาส</span> | <span class="org">สำนักงานศึกษาธิการจังหวัดนราธิวาส</span> | <span class="org">สำนักงานการศึกษาเอกชนจังหวัดนราธิวาส</span>
+      </div>
     </div>
 
     <!-- ===== หน้าสมัครสมาชิก ===== -->
@@ -527,9 +531,10 @@
           <div class="card">
             <div class="card-title">
               <h4>ข้อมูลศูนย์ (แก้ไขได้)</h4>
-              <button type="button" class="btn btn-outline2 btn-sm" onclick="backToSelect()">เปลี่ยนศูนย์</button>
+              <div style="display:flex; gap:8px; align-items:center;"><span id="centerTypeBadge"></span><button type="button" class="btn btn-outline2 btn-sm" onclick="backToSelect()">เปลี่ยนศูนย์</button></div>
             </div>
             <input type="hidden" id="t_row">
+            <input type="hidden" id="t_type">
             <div class="row">
               <div class="col-6 col-md-3"><label>รหัส ID</label><input type="text" id="t_id" class="form-control bg-light" readonly></div>
               <div class="col-6 col-md-3"><label>สถานะ</label><input type="text" id="t_status" class="form-control"></div>
@@ -602,6 +607,7 @@
               <button type="button" class="btn btn-outline2 btn-sm mt-2" onclick="cancelEdit()">ยกเลิกการแก้ไข</button>
             </div>
             <input type="hidden" id="editRow">
+            <input type="hidden" id="editType">
 
             <div class="tabs" id="formTabs"></div>
             <div id="formPanels"></div>
@@ -733,6 +739,10 @@
     function tadikaAddr(t) {
       return [t.address, t.subdist ? 'ต.' + t.subdist : '', t.dist ? 'อ.' + t.dist : ''].filter(Boolean).join(' ');
     }
+    function typeBadge(type) {
+      if (type === 'ปอเนาะ') return '<span class="lv lv-blue">ปอเนาะ</span>';
+      return '<span class="lv lv-green">ตาดีกา</span>';
+    }
 
     // ---- กราฟเส้นระดับผลการนิเทศ (SVG) ----
     function drawLevelChart(labels, pcts, colors) {
@@ -787,7 +797,7 @@
       document.getElementById('addrBody').innerHTML = rows.map(t => `
         <tr>
           <td>${escHtml(t.id)}</td>
-          <td>${escHtml(t.name)}</td>
+          <td>${escHtml(t.name)} ${typeBadge(t.type)}</td>
           <td>${escHtml(t.mosque)}</td>
           <td class="small">${escHtml(tadikaAddr(t)) || '—'}</td>
           <td>${statusBadge(t.status)}</td>
@@ -1033,6 +1043,7 @@
       box.innerHTML = c.matches.map((t, i) => `
         <button type="button" class="suggest-item" onclick="selectTadika('${key}', ${i})">
           <b style="color:var(--primary-deep);">${escHtml(tadikaLabel(t))}</b>
+          ${typeBadge(t.type)}
           ${String(t.status || '').includes('จดทะเบียน') && !String(t.status || '').includes('ไม่') ? '✅' : '⛔'}
           ${t.lat && t.lng ? '<span style="color:var(--blue-dark);"> 📍</span>' : ''}<br>
           <span class="small text-muted">${escHtml(tadikaAddr(t)) || '—'}</span>
@@ -1057,7 +1068,7 @@
 
     // ---- แสดงข้อมูลพื้นฐานของตาดีกาที่เลือก (AutoComplete หน้าแรก) ----
     function renderAddrDetail(t) {
-      document.getElementById('addrSelName').innerHTML = '🏫 ' + escHtml(tadikaLabel(t));
+      document.getElementById('addrSelName').innerHTML = '🏫 ' + escHtml(tadikaLabel(t)) + ' ' + typeBadge(t.type);
       document.getElementById('addrSelDetail').innerText = tadikaAddr(t) || '—';
       const cells = [
         ['📌 สถานะ', statusBadge(t.status)],
@@ -1381,6 +1392,7 @@
         if (res.success) {
           const d = res.data;
           document.getElementById('t_row').value = d.row;
+          document.getElementById('t_type').value = d.type || (t.type || '');
           document.getElementById('t_id').value = d.id;
           document.getElementById('t_status').value = d.status;
           document.getElementById('t_mosque').value = d.mosque;
@@ -1406,8 +1418,9 @@
           document.getElementById('t_sFemale').value = d.sFemale;
           document.getElementById('t_sTotal').value = d.sTotal;
 
-          document.getElementById('selTadikaBadge').innerText = tadikaLabel(t);
-          document.getElementById('dashTadikaName').innerText = tadikaLabel(t);
+          document.getElementById('selTadikaBadge').innerHTML = tadikaLabel(t) + ' ' + typeBadge(t.type);
+          document.getElementById('dashTadikaName').innerHTML = tadikaLabel(t) + ' ' + typeBadge(t.type);
+          document.getElementById('centerTypeBadge').innerHTML = typeBadge(d.type || t.type);
           Swal.close();
           document.getElementById('dashCard').classList.remove('section-hidden');
           document.getElementById('evaluationSection').classList.remove('section-hidden');
@@ -1492,6 +1505,7 @@
       const h = evalHistory[idx];
       if (!h) return;
       document.getElementById('editRow').value = h.row;
+      document.getElementById('editType').value = h.type || '';
       document.getElementById('editBanner').classList.remove('d-none');
       document.getElementById('editInfo').innerText = h.timestamp + ' (ผู้นิเทศ: ' + h.supervisor + ')';
       document.getElementById('finalSubmitBtn').innerText = '💾 บันทึกการแก้ไขและอัปเดตข้อมูลศูนย์';
@@ -1544,6 +1558,7 @@
 
     function resetEditState() {
       document.getElementById('editRow').value = '';
+      document.getElementById('editType').value = '';
       document.getElementById('editBanner').classList.add('d-none');
       document.getElementById('editInfo').innerText = '';
       document.getElementById('finalSubmitBtn').innerText = '💾 บันทึกการนิเทศและอัปเดตข้อมูลศูนย์';
@@ -1598,8 +1613,10 @@
       const payload = {
         supervisor: currentUser.fname,
         editRow: document.getElementById('editRow').value,
+        editType: document.getElementById('editType').value,
         tadikaData: {
           row: document.getElementById('t_row').value,
+          type: document.getElementById('t_type').value,
           id: document.getElementById('t_id').value,
           status: document.getElementById('t_status').value,
           mosque: document.getElementById('t_mosque').value,

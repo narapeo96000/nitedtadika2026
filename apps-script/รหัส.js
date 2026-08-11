@@ -1,7 +1,22 @@
-const SHEET_ID = '1qk9eLhwKgPvh2fLwWNSthV4JKyDkJGqJojhLDus5460'; 
-const SHEET_NAME1 = 'DATA';
-const SHEET_NAME2 = 'ADDRESS';
-const SHEET_NAME3 = 'USERS';
+const SHEET_ID = '1qk9eLhwKgPvh2fLwWNSthV4JKyDkJGqJojhLDus5460';
+// ชื่อชีตตาม Google Sheets: แยกข้อมูลตามประเภทศูนย์ (ตาดีกา / ปอเนาะ)
+const SHEET_DATA_TADEKA = 'DATA_TADEKA';
+const SHEET_ADDR_TADEKA  = 'ADDR_TADEKA';
+const SHEET_DATA_PONDOK = 'DATA_PONDOK';
+const SHEET_ADDR_PONDOK = 'ADDR_PONDOK';
+const SHEET_USERS = 'USERS';
+const TYPE_TADEKA = 'ตาดีกา';
+const TYPE_PONDOK = 'ปอเนาะ';
+const ADDR_SHEETS = [
+  { name: SHEET_ADDR_TADEKA, type: TYPE_TADEKA },
+  { name: SHEET_ADDR_PONDOK, type: TYPE_PONDOK }
+];
+const DATA_SHEETS = [
+  { name: SHEET_DATA_TADEKA, type: TYPE_TADEKA },
+  { name: SHEET_DATA_PONDOK, type: TYPE_PONDOK }
+];
+function getAddrSheet(type) { return type === TYPE_PONDOK ? SHEET_ADDR_PONDOK : SHEET_ADDR_TADEKA; }
+function getDataSheet(type) { return type === TYPE_PONDOK ? SHEET_DATA_PONDOK : SHEET_DATA_TADEKA; }
 
 // โครงสร้างใหม่ของชีต DATA (15 คอลัมน์ รองรับการประเมิน 4 ด้าน + สรุป)
 const DATA_HEADERS = ['Timestamp', 'ID ศูนย์', 'ชื่อศูนย์', 'ประเภทการประเมิน', 'คะแนนแบบ1', 'คะแนนแบบ2', 'คะแนนแบบ3', 'คะแนนแบบ4', 'รวม/150', 'ร้อยละ', 'ระดับ', 'รายละเอียด', 'ผู้นิเทศ', 'แก้ไขครั้งล่าสุด', 'ผู้แก้ไขล่าสุด'];
@@ -50,9 +65,9 @@ const USERS_HEADERS = ['Username','Password','ชื่อ-นามสกุล
 // --- เตรียมชีต USERS ให้มีคอลัมน์ สถานะ/บทบาท + สร้างบัญชี admin ถ้ายังไม่มี ---
 function ensureUsersSheet() {
   const ss = SpreadsheetApp.openById(SHEET_ID);
-  let sheet = ss.getSheetByName(SHEET_NAME3);
+  let sheet = ss.getSheetByName(SHEET_USERS);
   if(!sheet) {
-    sheet = ss.insertSheet(SHEET_NAME3);
+    sheet = ss.insertSheet(SHEET_USERS);
     sheet.getRange(1, 1, 1, USERS_HEADERS.length).setValues([USERS_HEADERS]);
     sheet.appendRow(['admin','admin123','ผู้ดูแลระบบ','-','ใช้งาน','ผู้ดูแลระบบ']);
     return sheet;
@@ -180,36 +195,39 @@ function setUserStatus(data) {
   return {success: false, message: 'สถานะไม่ถูกต้อง'};
 }
 
-// --- ดึงรายชื่อศูนย์มาให้เลือก (Autocomplete) ---
+// --- ดึงรายชื่อศูนย์มาให้เลือก (Autocomplete) จากทั้งชีต ADDR_TADEKA + ADDR_PONDOK ---
 function getTadikaList() {
-  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME2);
-  if(!sheet) return {success: false, message: "ไม่พบชีต ADDRESS"};
-  
-  const lastRow = sheet.getLastRow();
-  if(lastRow < 6) return {success: true, data: []};
-  
-  // คอลัมน์: A=ID, B=สถานะ, C=มัสยิด, D=ชื่อศูนย์, E=ประธาน, J=ที่อยู่, K=ตำบล, L=อำเภอ,
-  // M=โทร, N=ขนาด, O/P/Q=ครู ช/ญ/รวม, R/S/T=นักเรียน ช/ญ/รวม, U=ละติจูด, V=ลองจิจูด
-  const rows = sheet.getRange(6, 1, lastRow - 5, 22).getValues(); 
+  const ss = SpreadsheetApp.openById(SHEET_ID);
   let list = [];
-  for(let i = 0; i < rows.length; i++) {
-    if(rows[i][0] != "") {
-      list.push({
-        id: rows[i][0],
-        status: rows[i][1],
-        name: rows[i][3],
-        mosque: rows[i][2],
-        head: rows[i][4],
-        phone: rows[i][12],
-        size: rows[i][13],
-        teachers: { male: rows[i][14], female: rows[i][15], total: rows[i][16] },
-        students: { male: rows[i][17], female: rows[i][18], total: rows[i][19] },
-        address: rows[i][9],
-        subdist: rows[i][10],
-        dist: rows[i][11],
-        lat: rows[i][20],
-        lng: rows[i][21]
-      });
+
+  for(const cfg of ADDR_SHEETS) {
+    const sheet = ss.getSheetByName(cfg.name);
+    if(!sheet) continue;
+    const lastRow = sheet.getLastRow();
+    if(lastRow < 6) continue;
+    // คอลัมน์: A=ID, B=สถานะ, C=มัสยิด, D=ชื่อศูนย์, E=ประธาน, J=ที่อยู่, K=ตำบล, L=อำเภอ,
+    // M=โทร, N=ขนาด, O/P/Q=ครู ช/ญ/รวม, R/S/T=นักเรียน ช/ญ/รวม, U=ละติจูด, V=ลองจิจูด
+    const rows = sheet.getRange(6, 1, lastRow - 5, 22).getValues();
+    for(let i = 0; i < rows.length; i++) {
+      if(rows[i][0] != "") {
+        list.push({
+          id: rows[i][0],
+          type: cfg.type,
+          status: rows[i][1],
+          name: rows[i][3],
+          mosque: rows[i][2],
+          head: rows[i][4],
+          phone: rows[i][12],
+          size: rows[i][13],
+          teachers: { male: rows[i][14], female: rows[i][15], total: rows[i][16] },
+          students: { male: rows[i][17], female: rows[i][18], total: rows[i][19] },
+          address: rows[i][9],
+          subdist: rows[i][10],
+          dist: rows[i][11],
+          lat: rows[i][20],
+          lng: rows[i][21]
+        });
+      }
     }
   }
   return {success: true, data: list};
@@ -225,54 +243,54 @@ function getStats() {
   const latest = [];
 
   // ADDRESS: A=ID, B=สถานะ, J=เลขที่/หมู่/ถนน, O/P/Q=ครู ช/ญ/รวม, R/S/T=นักเรียน ช/ญ/รวม
-  const addr = ss.getSheetByName(SHEET_NAME2);
-  if(addr) {
+  const toNum = v => { const n = Number(String(v).replace(/,/g, '').trim()); return isNaN(n) ? 0 : n; };
+  for(const cfg of ADDR_SHEETS) {
+    const addr = ss.getSheetByName(cfg.name);
+    if(!addr) continue;
     const lastRow = addr.getLastRow();
-    if(lastRow >= 6) {
-      const vals = addr.getRange(6, 1, lastRow - 5, 22).getValues();
-      const toNum = v => { const n = Number(String(v).replace(/,/g, '').trim()); return isNaN(n) ? 0 : n; };
-      vals.forEach(r => {
-        if(String(r[0]).trim() === '') return;
-        totalTadika++;
-        const status = String(r[1] || '').trim();
-        if(status) {
-          if(status.includes('จดทะเบียน') && !status.includes('ไม่')) registered++;
-          else unregistered++;
-        }
-        const tm = toNum(r[14]), tf = toNum(r[15]), tt = toNum(r[16]);
-        tMale += tm; tFemale += tf; tTotal += tt || (tm + tf);
-        const sm = toNum(r[17]), sf = toNum(r[18]), st = toNum(r[19]);
-        sMale += sm; sFemale += sf; sTotal += st || (sm + sf);
-      });
-    }
+    if(lastRow < 6) continue;
+    const vals = addr.getRange(6, 1, lastRow - 5, 22).getValues();
+    vals.forEach(r => {
+      if(String(r[0]).trim() === '') return;
+      totalTadika++;
+      const status = String(r[1] || '').trim();
+      if(status) {
+        if(status.includes('จดทะเบียน') && !status.includes('ไม่')) registered++;
+        else unregistered++;
+      }
+      const tm = toNum(r[14]), tf = toNum(r[15]), tt = toNum(r[16]);
+      tMale += tm; tFemale += tf; tTotal += tt || (tm + tf);
+      const sm = toNum(r[17]), sf = toNum(r[18]), st = toNum(r[19]);
+      sMale += sm; sFemale += sf; sTotal += st || (sm + sf);
+    });
   }
 
-  const data = ss.getSheetByName(SHEET_NAME1);
-  if(data) {
+  for(const cfg of DATA_SHEETS) {
+    const data = ss.getSheetByName(cfg.name);
+    if(!data) continue;
     const lastRow = data.getLastRow();
-    if(lastRow >= 2) {
-      // หาตำแหน่งคอลัมน์จาก header เพื่อกันข้อมูลเลื่อนคอลัมน์
-      const header = data.getRange(1, 1, 1, 15).getValues()[0];
-      const colOf = name => {
-        for(let i = 0; i < header.length; i++) if(String(header[i]).trim() === name) return i;
-        return -1;
-      };
-      const ciName = colOf('ชื่อศูนย์'), ciPct = colOf('ร้อยละ'), ciLvl = colOf('ระดับ'), ciTs = colOf('Timestamp');
-      const vals = data.getRange(2, 1, lastRow - 1, 15).getValues();
-      totalEval = vals.length;
-      vals.forEach(r => {
-        const pct = Number(r[ciPct]);
-        let lvl = String(r[ciLvl] || '').trim();
-        if(!lvl || !(lvl in levelCounts)) lvl = 'ไม่ระบุ';
-        levelCounts[lvl]++;
-        if(!isNaN(pct)) sumPct += pct;
-        latest.push({ name: String(r[ciName] || ''), timestamp: formatDate(r[ciTs]), pct: isNaN(pct) ? 0 : pct, level: lvl });
-      });
-      latest.sort((a, b) => a.timestamp < b.timestamp ? 1 : -1);
-    }
+    if(lastRow < 2) continue;
+    // หาตำแหน่งคอลัมน์จาก header เพื่อกันข้อมูลเลื่อนคอลัมน์
+    const header = data.getRange(1, 1, 1, 15).getValues()[0];
+    const colOf = name => {
+      for(let i = 0; i < header.length; i++) if(String(header[i]).trim() === name) return i;
+      return -1;
+    };
+    const ciName = colOf('ชื่อศูนย์'), ciPct = colOf('ร้อยละ'), ciLvl = colOf('ระดับ'), ciTs = colOf('Timestamp');
+    const vals = data.getRange(2, 1, lastRow - 1, 15).getValues();
+    totalEval += vals.length;
+    vals.forEach(r => {
+      const pct = Number(r[ciPct]);
+      let lvl = String(r[ciLvl] || '').trim();
+      if(!lvl || !(lvl in levelCounts)) lvl = 'ไม่ระบุ';
+      levelCounts[lvl]++;
+      if(!isNaN(pct)) sumPct += pct;
+      latest.push({ name: String(r[ciName] || ''), timestamp: formatDate(r[ciTs]), pct: isNaN(pct) ? 0 : pct, level: lvl });
+    });
   }
+  latest.sort((a, b) => a.timestamp < b.timestamp ? 1 : -1);
 
-  const users = ss.getSheetByName(SHEET_NAME3);
+  const users = ss.getSheetByName(SHEET_USERS);
   if(users) {
     const lastRow = users.getLastRow();
     if(lastRow >= 2) totalUsers = lastRow - 1;
@@ -295,35 +313,40 @@ function getStats() {
   };
 }
 
-// --- ดึงข้อมูลรายละเอียดของศูนย์ที่เลือก ---
+// --- ดึงข้อมูลรายละเอียดของศูนย์ที่เลือก (ค้นหาจากทั้ง 2 ชีต ADDR) ---
 function getTadikaData(id) {
-  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME2);
-  const lastRow = sheet.getLastRow();
-  const rows = sheet.getRange(6, 1, lastRow - 5, 22).getValues(); 
-  
-  for(let i = 0; i < rows.length; i++) {
-    if(rows[i][0] == id) {
-      return {
-        success: true,
-        data: {
-          row: i + 6,
-          id: rows[i][0], status: rows[i][1], mosque: rows[i][2], name: rows[i][3], 
-          head: rows[i][4], eduSec: rows[i][5], eduRel: rows[i][6], foundedDate: rows[i][7], 
-          regNum: rows[i][8], address: rows[i][9], subdist: rows[i][10], dist: rows[i][11], 
-          phone: rows[i][12], size: rows[i][13], tMale: rows[i][14], tFemale: rows[i][15], 
-          tTotal: rows[i][16], sMale: rows[i][17], sFemale: rows[i][18], sTotal: rows[i][19],
-          lat: rows[i][20], lng: rows[i][21]
-        }
-      };
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  id = String(id).trim();
+  for(const cfg of ADDR_SHEETS) {
+    const sheet = ss.getSheetByName(cfg.name);
+    if(!sheet) continue;
+    const lastRow = sheet.getLastRow();
+    if(lastRow < 6) continue;
+    const rows = sheet.getRange(6, 1, lastRow - 5, 22).getValues();
+    for(let i = 0; i < rows.length; i++) {
+      if(String(rows[i][0]).trim() === id) {
+        return {
+          success: true,
+          data: {
+            row: i + 6,
+            type: cfg.type,
+            id: rows[i][0], status: rows[i][1], mosque: rows[i][2], name: rows[i][3],
+            head: rows[i][4], eduSec: rows[i][5], eduRel: rows[i][6], foundedDate: rows[i][7],
+            regNum: rows[i][8], address: rows[i][9], subdist: rows[i][10], dist: rows[i][11],
+            phone: rows[i][12], size: rows[i][13], tMale: rows[i][14], tFemale: rows[i][15],
+            tTotal: rows[i][16], sMale: rows[i][17], sFemale: rows[i][18], sTotal: rows[i][19],
+            lat: rows[i][20], lng: rows[i][21]
+          }
+        };
+      }
     }
   }
   return {success: false, message: "ไม่พบข้อมูลศูนย์"};
 }
 
-// --- บันทึกพิกัด GPS ของศูนย์ (ชีต ADDRESS: คอลัมน์ U=ละติจูด, V=ลองจิจูด) ---
+// --- บันทึกพิกัด GPS ของศูนย์ (ชีต ADDR ที่ตรงตามประเภท: คอลัมน์ U=ละติจูด, V=ลองจิจูด) ---
 function savePin(data) {
-  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME2);
-  if(!sheet) return {success: false, message: "ไม่พบชีต ADDRESS"};
+  const ss = SpreadsheetApp.openById(SHEET_ID);
   const id = String(data && data.id ? data.id : '').trim();
   const lat = String(data && data.lat != null ? data.lat : '').trim();
   const lng = String(data && data.lng != null ? data.lng : '').trim();
@@ -331,26 +354,31 @@ function savePin(data) {
   if(!lat || !lng || isNaN(Number(lat)) || isNaN(Number(lng))) {
     return {success: false, message: "พิกัดไม่ถูกต้อง (ต้องเป็นตัวเลขละติจูด/ลองจิจูด)"};
   }
-  const lastRow = sheet.getLastRow();
-  if(lastRow < 6) return {success: false, message: "ชีต ADDRESS ยังไม่มีข้อมูลศูนย์"};
-  const rows = sheet.getRange(6, 1, lastRow - 5, 22).getValues();
-  for(let i = 0; i < rows.length; i++) {
-    if(String(rows[i][0]).trim() === id) {
-      const row = i + 6;
-      sheet.getRange(row, 21).setValue(Number(lat));
-      sheet.getRange(row, 22).setValue(Number(lng));
-      return {success: true, message: "บันทึกพิกัดเรียบร้อย (U=ละติจูด, V=ลองจิจูด)", row: row};
+  for(const cfg of ADDR_SHEETS) {
+    const sheet = ss.getSheetByName(cfg.name);
+    if(!sheet) continue;
+    const lastRow = sheet.getLastRow();
+    if(lastRow < 6) continue;
+    const rows = sheet.getRange(6, 1, lastRow - 5, 22).getValues();
+    for(let i = 0; i < rows.length; i++) {
+      if(String(rows[i][0]).trim() === id) {
+        const row = i + 6;
+        sheet.getRange(row, 21).setValue(Number(lat));
+        sheet.getRange(row, 22).setValue(Number(lng));
+        return {success: true, message: "บันทึกพิกัดเรียบร้อย (U=ละติจูด, V=ลองจิจูด)", row: row};
+      }
     }
   }
   return {success: false, message: "ไม่พบข้อมูลศูนย์นี้ในชีต ADDRESS"};
 }
 
-// --- เตรียมชีต DATA ให้มี Header ครบตาม DATA_HEADERS (15 คอลัมน์) ---
-function ensureDataSheet() {
+// --- เตรียมชีต DATA (ตาดีกา/ปอเนาะ) ให้มี Header ครบตาม DATA_HEADERS (15 คอลัมน์) ---
+function ensureDataSheet(type) {
+  const name = getDataSheet(type);
   const ss = SpreadsheetApp.openById(SHEET_ID);
-  let sheet = ss.getSheetByName(SHEET_NAME1);
+  let sheet = ss.getSheetByName(name);
   if(!sheet) {
-    sheet = ss.insertSheet(SHEET_NAME1);
+    sheet = ss.insertSheet(name);
     sheet.getRange(1, 1, 1, DATA_HEADERS.length).setValues([DATA_HEADERS]);
     return sheet;
   }
@@ -366,49 +394,60 @@ function formatDate(d) {
          pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
 }
 
-// --- ดึงประวัติการนิเทศของศูนย์ที่เลือก (สำหรับกลับมาแก้ไขได้) ---
+// --- ดึงประวัติการนิเทศของศูนย์ที่เลือก (ค้นหาจากทั้ง 2 ชีต DATA) ---
 function getEvaluations(tadikaId) {
-  const sheet = ensureDataSheet();
-  const lastRow = sheet.getLastRow();
-  if(lastRow < 2) return {success: true, data: []};
-
-  const rows = sheet.getRange(2, 1, lastRow - 1, DATA_HEADERS.length).getValues();
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  tadikaId = String(tadikaId).trim();
   const list = [];
-  for(let i = 0; i < rows.length; i++) {
-    if(String(rows[i][1]).trim() == String(tadikaId).trim()) {
-      let details = null;
-      try { details = JSON.parse(rows[i][11] || 'null'); } catch(e) { details = null; }
-      list.push({
-        row: i + 2,
-        timestamp: formatDate(rows[i][0]),
-        id: rows[i][1],
-        name: rows[i][2],
-        formType: rows[i][3],
-        score1: rows[i][4],
-        score2: rows[i][5],
-        score3: rows[i][6],
-        score4: rows[i][7],
-        totalScore: rows[i][8],
-        pct: rows[i][9],
-        level: rows[i][10],
-        details: details,
-        supervisor: rows[i][12],
-        lastEdit: formatDate(rows[i][13]),
-        lastEditor: rows[i][14]
-      });
+
+  for(const cfg of DATA_SHEETS) {
+    const sheet = ss.getSheetByName(cfg.name);
+    if(!sheet) continue;
+    const lastRow = sheet.getLastRow();
+    if(lastRow < 2) continue;
+    const rows = sheet.getRange(2, 1, lastRow - 1, DATA_HEADERS.length).getValues();
+    for(let i = 0; i < rows.length; i++) {
+      if(String(rows[i][1]).trim() === tadikaId) {
+        let details = null;
+        try { details = JSON.parse(rows[i][11] || 'null'); } catch(e) { details = null; }
+        list.push({
+          row: i + 2,
+          type: cfg.type,
+          timestamp: formatDate(rows[i][0]),
+          id: rows[i][1],
+          name: rows[i][2],
+          formType: rows[i][3],
+          score1: rows[i][4],
+          score2: rows[i][5],
+          score3: rows[i][6],
+          score4: rows[i][7],
+          totalScore: rows[i][8],
+          pct: rows[i][9],
+          level: rows[i][10],
+          details: details,
+          supervisor: rows[i][12],
+          lastEdit: formatDate(rows[i][13]),
+          lastEditor: rows[i][14]
+        });
+      }
     }
   }
   list.sort((a, b) => a.timestamp < b.timestamp ? 1 : -1);
   return {success: true, data: list};
 }
 
-// --- บันทึก/แก้ไขผลนิเทศ + อัปเดตข้อมูลศูนย์ (ประทับเวลาและผู้แก้ไขทุกครั้ง) ---
+// --- บันทึก/แก้ไขผลนิเทศ + อัปเดตข้อมูลศูนย์ (เลือกชีตตามประเภทตาดีกา/ปอเนาะ) ---
 function saveEvaluation(payload) {
   const ss = SpreadsheetApp.openById(SHEET_ID);
-  
-  // 5.1 อัปเดตข้อมูลศูนย์ลงชีต ADDRESS
-  const addressSheet = ss.getSheetByName(SHEET_NAME2);
   const t = payload.tadikaData;
+  const e = payload.evalData;
+  // ประเภทศูนย์: มาจากข้อมูลศูนย์ (เพิ่ม), หรือจากประวัติที่กำลังแก้ไข (แก้ไข)
+  const type = (t && t.type) || (payload.editType && payload.editType.trim()) || TYPE_TADEKA;
+  const dataType = (payload.editRow && !isNaN(payload.editRow) && payload.editType && payload.editType.trim())
+    ? payload.editType.trim() : type;
+
+  // อัปเดตข้อมูลศูนย์ลงชีต ADDR ที่ตรงตามประเภท
+  const addressSheet = ss.getSheetByName(getAddrSheet(type));
   const updateValues = [[
     t.status, t.mosque, t.name, t.head, t.eduSec, t.eduRel, t.foundedDate, t.regNum,
     t.address, t.subdist, t.dist, t.phone, t.size, t.tMale, t.tFemale, t.tTotal,
@@ -418,9 +457,8 @@ function saveEvaluation(payload) {
     addressSheet.getRange(t.row, 2, 1, 21).setValues(updateValues);
   }
 
-  // 5.2 บันทึก/แก้ไขผลนิเทศลงชีต DATA
-  const dataSheet = ensureDataSheet();
-  const e = payload.evalData;
+  // บันทึก/แก้ไขผลนิเทศลงชีต DATA ที่ตรงตามประเภท
+  const dataSheet = ensureDataSheet(dataType);
   const supervisor = String(payload.supervisor);
   const now = new Date();
   const detailsJSON = JSON.stringify({ answers: e.answers || {}, comment: e.comment || '', strengths: e.strengths || '', improve: e.improve || '' });
