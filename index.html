@@ -542,10 +542,10 @@
         </div>
       </div>
 
-      <!-- แผนที่ปักหมุดพิกัด (แสดงหลังล็อกอิน, ไม่บังคับ) -->
+      <!-- แผนที่ปักหมุดแผนที่ (แสดงหลังล็อกอิน, ไม่บังคับ) -->
       <div class="card">
         <div class="card-title">
-          <h4>📍 แผนที่และพิกัดศูนย์</h4>
+          <h4>📍 แผนที่ศูนย์</h4>
           <span class="badge" id="pinBadge">ยังไม่ได้เลือกศูนย์</span>
         </div>
         <div id="pinMapBox" style="height:280px; border-radius:14px; border:1.5px solid var(--border); z-index:0;"></div>
@@ -554,11 +554,11 @@
           <div class="col-6"><label>ลองจิจูด</label><input type="text" id="pinLngIn" class="form-control bg-light" readonly placeholder="-"></div>
         </div>
         <div class="row mt-2">
-          <div class="col-6"><button type="button" class="btn btn-primary w-100" id="savePinBtn" onclick="savePinToSheet()" disabled>💾 บันทึกพิกัด</button></div>
+          <div class="col-6"><button type="button" class="btn btn-primary w-100" id="savePinBtn" onclick="savePinToSheet()" disabled>💾 บันทึกแผนที่</button></div>
           <div class="col-6"><button type="button" class="btn btn-outline w-100" onclick="pinByGPS()">📍 ตำแหน่งปัจจุบัน</button></div>
         </div>
         <div class="info-box mt-2 small" style="margin-bottom:0;">
-          👉 คลิกบนแผนที่ (หรือกด <b>📍 ตำแหน่งปัจจุบัน</b>) แล้วกด <b>💾 บันทึกพิกัด</b> — ไม่บังคับ แต่แนะนำให้ปักหมุดเพื่อใช้เดินทางนิเทศ บันทึกลงชีต ADDRESS (U=ละติจูด, V=ลองจิจูด)
+          👉 คลิกบนแผนที่ (หรือกด <b>📍 ตำแหน่งปัจจุบัน</b>) แล้วกด <b>💾 บันทึกแผนที่</b> — ไม่บังคับ แต่แนะนำให้ปักหมุดเพื่อใช้เดินทางนิเทศ บันทึกลงชีต ADDRESS (U=ละติจูด, V=ลองจิจูด)
         </div>
         <button class="btn btn-success w-100 mt-3" id="selectBtn" onclick="fetchTadikaData()" disabled>เริ่มการนิเทศ</button>
       </div>
@@ -591,8 +591,10 @@
               <div class="col-6 col-md-3"><label>สถานะ</label><input type="text" id="t_status" class="form-control"></div>
               <div class="col-6 col-md-3"><label>ขนาดศูนย์</label><input type="text" id="t_size" class="form-control"></div>
               <div class="col-6 col-md-3"><label>โทรศัพท์</label><input type="text" id="t_phone" class="form-control"></div>
-              <div class="col-12 col-md-6"><label>ชื่อศูนย์ (ตาดีกา)</label><input type="text" id="t_name" class="form-control" required></div>
-              <div class="col-12 col-md-6"><label>ชื่อมัสยิด</label><input type="text" id="t_mosque" class="form-control"></div>
+              <div class="col-12"><label>ชื่อศูนย์ (ตาดีกา) และชื่อมัสยิด</label>
+                <input type="text" id="t_nameMosque" class="form-control" placeholder="เช่น มูฮำมาดียะห์อัลอิสลามยะห์ (มัสยิดวุสตอ)" required>
+                <input type="hidden" id="t_mosque">
+                <input type="hidden" id="t_name">
               <div class="col-6 col-md-4"><label>ประธานศูนย์ฯ / โต๊ะครู</label><input type="text" id="t_head" class="form-control"></div>
               <div class="col-6 col-md-4"><label>วุฒิ(สามัญ)</label><input type="text" id="t_eduSec" class="form-control"></div>
               <div class="col-6 col-md-4"><label>วุฒิ(ศาสนา)</label><input type="text" id="t_eduRel" class="form-control"></div>
@@ -602,7 +604,7 @@
               <div class="col-6 col-md-4"><label>ตำบล</label><input type="text" id="t_subdist" class="form-control"></div>
               <div class="col-6 col-md-4"><label>อำเภอ</label><input type="text" id="t_dist" class="form-control"></div>
               <div class="col-12 col-md-4">
-                <label>พิกัด GPS (ปักหมุด)</label>
+                <label>แผนที่ GPS (ปักหมุด)</label>
                 <div style="display:flex; gap:6px;">
                   <input type="text" id="t_lat" class="form-control" placeholder="ละติจูด" readonly>
                   <input type="text" id="t_lng" class="form-control" placeholder="ลองจิจูด" readonly>
@@ -620,12 +622,12 @@
               </div>
             </div>
             <div class="row mt-3">
-              <div class="col-6 col-md-4"><label>ครู ชาย/หญิง/รวม</label>
+              <div class="col-6 col-md-4"><label>จำนวนครูผู้สอน (ช/ญ/รวม)</label>
                 <div class="row"><div class="col"><input type="number" id="t_tMale" class="form-control" placeholder="ชาย"></div>
                 <div class="col"><input type="number" id="t_tFemale" class="form-control" placeholder="หญิง"></div>
                 <div class="col"><input type="number" id="t_tTotal" class="form-control" placeholder="รวม"></div></div>
               </div>
-              <div class="col-6 col-md-4"><label>นักเรียน ชาย/หญิง/รวม</label>
+              <div class="col-6 col-md-4"><label>จำนวนนักเรียน (ช/ญ/รวม)</label>
                 <div class="row"><div class="col"><input type="number" id="t_sMale" class="form-control" placeholder="ชาย"></div>
                 <div class="col"><input type="number" id="t_sFemale" class="form-control" placeholder="หญิง"></div>
                 <div class="col"><input type="number" id="t_sTotal" class="form-control" placeholder="รวม"></div></div>
@@ -883,6 +885,21 @@
       const m = (t.mosque && String(t.mosque).trim()) ? ' [' + t.mosque + ']' : '';
       return String(t.name || t.id) + m;
     }
+    // รวมชื่อศูนย์ + ชื่อมัสยิด ให้แสดงในช่องเดียว เช่น "ศูนย์ชื่อ (มัสยิด)"
+    function mergeNameMosque(name, mosque) {
+      name = String(name || '').trim();
+      mosque = String(mosque || '').trim();
+      if (!name && !mosque) return '';
+      if (!mosque) return name;
+      return name ? name + ' (' + mosque + ')' : mosque;
+    }
+    // แยกค่าจากช่องรวมกลับเป็นชื่อศูนย์ + ชื่อมัสยิด (เก็บแยกคอลัมน์ตามเดิม)
+    function splitNameMosque() {
+      const v = String(document.getElementById('t_nameMosque').value || '').trim();
+      const m = v.match(/^(.*?)\s*\(\s*(.*?)\s*\)\s*$/);
+      document.getElementById('t_name').value = m ? m[1].trim() : v;
+      document.getElementById('t_mosque').value = m ? m[2].trim() : '';
+    }
     function tadikaAddr(t) {
       return [t.address, t.subdist ? 'ต.' + t.subdist : '', t.dist ? 'อ.' + t.dist : ''].filter(Boolean).join(' ');
     }
@@ -942,7 +959,7 @@
       { key: 'status',    icon: '📌', label: 'สถานะ' },
       { key: 'teachers',  icon: '👨‍🏫', label: 'ครู (ช/ญ)' },
       { key: 'students',  icon: '🎒', label: 'นักเรียน (ช/ญ)' },
-      { key: 'pin',       icon: '📍', label: 'พิกัด' }
+      { key: 'pin',       icon: '📍', label: 'แผนที่' }
     ];
     let addrSort = { key: 'name', dir: 'asc' };
 
@@ -1287,7 +1304,7 @@
         ['📏 ขนาดศูนย์', escHtml(t.size) || '—'],
         ['👨‍🏫 ครู (ช/ญ/รวม)', fmtNum(t.teachers.male) + ' / ' + fmtNum(t.teachers.female) + ' / ' + fmtNum(t.teachers.total)],
         ['🎒 นักเรียน (ช/ญ/รวม)', fmtNum(t.students.male) + ' / ' + fmtNum(t.students.female) + ' / ' + fmtNum(t.students.total)],
-        ['📍 พิกัด', (t.lat && t.lng) ? t.lat + ', ' + t.lng : 'ยังไม่มีพิกัด']
+        ['📍 แผนที่', (t.lat && t.lng) ? t.lat + ', ' + t.lng : 'ยังไม่มีแผนที่']
       ];
       document.getElementById('addrSelExtra').innerHTML = '<div class="tk-row">' + cells.map(([k, v]) =>
         `<div class="tk-cell"><span class="tk-lbl">${k}</span><span class="tk-val" style="font-size:1rem;">${v}</span></div>`
@@ -1665,14 +1682,14 @@
       Swal.fire({ icon: 'success', title: 'AI ร่างแผนพัฒนาสำเร็จ', html: `ระดับผลการนิเทศเบื้องต้น: <b>${lvl.name} (${pct}%)</b><br>กรุณาตรวจสอบและปรับแก้ก่อนบันทึก`, confirmButtonText: 'ตกลง' });
     }
 
-    // ---- พิกัด GPS (ปักหมุดตาดีกา) ----
+    // ---- แผนที่ GPS (ปักหมุดตาดีกา) ----
     function showPinMap(lat, lng, label) {
       const url = 'https://www.google.com/maps?q=' + encodeURIComponent(lat + ',' + lng) + '&z=17';
       const embed = 'https://maps.google.com/maps?q=' + encodeURIComponent(lat + ',' + lng) + '&z=17&output=embed';
       document.getElementById('pinMap').src = embed;
       document.getElementById('pinMapWrap').classList.remove('d-none');
       const st = document.getElementById('pinStatus');
-      st.innerHTML = '<b>📍 พิกัด:</b> ' + escHtml(lat) + ', ' + escHtml(lng) +
+      st.innerHTML = '<b>📍 แผนที่:</b> ' + escHtml(lat) + ', ' + escHtml(lng) +
         ' <a href="' + url + '" target="_blank" rel="noopener" style="color:var(--blue-dark); font-weight:600;">เปิดแผนที่ ↗</a>';
       st.classList.remove('d-none');
       if (label) document.getElementById('dashTadikaName').innerText = label;
@@ -1711,7 +1728,7 @@
       );
     }
 
-    // ---- แผนที่ปักหมุด (Leaflet + OpenStreetMap — เลือกพิกัดจากแผนที่ได้) ----
+    // ---- แผนที่ปักหมุด (Leaflet + OpenStreetMap — เลือกแผนที่จากแผนที่ได้) ----
     let pinMapObj = null;
     let pinMarker = null;
     let pinCoords = null;
@@ -1738,7 +1755,7 @@
       pinCoords = { lat: la, lng: lo };
       document.getElementById('pinLatIn').value = la;
       document.getElementById('pinLngIn').value = lo;
-      document.getElementById('pinBadge').innerText = 'พิกัด: ' + la + ', ' + lo;
+      document.getElementById('pinBadge').innerText = 'แผนที่: ' + la + ', ' + lo;
       if (!pinMarker) {
         pinMarker = L.marker([la, lo], { draggable: true }).addTo(pinMapObj);
         pinMarker.on('dragend', (e) => {
@@ -1771,9 +1788,9 @@
       if (t.lat && t.lng) {
         setPinCoords(t.lat, t.lng);
         pinMapObj.setView([Number(t.lat), Number(t.lng)], 16);
-        badge.innerText = '📍 มีพิกัดแล้ว — คลิกบนแผนที่เพื่อแก้ไข';
+        badge.innerText = '📍 มีแผนที่แล้ว — คลิกบนแผนที่เพื่อแก้ไข';
       } else {
-        badge.innerText = 'ยังไม่มีพิกัด — คลิกบนแผนที่เพื่อปักหมุด';
+        badge.innerText = 'ยังไม่มีแผนที่ — คลิกบนแผนที่เพื่อปักหมุด';
         document.getElementById('savePinBtn').disabled = false;
       }
     }
@@ -1792,7 +1809,7 @@
           const lat = pos.coords.latitude, lng = pos.coords.longitude;
           setPinCoords(lat, lng);
           pinMapObj.setView([lat, lng], 17);
-          Swal.fire({ icon: 'success', title: 'ปักหมุดตำแหน่งปัจจุบัน', text: 'ละติจูด: ' + lat.toFixed(6) + ', ลองจิจูด: ' + lng.toFixed(6) + ' — กด 💾 บันทึกพิกัด เพื่อบันทึก', timer: 2200, showConfirmButton: false });
+          Swal.fire({ icon: 'success', title: 'ปักหมุดตำแหน่งปัจจุบัน', text: 'ละติจูด: ' + lat.toFixed(6) + ', ลองจิจูด: ' + lng.toFixed(6) + ' — กด 💾 บันทึกแผนที่ เพื่อบันทึก', timer: 2200, showConfirmButton: false });
         },
         (err) => {
           Swal.close();
@@ -1811,7 +1828,7 @@
       }
       const btn = document.getElementById('savePinBtn');
       btn.disabled = true;
-      showLoading('กำลังบันทึกพิกัด...');
+      showLoading('กำลังบันทึกแผนที่...');
       try {
         const res = await api('savePin', { id: t.id, lat: pinCoords.lat, lng: pinCoords.lng });
         Swal.close();
@@ -1827,13 +1844,13 @@
             }
           });
           document.getElementById('pinBadge').innerText = '📍 บันทึกแล้ว: ' + pinCoords.lat + ', ' + pinCoords.lng;
-          Swal.fire({ icon: 'success', title: 'บันทึกพิกัดเรียบร้อย', html: 'บันทึกลงชีต ADDRESS แล้ว (U=ละติจูด, V=ลองจิจูด)', confirmButtonText: 'ตกลง' });
+          Swal.fire({ icon: 'success', title: 'บันทึกแผนที่เรียบร้อย', html: 'บันทึกลงชีต ADDRESS แล้ว (U=ละติจูด, V=ลองจิจูด)', confirmButtonText: 'ตกลง' });
         } else {
           Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', html: escHtml(res.message) });
         }
       } catch (err) {
         Swal.close();
-        Swal.fire({ icon: 'error', title: 'ล้มเหลว', text: 'เครือข่ายขัดข้อง ไม่สามารถบันทึกพิกัดได้' });
+        Swal.fire({ icon: 'error', title: 'ล้มเหลว', text: 'เครือข่ายขัดข้อง ไม่สามารถบันทึกแผนที่ได้' });
       }
       btn.disabled = false;
     }
@@ -1855,6 +1872,7 @@
           document.getElementById('t_status').value = d.status;
           document.getElementById('t_mosque').value = d.mosque;
           document.getElementById('t_name').value = d.name;
+          document.getElementById('t_nameMosque').value = mergeNameMosque(d.name, d.mosque);
           document.getElementById('t_head').value = d.head;
           document.getElementById('t_eduSec').value = d.eduSec;
           document.getElementById('t_eduRel').value = d.eduRel;
@@ -2143,6 +2161,7 @@
 
       const collected = collectAnswers();
       const meta = collectMeta();
+      splitNameMosque(); // แยกค่าช่อง "ชื่อศูนย์ (ชื่อมัสยิด)" -> t_name / t_mosque
 
       const payload = {
         supervisor: currentUser.fname,
