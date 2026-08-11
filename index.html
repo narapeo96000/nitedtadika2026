@@ -181,11 +181,11 @@
     .lvl-chart { overflow: hidden; }
     .lvl-chart svg { width: 100%; height: auto; display: block; max-width: 100%; }
     .lvl-chart .grid { stroke: #e6ecf2; stroke-width: 1; }
-    .lvl-chart .axis-label { fill: var(--muted); font-size: 9px; font-weight: 600; }
+    .lvl-chart .axis-label { fill: var(--muted); font-size: 8px; font-weight: 600; }
     .lvl-chart .line { fill: none; stroke: var(--primary); stroke-width: 2.5; stroke-linejoin: round; }
     .lvl-chart .area { fill: var(--primary-soft); opacity: .35; }
     .lvl-chart .dot { stroke: #fff; stroke-width: 2; }
-    .lvl-chart .dot-val { fill: var(--primary-deep); font-size: 10px; font-weight: 700; text-anchor: middle; }
+    .lvl-chart .dot-val { fill: var(--primary-deep); font-size: 9px; font-weight: 700; text-anchor: middle; }
     .chip { display: inline-block; border-radius: 999px; padding: 4px 10px; font-size: .75rem; font-weight: 600; margin: 2px 3px 2px 0; background: #eef2f6; color: var(--ink); }
     .chip .lv-green { background: var(--green-soft); color: var(--green-dark); }
 
@@ -279,8 +279,8 @@
       .stat-card .lbl { font-size: .66rem; }
       .stat-grid { gap: 8px; }
       h5 { font-size: .82rem; }
-      .lvl-chart .axis-label { font-size: 8px; }
-      .lvl-chart .dot-val { font-size: 9px; }
+      .lvl-chart .axis-label { font-size: 6.5px; }
+      .lvl-chart .dot-val { font-size: 7.5px; }
       .tk-cell { padding: 8px 4px; }
       .tk-val { font-size: 1.05rem; }
       .tk-lbl { font-size: .66rem; }
@@ -904,16 +904,16 @@
           return `<tr><td>${i + 1}</td><td>${escHtml(e.name)}</td><td class="small">${escHtml(e.timestamp)}</td><td>${Number(e.pct) || 0}%</td><td><span class="lv ${lvl.cls}">${lvl.name}</span></td></tr>`;
         }).join('') || '<tr><td colspan="5" class="text-center text-muted py-3">ยังไม่มีข้อมูลการนิเทศ</td></tr>';
 
-        // ข้อมูลตาดีกา (TADEKA)
-        document.getElementById('tk_total').innerText = fmt(d.totalTadika);
-        document.getElementById('tk_reg').innerText = fmt(d.registered);
-        document.getElementById('tk_unreg').innerText = fmt(d.unregistered);
-        document.getElementById('tk_tTotal').innerText = fmt(d.teachers.total);
-        document.getElementById('tk_tMale').innerText = fmt(d.teachers.male);
-        document.getElementById('tk_tFemale').innerText = fmt(d.teachers.female);
-        document.getElementById('tk_sTotal').innerText = fmt(d.students.total);
-        document.getElementById('tk_sMale').innerText = fmt(d.students.male);
-        document.getElementById('tk_sFemale').innerText = fmt(d.students.female);
+        // ข้อมูลตาดีกา (TADEKA) — นับจาก ADDR_TADEKA ทั้งหมด
+        document.getElementById('tk_total').innerText = fmt(d.tkTotal);
+        document.getElementById('tk_reg').innerText = fmt(d.tkReg);
+        document.getElementById('tk_unreg').innerText = fmt(d.tkUnreg);
+        document.getElementById('tk_tTotal').innerText = fmt(d.tkTeachers.total);
+        document.getElementById('tk_tMale').innerText = fmt(d.tkTeachers.male);
+        document.getElementById('tk_tFemale').innerText = fmt(d.tkTeachers.female);
+        document.getElementById('tk_sTotal').innerText = fmt(d.tkStudents.total);
+        document.getElementById('tk_sMale').innerText = fmt(d.tkStudents.male);
+        document.getElementById('tk_sFemale').innerText = fmt(d.tkStudents.female);
       } catch (e) { /* ข้ามเมื่อเครือข่ายขัดข้อง */ }
     }
 

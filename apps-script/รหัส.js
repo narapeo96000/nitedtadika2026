@@ -302,6 +302,29 @@ function getStats() {
     if(lastRow >= 2) totalUsers = lastRow - 1;
   }
 
+  // 3) นับศูนย์ตาดีกาทั้งหมดจาก ADDR_TADEKA (สำหรับการ์ด ข้อมูลตาดีกา (TADEKA) — ไม่รวมปอเนาะ)
+  let tkTotal = 0, tkReg = 0, tkUnreg = 0;
+  let tkTMale = 0, tkTFemale = 0, tkTTotal = 0, tkSMale = 0, tkSFemale = 0, tkSTotal = 0;
+  if(addr) {
+    const lastRow = addr.getLastRow();
+    if(lastRow >= 6) {
+      const vals = addr.getRange(6, 1, lastRow - 5, 22).getValues();
+      vals.forEach(r => {
+        if(String(r[0]).trim() === '') return;
+        tkTotal++;
+        const status = String(r[1] || '').trim();
+        if(status) {
+          if(status.includes('จดทะเบียน') && !status.includes('ไม่')) tkReg++;
+          else tkUnreg++;
+        }
+        const tm = toNum(r[14]), tf = toNum(r[15]), tt = toNum(r[16]);
+        tkTMale += tm; tkTFemale += tf; tkTTotal += tt || (tm + tf);
+        const sm = toNum(r[17]), sf = toNum(r[18]), st = toNum(r[19]);
+        tkSMale += sm; tkSFemale += sf; tkSTotal += st || (sm + sf);
+      });
+    }
+  }
+
   return {
     success: true,
     data: {
@@ -314,7 +337,12 @@ function getStats() {
       totalUsers: totalUsers,
       avgPct: totalEval ? Math.round(sumPct / totalEval) : 0,
       levelCounts: levelCounts,
-      latest: latest.slice(0, 10)
+      latest: latest.slice(0, 10),
+      tkTotal: tkTotal,
+      tkReg: tkReg,
+      tkUnreg: tkUnreg,
+      tkTeachers: { male: tkTMale, female: tkTFemale, total: tkTTotal },
+      tkStudents: { male: tkSMale, female: tkSFemale, total: tkSTotal }
     }
   };
 }
