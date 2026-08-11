@@ -11,6 +11,9 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.20/dist/sweetalert2.min.css">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.20/dist/sweetalert2.all.min.js"></script>
 
+  <!-- แจ้งเบราว์เซอร์ไม่ให้หา favicon (ป้องกัน 404 Error ใน Console) -->
+  <link rel="icon" href="data:,">
+
   <style>
     body { background-color: #f4f6f9; font-family: 'Sarabun', sans-serif; }
     .header-banner { background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%); color: white; padding: 25px 0; border-radius: 0 0 20px 20px; margin-bottom: 25px; }
@@ -18,7 +21,6 @@
     .section-hidden { display: none !important; }
     .section-title { border-left: 4px solid #007bff; padding-left: 10px; margin-bottom: 20px; font-weight: bold; color: #333; }
     
-    /* ปรับแต่ง SweetAlert เล็กน้อยให้เข้ากับฟอนต์ Sarabun */
     .swal2-popup { font-family: 'Sarabun', sans-serif; border-radius: 15px; }
     
     /* Chatbot Styles */
@@ -40,19 +42,14 @@
   </div>
 
   <div class="container mb-5">
-
- <!-- ส่วนที่ 1: Login -->
+    
+    <!-- ส่วนที่ 1: Login -->
     <div id="loginSection" class="row justify-content-center">
       <div class="col-md-6 col-lg-5">
         <div class="card p-4">
-          <h4 class="mb-4 text-primary">📝 แบบบันทึกการนิเทศ</h4>
-          <form id="evaluationForm" onsubmit="submitForm(event)">
-            
           <h4 class="mb-4 text-center text-primary">ล็อกอินเข้าสู่ระบบ</h4>
           <form onsubmit="handleLogin(event)">
             <div class="mb-3">
-              <label class="form-label">ชื่อศูนย์ตาดีกา / ศอม.</label>
-              <input type="text" class="form-control" id="centerName" required placeholder="ระบุชื่อศูนย์">
               <label>Username</label>
               <input type="text" id="loginUser" class="form-control" required>
             </div>
@@ -66,17 +63,6 @@
       </div>
     </div>
 
-            <div class="mb-3">
-              <label class="form-label">รูปแบบการประเมิน (5 รูปแบบ)</label>
-              <select class="form-select" id="formType" required>
-                <option value="">-- เลือกรูปแบบ --</option>
-                <option value="รูปแบบที่ 1 - การบริหารจัดการ">รูปแบบที่ 1 - การบริหารจัดการ</option>
-                <option value="รูปแบบที่ 2 - การจัดการเรียนการสอน">รูปแบบที่ 2 - การจัดการเรียนการสอน</option>
-                <option value="รูปแบบที่ 3 - สื่อและนวัตกรรม">รูปแบบที่ 3 - สื่อและนวัตกรรม</option>
-                <option value="รูปแบบที่ 4 - การวัดและประเมินผล">รูปแบบที่ 4 - การวัดและประเมินผล</option>
-                <option value="รูปแบบที่ 5 - การมีส่วนร่วมชุมชน">รูปแบบที่ 5 - การมีส่วนร่วมชุมชน</option>
-              </select>
-              
     <!-- ส่วนที่ 2: เลือกศูนย์ตาดีกา -->
     <div id="selectSection" class="row justify-content-center section-hidden">
       <div class="col-md-8">
@@ -186,12 +172,11 @@
   </div>
 
   <script>
-    // 👇👇 ใส่ URL ใหม่ที่ Deploy จาก Apps Script ตรงนี้!
-    const API_URL = ' const API_URL = 'https://script.google.com/macros/s/AKfycbxHLuOAJvHuBa3xTWe0FNZEilRxsFl_XVhQAJTo9U2uzcHfS384QM7GnVdTgB9c6UUP/exec';
+    // 👇 ตรวจสอบให้แน่ใจว่า URL มีเครื่องหมาย ' ครอบอยู่ถูกต้องแล้ว
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxHLuOAJvHuBa3xTWe0FNZEilRxsFl_XVhQAJTo9U2uzcHfS384QM7GnVdTgB9c6UUP/exec';
     
     let currentUser = {};
 
-    // --- Loading UI สำหรับ SweetAlert ---
     function showLoading(text) {
       Swal.fire({
         title: text,
@@ -200,7 +185,7 @@
       });
     }
 
-// 1. ระบบ Login (อัปเดตใหม่ ให้มีหน่วงเวลา 5 วินาที พร้อม SweetAlert2)
+    // 1. ระบบ Login (พร้อม SweetAlert หน่วงเวลา 5 วินาที)
     async function handleLogin(e) {
       e.preventDefault();
       const btn = document.getElementById('loginBtn');
@@ -225,10 +210,9 @@
           currentUser = res.userData;
           document.getElementById('headerUserText').innerText = `ผู้นิเทศ: ${currentUser.fname}`;
           
-          // ปิด Loading เดิมก่อนแสดงอันใหม่
           Swal.close();
 
-          // แสดง SweetAlert แจ้งเข้าสู่ระบบสำเร็จ พร้อมนับเวลา 5 วินาที
+          let timerInterval;
           Swal.fire({
             icon: 'success',
             title: 'เข้าสู่ระบบสำเร็จ!',
@@ -236,11 +220,10 @@
             timer: 5000,
             timerProgressBar: true,
             allowOutsideClick: false,
-            showConfirmButton: false, // ซ่อนปุ่ม "ตกลง" บังคับรอ
+            showConfirmButton: false,
             didOpen: () => {
               const timer = Swal.getPopup().querySelector("b:nth-of-type(2)");
               timerInterval = setInterval(() => {
-                // อัปเดตตัวเลขแสดงเวลาที่เหลือ
                 timer.textContent = Math.ceil(Swal.getTimerLeft() / 1000);
               }, 100);
             },
@@ -248,7 +231,6 @@
               clearInterval(timerInterval);
             }
           }).then((result) => {
-            // เมื่อครบ 5 วินาที (SweetAlert ปิดลง) จะสลับหน้าจอ
             if (result.dismiss === Swal.DismissReason.timer) {
               document.getElementById('loginSection').classList.add('section-hidden');
               document.getElementById('selectSection').classList.remove('section-hidden');
@@ -257,7 +239,7 @@
           });
 
         } else {
-          // แจ้งเตือนเมื่อ Login ไม่สำเร็จ หน่วงไว้ 5 วินาทีเช่นกัน
+          let timerInterval;
           Swal.fire({ 
             icon: 'error', 
             title: 'เข้าสู่ระบบล้มเหลว', 
@@ -276,17 +258,13 @@
           });
         }
       } catch (err) { 
-        Swal.fire({ 
-          icon: 'error', 
-          title: 'เครือข่ายขัดข้อง', 
-          text: 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้ กรุณาตรวจสอบอินเทอร์เน็ตของท่าน' 
-        });
+        Swal.fire({ icon: 'error', title: 'เครือข่ายขัดข้อง', text: 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้' });
       }
       
       btn.disabled = false;
     }
 
-    // 2. โหลดรายชื่อศูนย์ลง Dropdown
+    // 2. โหลดรายชื่อศูนย์
     async function loadTadikaList() {
       const select = document.getElementById('tadikaDropdown');
       select.innerHTML = '<option value="">กำลังโหลด...</option>';
@@ -305,16 +283,13 @@
       } catch(err) { select.innerHTML = '<option value="">โหลดข้อมูลล้มเหลว</option>'; }
     }
 
-    // 3. เลือกศูนย์และดึงข้อมูลมาแสดงในฟอร์ม
+    // 3. ดึงข้อมูลศูนย์
     async function fetchTadikaData() {
       const id = document.getElementById('tadikaDropdown').value;
-      if(!id) {
-        return Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณาเลือกศูนย์ตาดีกาที่ต้องการนิเทศ' });
-      }
+      if(!id) return Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณาเลือกศูนย์ตาดีกาที่ต้องการนิเทศ' });
       
       const btn = document.getElementById('selectBtn');
       btn.disabled = true;
-      
       showLoading('กำลังดึงข้อมูลศูนย์...');
 
       try {
@@ -347,30 +322,26 @@
           document.getElementById('t_sFemale').value = d.sFemale;
           document.getElementById('t_sTotal').value = d.sTotal;
 
-          Swal.close(); // ปิดหน้าจอโหลด
+          Swal.close(); 
           document.getElementById('selectSection').classList.add('section-hidden');
           document.getElementById('evaluationSection').classList.remove('section-hidden');
         } else { 
           Swal.fire({ icon: 'error', title: 'ผิดพลาด', text: res.message });
         }
-      } catch(err) { 
-        Swal.fire({ icon: 'error', title: 'ล้มเหลว', text: 'ไม่สามารถดึงข้อมูลได้' });
-      }
+      } catch(err) { Swal.fire({ icon: 'error', title: 'ล้มเหลว', text: 'ไม่สามารถดึงข้อมูลได้' }); }
       
       btn.disabled = false;
     }
     
-    // ฟังก์ชันเพิ่มเติมสำหรับปุ่มกดกลับไปเลือกศูนย์
     function backToSelect() {
       document.getElementById('evaluationSection').classList.add('section-hidden');
       document.getElementById('selectSection').classList.remove('section-hidden');
     }
 
-    // 4. บันทึกข้อมูลกลับ (อัปเดตศูนย์ + ประเมิน)
+    // 4. บันทึกข้อมูล
     async function submitFinal(e) {
       e.preventDefault();
       
-      // การยืนยันก่อนบันทึกด้วย SweetAlert
       const result = await Swal.fire({
         title: 'ยืนยันการบันทึก?',
         text: "คุณตรวจสอบข้อมูลและคะแนนถูกต้องแล้วใช่หรือไม่",
@@ -386,7 +357,6 @@
 
       const btn = document.getElementById('finalSubmitBtn');
       btn.disabled = true;
-      
       showLoading('กำลังบันทึกข้อมูลการนิเทศ...');
 
       const payload = {
@@ -436,19 +406,14 @@
             text: res.message,
             confirmButtonText: 'ตกลง'
           }).then(() => {
-            // เคลียร์ฟอร์ม และกลับไปหน้าเลือกศูนย์
             document.getElementById('mainForm').reset();
             document.getElementById('totalDisplay').innerText = 0;
             document.getElementById('totalScore').value = 0;
             document.getElementById('evaluationSection').classList.add('section-hidden');
             document.getElementById('selectSection').classList.remove('section-hidden');
           });
-        } else {
-          Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', text: res.message });
-        }
-      } catch(err) { 
-        Swal.fire({ icon: 'error', title: 'ล้มเหลว', text: 'เครือข่ายขัดข้อง ไม่สามารถบันทึกได้' });
-      }
+        } else { Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', text: res.message }); }
+      } catch(err) { Swal.fire({ icon: 'error', title: 'ล้มเหลว', text: 'เครือข่ายขัดข้อง ไม่สามารถบันทึกได้' }); }
       
       btn.disabled = false;
     }
@@ -460,7 +425,7 @@
       document.getElementById('totalScore').value = t;
     }));
 
-    // บอท (ไม่มีการเปลี่ยนแปลง)
+    // บอท
     function toggleChat() {
       const c = document.getElementById('chat-widget');
       c.style.display = (c.style.display==='flex') ? 'none' : 'flex';
