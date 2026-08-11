@@ -91,9 +91,9 @@
 
   <div class="container mb-5">
     
-    <!-- ส่วนที่ 1: Login -->
+    <!-- ส่วนที่ 1: Login + เลือกศูนย์ตาดีกา -->
     <div id="loginSection" class="row justify-content-center">
-      <div class="col-md-6 col-lg-5">
+      <div class="col-md-7 col-lg-6">
         <div class="card p-4">
           <h4 class="mb-4 text-center text-primary">ล็อกอินเข้าสู่ระบบ</h4>
           <form onsubmit="handleLogin(event)">
@@ -101,9 +101,20 @@
               <label>Username</label>
               <input type="text" id="loginUser" class="form-control" required>
             </div>
-            <div class="mb-4">
+            <div class="mb-3">
               <label>Password</label>
               <input type="password" id="loginPass" class="form-control" required>
+            </div>
+            <div class="mb-4">
+              <label>เลือกศูนย์ตาดีกาที่จะนิเทศ (พิมพ์ค้นหาได้)</label>
+              <div class="position-relative">
+                <input type="text" id="lgTadikaSearch" class="form-control" placeholder="พิมพ์ชื่อตาดีกา / มัสยิด / ตำบล / อำเภอ..." autocomplete="off" oninput="filterTadika('lg')" onkeydown="tadikaKey('lg', event)">
+                <div id="lgTadikaSuggest" class="d-none position-absolute w-100" style="z-index: 1050; max-height: 300px; overflow-y: auto; border-radius: 10px; box-shadow: 0 8px 20px rgba(0,0,0,.18);"></div>
+              </div>
+              <div id="lgSelInfo" class="alert alert-primary d-none mt-2 mb-0 py-2">
+                <b id="lgSelName"></b><br>
+                <span id="lgSelDetail" class="small text-muted"></span>
+              </div>
             </div>
             <button type="submit" class="btn btn-primary w-100" id="loginBtn">เข้าสู่ระบบ</button>
           </form>
@@ -111,14 +122,14 @@
       </div>
     </div>
 
-    <!-- ส่วนที่ 2: เลือกศูนย์ตาดีกา -->
+    <!-- ส่วนที่ 2: เลือกศูนย์ตาดีกา (สำหรับเปลี่ยนศูนย์ภายหลัง) -->
     <div id="selectSection" class="row justify-content-center section-hidden">
       <div class="col-md-8">
         <div class="card p-4">
           <h4 class="mb-1 text-primary">เลือกศูนย์ตาดีกา / ศอม. ที่ต้องการนิเทศ</h4>
           <p class="text-muted mb-3">พิมพ์ชื่อตาดีกา ชื่อมัสยิด ที่อยู่ ตำบล หรืออำเภอ เพื่อค้นหา</p>
           <div class="mb-3 position-relative">
-            <input type="text" id="tadikaSearch" class="form-control" placeholder="พิมพ์เพื่อค้นหา..." autocomplete="off" oninput="filterTadika()" onkeydown="tadikaKey(event)">
+            <input type="text" id="tadikaSearch" class="form-control" placeholder="พิมพ์เพื่อค้นหา..." autocomplete="off" oninput="filterTadika('sel')" onkeydown="tadikaKey('sel', event)">
             <div id="tadikaSuggest" class="d-none position-absolute w-100" style="z-index: 1050; max-height: 340px; overflow-y: auto; border-radius: 10px; box-shadow: 0 8px 20px rgba(0,0,0,.18);"></div>
           </div>
           <div id="selectedTadikaInfo" class="alert alert-primary d-none mb-3">
@@ -258,7 +269,6 @@
     let evalHistory = [];
     let tadikaList = [];
     let selectedTadika = null;
-    let suggestMatches = [];
 
     function showLoading(text) {
       Swal.fire({
@@ -316,8 +326,12 @@
           }).then((result) => {
             if (result.dismiss === Swal.DismissReason.timer) {
               document.getElementById('loginSection').classList.add('section-hidden');
-              document.getElementById('selectSection').classList.remove('section-hidden');
-              loadTadikaList();
+              selectedTadika = autoReg.lg.selected;
+              if(selectedTadika) {
+                fetchTadikaData();
+              } else {
+                document.getElementById('selectSection').classList.remove('section-hidden');
+              }
             }
           });
 
@@ -376,67 +390,81 @@
       return [t.address, t.subdist, t.dist].filter(Boolean).join(', ');
     }
 
-    function filterTadika() {
-      const q = document.getElementById('tadikaSearch').value.trim().toLowerCase();
-      const box = document.getElementById('tadikaSuggest');
-      selectedTadika = null;
-      document.getElementById('selectedTadikaInfo').classList.add('d-none');
-      document.getElementById('selectBtn').disabled = true;
+    // กลุ่ม Autocomplete: 'lg' = หน้าล็อกอิน, 'sel' = หน้าหลังล็อกอิน
+    const autoReg = {
+      lg:  { search:'lgTadikaSearch', suggest:'lgTadikaSuggest', info:'lgSelInfo', selName:'lgSelName', selDetail:'lgSelDetail', btn:null, selected:null, matches:[] },
+      sel: { search:'tadikaSearch', suggest:'tadikaSuggest', info:'selectedTadikaInfo', selName:'selName', selDetail:'selDetail', btn:'selectBtn', selected:null, matches:[] }
+    };
+
+    function filterTadika(key) {
+      const c = autoReg[key];
+      const q = document.getElementById(c.search).value.trim().toLowerCase();
+      const box = document.getElementById(c.suggest);
+      c.selected = null;
+      document.getElementById(c.info).classList.add('d-none');
+      if(c.btn) document.getElementById(c.btn).disabled = true;
       if(!q) { box.classList.add('d-none'); box.innerHTML = ''; return; }
 
-      suggestMatches = tadikaList.filter(t => {
+      c.matches = tadikaList.filter(t => {
         const hay = [t.id, t.name, t.mosque, t.address, t.subdist, t.dist].filter(Boolean).join(' ').toLowerCase();
         return hay.includes(q);
       }).slice(0, 12);
 
       box.classList.remove('d-none');
-      if(suggestMatches.length === 0) {
+      if(c.matches.length === 0) {
         box.innerHTML = '<div class="list-group-item text-center text-muted py-3 bg-white">ไม่พบข้อมูลศูนย์ที่ค้นหา</div>';
         return;
       }
-      box.innerHTML = suggestMatches.map((t, i) => `
-        <button type="button" class="list-group-item list-group-item-action text-start bg-white border-bottom" onclick="selectTadika(${i})">
+      box.innerHTML = c.matches.map((t, i) => `
+        <button type="button" class="list-group-item list-group-item-action text-start bg-white border-bottom" onclick="selectTadika('${key}', ${i})">
           <b class="text-primary">${escHtml(tadikaLabel(t))}</b><br>
           <span class="small text-muted">${escHtml(tadikaAddr(t)) || '—'}</span>
         </button>`).join('');
     }
 
-    function selectTadika(i) {
-      const t = suggestMatches[i];
+    function selectTadika(key, i) {
+      const c = autoReg[key];
+      const t = c.matches[i];
       if(!t) return;
-      selectedTadika = t;
-      document.getElementById('tadikaSearch').value = tadikaLabel(t);
-      document.getElementById('tadikaSuggest').classList.add('d-none');
-      document.getElementById('selName').innerText = tadikaLabel(t);
-      document.getElementById('selDetail').innerText = tadikaAddr(t) || '—';
-      document.getElementById('selectedTadikaInfo').classList.remove('d-none');
-      document.getElementById('selectBtn').disabled = false;
+      c.selected = t;
+      document.getElementById(c.search).value = tadikaLabel(t);
+      document.getElementById(c.suggest).classList.add('d-none');
+      document.getElementById(c.selName).innerText = tadikaLabel(t);
+      document.getElementById(c.selDetail).innerText = tadikaAddr(t) || '—';
+      document.getElementById(c.info).classList.remove('d-none');
+      if(c.btn) document.getElementById(c.btn).disabled = false;
     }
 
-    function tadikaKey(e) {
+    function tadikaKey(key, e) {
+      const c = autoReg[key];
+      const box = document.getElementById(c.suggest);
       if(e.key === 'Enter') {
-        e.preventDefault();
-        if(document.getElementById('tadikaSuggest').classList.contains('d-none')) {
-          if(selectedTadika) fetchTadikaData();
-        } else if(suggestMatches.length > 0) {
-          selectTadika(0);
+        if(!box.classList.contains('d-none') && c.matches.length > 0) {
+          e.preventDefault();
+          selectTadika(key, 0);
+        } else if(key === 'sel' && c.selected) {
+          e.preventDefault();
+          fetchTadikaData();
         }
       } else if(e.key === 'Escape') {
-        document.getElementById('tadikaSuggest').classList.add('d-none');
+        box.classList.add('d-none');
       }
     }
 
     function clearTadikaSelection() {
-      selectedTadika = null;
-      document.getElementById('tadikaSearch').value = '';
-      document.getElementById('tadikaSuggest').classList.add('d-none');
-      document.getElementById('selectedTadikaInfo').classList.add('d-none');
-      document.getElementById('selectBtn').disabled = true;
+      const c = autoReg.sel;
+      c.selected = null;
+      document.getElementById(c.search).value = '';
+      document.getElementById(c.suggest).classList.add('d-none');
+      document.getElementById(c.info).classList.add('d-none');
+      if(c.btn) document.getElementById(c.btn).disabled = true;
     }
 
     document.addEventListener('click', (e) => {
-      const box = document.getElementById('tadikaSuggest');
-      if(!document.getElementById('tadikaSearch').parentElement.contains(e.target)) box.classList.add('d-none');
+      Object.values(autoReg).forEach(c => {
+        const box = document.getElementById(c.suggest);
+        if(!document.getElementById(c.search).parentElement.contains(e.target)) box.classList.add('d-none');
+      });
     });
 
     // 3. ดึงข้อมูลศูนย์
@@ -687,6 +715,9 @@
       } catch(e) { document.getElementById(id).innerText = 'Error'; }
       b.scrollTop = b.scrollHeight;
     }
+
+    // โหลดรายชื่อศูนย์ตั้งแต่เปิดหน้าเว็บ (สำหรับ Autocomplete หน้าล็อกอิน)
+    loadTadikaList();
   </script>
 </body>
 </html>
