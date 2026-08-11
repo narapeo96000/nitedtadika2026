@@ -21,6 +21,10 @@ function doPost(e) {
       res = getTadikaList();
     } else if (action === 'getStats') {
       res = getStats();
+    } else if (action === 'getUsers') {
+      res = getUsers(payload);
+    } else if (action === 'setUserStatus') {
+      res = setUserStatus(payload);
     } else if (action === 'getTadikaData') {
       res = getTadikaData(payload);
     } else if (action === 'getEvaluations') {
@@ -41,38 +45,75 @@ function doPost(e) {
   }
 }
 
-// --- ตรวจสอบ Login ---
+const USERS_HEADERS = ['Username','Password','ชื่อ-นามสกุล','เบอร์โทร','สถานะ','บทบาท'];
+
+// --- เตรียมชีต USERS ให้มีคอลัมน์ สถานะ/บทบาท + สร้างบัญชี admin ถ้ายังไม่มี ---
+function ensureUsersSheet() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  let sheet = ss.getSheetByName(SHEET_NAME3);
+  if(!sheet) {
+    sheet = ss.insertSheet(SHEET_NAME3);
+    sheet.getRange(1, 1, 1, USERS_HEADERS.length).setValues([USERS_HEADERS]);
+    sheet.appendRow(['admin','admin123','ผู้ดูแลระบบ','-','ใช้งาน','ผู้ดูแลระบบ']);
+    return sheet;
+  }
+  const head = sheet.getRange(1, 1, 1, sheet.getLastColumn() || 1).getValues()[0];
+  if(String(head[0]).trim() !== 'Username' || String(head[4] || '').trim() !== 'สถานะ') {
+    sheet.getRange(1, 1, 1, USERS_HEADERS.length).setValues([USERS_HEADERS]);
+  }
+  const lastRow = sheet.getLastRow();
+  let hasAdmin = false;
+  if(lastRow >= 1) {
+    const rows = sheet.getRange(1, 1, lastRow, 6).getValues();
+    for(let i = 1; i < rows.length; i++) {
+      const u = String(rows[i][0]).trim();
+      if(u === '') continue;
+      if(u.toLowerCase() === 'admin') hasAdmin = true;
+      if(String(rows[i][4] || '').trim() === '') sheet.getRange(i + 1, 5).setValue('ใช้งาน');
+      if(String(rows[i][5] || '').trim() === '') {
+        sheet.getRange(i + 1, 6).setValue(u.toLowerCase() === 'admin' ? 'ผู้ดูแลระบบ' : 'ผู้ใช้');
+      }
+    }
+  }
+  if(!hasAdmin) sheet.appendRow(['admin','admin123','ผู้ดูแลระบบ','-','ใช้งาน','ผู้ดูแลระบบ']);
+  return sheet;
+}
+
+// --- ตรวจสอบ Login (ต้องมีสถานะ = ใช้งาน จึงจะเข้าได้) ---
 function loginUser(data) {
-  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('USERS');
-  if(!sheet) return {success: false, message: "ไม่พบชีต USERS"};
-  
-  const rows = sheet.getDataRange().getValues(); 
+  const sheet = ensureUsersSheet();
+  const rows = sheet.getDataRange().getValues();
   const inputUser = String(data.username).trim();
   const inputPass = String(data.password).trim();
 
   for(let i = 1; i < rows.length; i++) {
     let sheetUser = String(rows[i][0]).trim();
     let sheetPass = String(rows[i][1]).trim();
-    
+
     if(sheetUser === inputUser && sheetPass === inputPass) {
+      const status = String(rows[i][4] || '').trim() || 'ใช้งาน';
+      const role = String(rows[i][5] || '').trim() || (sheetUser.toLowerCase() === 'admin' ? 'ผู้ดูแลระบบ' : 'ผู้ใช้');
+      if(status === 'รออนุมัติ') {
+        return { success: false, message: 'บัญชีของคุณยังรอการอนุมัติจากผู้ดูแลระบบ กรุณารอผู้ดูแลระบบอนุมัติก่อนเข้าสู่ระบบ' };
+      }
+      if(status === 'ระงับ') {
+        return { success: false, message: 'บัญชีของคุณถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ' };
+      }
       return {
-        success: true, 
-        userData: { fname: rows[i][2], tel: rows[i][3] }
+        success: true,
+        userData: { username: sheetUser, fname: rows[i][2], tel: rows[i][3], role: role, status: status }
       };
     }
   }
-  
   return {
-    success: false, 
-    message: "Username หรือ Password ไม่ถูกต้อง\n\n(ข้อมูลที่ระบบได้รับ: User='" + inputUser + "', Pass='" + inputPass + "')"
+    success: false,
+    message: "Username หรือ Password ไม่ถูกต้อง"
   };
 }
 
-// --- สมัครสมาชิกใหม่ (เพิ่มผู้ใช้ลงชีต USERS) ---
+// --- สมัครสมาชิกใหม่ (บันทึกสถานะ = รออนุมัติ รอผู้ดูแลระบบ) ---
 function registerUser(data) {
-  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME3);
-  if(!sheet) return {success: false, message: "ไม่พบชีต USERS"};
-
+  const sheet = ensureUsersSheet();
   const rows = sheet.getDataRange().getValues();
   const u = String(data.username).trim();
   const p = String(data.password).trim();
@@ -82,13 +123,61 @@ function registerUser(data) {
   if(!u || !p || !f) return {success: false, message: "กรอกข้อมูลไม่ครบถ้วน (ต้องมี Username, Password และชื่อ-นามสกุล)"};
 
   for(let i = 1; i < rows.length; i++) {
-    if(String(rows[i][0]).trim() === u) {
+    if(String(rows[i][0]).trim().toLowerCase() === u.toLowerCase()) {
       return {success: false, message: "Username นี้ถูกใช้งานแล้ว กรุณาใช้ชื่ออื่น"};
     }
   }
 
-  sheet.appendRow([u, p, f, tel]);
-  return {success: true, message: "สมัครสมาชิกเรียบร้อยแล้ว! กรุณาเข้าสู่ระบบ"};
+  sheet.appendRow([u, p, f, tel, 'รออนุมัติ', 'ผู้ใช้']);
+  return {success: true, message: "สมัครสมาชิกเรียบร้อย!<br>บัญชีของคุณ<b>รอการอนุมัติจากผู้ดูแลระบบ</b> จึงจะเข้าสู่ระบบได้"};
+}
+
+// --- ผู้ดูแลระบบ: ดึงรายชื่อผู้ใช้ทั้งหมด ---
+function getUsers(data) {
+  const sheet = ensureUsersSheet();
+  const rows = sheet.getDataRange().getValues();
+  const admin = String(data.username || '').trim();
+  let isAdmin = false;
+  for(let i = 1; i < rows.length; i++) {
+    if(String(rows[i][0]).trim() === admin && String(rows[i][5] || '').trim() === 'ผู้ดูแลระบบ') { isAdmin = true; break; }
+  }
+  if(!isAdmin) return {success: false, message: 'ไม่มีสิทธิ์ใช้งาน (เฉพาะผู้ดูแลระบบ)'};
+  const list = [];
+  for(let i = 1; i < rows.length; i++) {
+    if(String(rows[i][0]).trim() === '') continue;
+    list.push({
+      row: i + 1,
+      username: rows[i][0],
+      fname: rows[i][2],
+      tel: rows[i][3],
+      status: String(rows[i][4] || '').trim() || 'ใช้งาน',
+      role: String(rows[i][5] || '').trim() || 'ผู้ใช้'
+    });
+  }
+  return {success: true, data: list};
+}
+
+// --- ผู้ดูแลระบบ: อนุมัติ / ระงับ / เปิดใช้งานบัญชี ---
+function setUserStatus(data) {
+  const sheet = ensureUsersSheet();
+  const rows = sheet.getDataRange().getValues();
+  const admin = String(data.admin || '').trim();
+  const target = String(data.username || '').trim();
+  const status = String(data.status || '').trim();
+
+  let isAdmin = false, targetRow = -1;
+  for(let i = 1; i < rows.length; i++) {
+    const u = String(rows[i][0]).trim();
+    if(u === admin && String(rows[i][5] || '').trim() === 'ผู้ดูแลระบบ') isAdmin = true;
+    if(u === target) targetRow = i + 1;
+  }
+  if(!isAdmin) return {success: false, message: 'ไม่มีสิทธิ์ใช้งาน (เฉพาะผู้ดูแลระบบ)'};
+  if(targetRow < 1) return {success: false, message: 'ไม่พบบัญชีผู้ใช้นี้'};
+  if(status === 'ใช้งาน' || status === 'ระงับ') {
+    sheet.getRange(targetRow, 5).setValue(status);
+    return {success: true, message: (status === 'ใช้งาน' ? '✅ เปิดใช้งาน' : '⛔ ระงับ') + 'บัญชี "' + target + '" เรียบร้อย'};
+  }
+  return {success: false, message: 'สถานะไม่ถูกต้อง'};
 }
 
 // --- ดึงรายชื่อศูนย์มาให้เลือก (Autocomplete) ---

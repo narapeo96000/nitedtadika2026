@@ -429,6 +429,21 @@
     <!-- ===== หน้าหลัก (หลังล็อกอิน) ===== -->
     <div id="appSection" class="section-hidden">
 
+      <!-- จัดการผู้ใช้ (ผู้ดูแลระบบ) -->
+      <div id="adminCard" class="card section-hidden">
+        <div class="card-title">
+          <h4>👥 จัดการผู้ใช้ (ผู้ดูแลระบบ)</h4>
+          <button type="button" class="btn btn-outline2 btn-sm" onclick="loadUsers()">🔄 โหลดใหม่</button>
+        </div>
+        <p class="small text-muted" style="margin-bottom:6px;">อนุมัติผู้ที่สมัครใหม่ หรือระงับ/เปิดใช้งานบัญชี (สมาชิกต้องมีสถานะ <b>ใช้งาน</b> จึงจะเข้าระบบได้)</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>👤 Username</th><th>ชื่อ-นามสกุล</th><th>📞 เบอร์โทร</th><th>📌 สถานะ</th><th>การจัดการ</th></tr></thead>
+            <tbody id="adminUserBody"><tr><td colspan="6" class="text-center text-muted py-3">กำลังโหลด...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- เลือกศูนย์ -->
       <div class="card">
         <div class="card-title"><h4>เลือกศูนย์ตาดีกา / ศอม.</h4><span class="badge" id="selTadikaBadge">ยังไม่ได้เลือก</span></div>
@@ -794,6 +809,57 @@
       } catch (e) { /* ข้ามเมื่อเครือข่ายขัดข้อง */ }
     }
 
+    // ---- ผู้ดูแลระบบ: จัดการผู้ใช้ (อนุมัติ / ระงับ / เปิดใช้งาน) ----
+    function userStatusBadge(s) {
+      if (s === 'ใช้งาน') return '<span class="lv lv-green">✅ ใช้งาน</span>';
+      if (s === 'รออนุมัติ') return '<span class="lv lv-amber">⏳ รออนุมัติ</span>';
+      if (s === 'ระงับ') return '<span class="lv lv-red">⛔ ระงับ</span>';
+      return '<span class="lv lv-amber">' + escHtml(s) + '</span>';
+    }
+    async function loadUsers() {
+      try {
+        const res = await api('getUsers', { username: currentUser.username });
+        if (!res.success) {
+          document.getElementById('adminUserBody').innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">' + escHtml(res.message) + '</td></tr>';
+          return;
+        }
+        const rows = res.data || [];
+        document.getElementById('adminUserBody').innerHTML = rows.map((u, i) => {
+          let actions = '';
+          if (u.role !== 'ผู้ดูแลระบบ') {
+            if (u.status === 'รออนุมัติ' || u.status === 'ระงับ') {
+              actions += `<button class="btn btn-outline2 btn-sm" style="margin:2px;" onclick="setUserStatus('${escHtml(u.username)}','ใช้งาน')">✅ อนุมัติ</button>`;
+            }
+            if (u.status === 'ใช้งาน') {
+              actions += `<button class="btn btn-outline2 btn-sm" style="margin:2px; color:var(--red-dark); border-color:var(--red-dark);" onclick="setUserStatus('${escHtml(u.username)}','ระงับ')">⛔ ระงับ</button>`;
+            }
+            if (u.status === 'ระงับ') {
+              actions += `<button class="btn btn-outline2 btn-sm" style="margin:2px;" onclick="setUserStatus('${escHtml(u.username)}','ใช้งาน')">▶️ เปิดใช้งาน</button>`;
+            }
+          } else { actions = '<span class="small text-muted">—</span>'; }
+          return `<tr>
+            <td>${i + 1}</td>
+            <td><b>${escHtml(u.username)}</b> ${u.role === 'ผู้ดูแลระบบ' ? '<span class="lv lv-blue">👑 ADMIN</span>' : ''}</td>
+            <td>${escHtml(u.fname)}</td>
+            <td class="small">${escHtml(u.tel)}</td>
+            <td>${userStatusBadge(u.status)}</td>
+            <td>${actions}</td>
+          </tr>`;
+        }).join('');
+      } catch (e) { /* ข้าม */ }
+    }
+    async function setUserStatus(username, status) {
+      try {
+        const res = await api('setUserStatus', { admin: currentUser.username, username, status });
+        if (res.success) {
+          Swal.fire({ icon: 'success', title: res.message, timer: 1500, showConfirmButton: false });
+          loadUsers();
+        } else {
+          Swal.fire({ icon: 'error', title: 'ไม่สำเร็จ', html: escHtml(res.message) });
+        }
+      } catch (e) { /* ข้าม */ }
+    }
+
     // ---- หน้า Login / Register ----
     function showLogin() {
       document.getElementById('loginSection').classList.remove('section-hidden');
@@ -837,10 +903,12 @@
           currentUser = res.userData;
           Swal.close();
           Swal.fire({ icon: 'success', title: 'เข้าสู่ระบบสำเร็จ!', html: 'ยินดีต้อนรับ <b>' + escHtml(currentUser.fname) + '</b>', timer: 1800, showConfirmButton: false });
-          document.getElementById('headerUserText').innerText = 'ผู้นิเทศ: ' + currentUser.fname;
+          document.getElementById('headerUserText').innerText = 'ผู้นิเทศ: ' + currentUser.fname + (currentUser.role === 'ผู้ดูแลระบบ' ? ' (ผู้ดูแลระบบ)' : '');
           document.getElementById('loginSection').classList.add('section-hidden');
           document.getElementById('appHeader').classList.remove('section-hidden');
           document.getElementById('appSection').classList.remove('section-hidden');
+          const adminCard = document.getElementById('adminCard');
+          if (currentUser.role === 'ผู้ดูแลระบบ') { adminCard.classList.remove('section-hidden'); loadUsers(); }
           const sel = autoReg.lg.selected;
           if (sel) { selectByObj('sel', sel); }
           initPinMap();
@@ -892,6 +960,7 @@
       document.getElementById('appSection').classList.add('section-hidden');
       document.getElementById('evaluationSection').classList.add('section-hidden');
       document.getElementById('dashCard').classList.add('section-hidden');
+      document.getElementById('adminCard').classList.add('section-hidden');
       clearTadikaSelection();
       document.getElementById('loginUser').value = '';
       document.getElementById('loginPass').value = '';
