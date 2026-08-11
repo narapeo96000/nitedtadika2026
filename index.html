@@ -154,6 +154,41 @@
     }
     .q-scale button.sel { background: var(--primary); border-color: var(--primary); color: #fff; }
 
+    .form-section { border: 1px solid var(--border); border-radius: 14px; margin-bottom: 14px; overflow: hidden; background: #fff; }
+    .section-head {
+      display: flex; justify-content: space-between; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, var(--primary-soft), var(--blue-light));
+      padding: 10px 14px; border-bottom: 1px solid var(--border);
+    }
+    .section-head .code { font-weight: 700; color: var(--primary-deep); }
+    .section-head .title { font-weight: 600; color: var(--ink); }
+    .section-head .pts { font-weight: 700; color: var(--primary-deep); white-space: nowrap; }
+    .section-body { padding: 12px 14px; }
+    .q-evidence {
+      margin: 6px 0 10px; font-size: .82rem; color: var(--blue-dark);
+      background: var(--blue-light); border-radius: 10px; padding: 6px 10px;
+    }
+    .q-note { width: 100%; margin-top: 10px; }
+    .q-note textarea { width: 100%; min-height: 48px; border: 1.5px solid var(--border); border-radius: 10px; padding: 8px 12px; font-family: inherit; font-size: .88rem; resize: vertical; background: #fbfdff; }
+    .q-note textarea:focus { outline: none; border-color: var(--blue); }
+    .q-note label { font-size: .78rem; color: var(--muted); font-weight: 600; margin: 0 0 3px; }
+
+    .form-meta-card { background: var(--primary-light); border: 1px solid var(--primary-soft); border-radius: 14px; padding: 12px 14px; margin-bottom: 14px; }
+    .form-meta-card .mtitle { font-weight: 700; color: var(--primary-deep); margin-bottom: 10px; font-size: .95rem; }
+
+    .ap-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+    .ap-table th, .ap-table td { border: 1px solid var(--border); padding: 8px 6px; text-align: left; vertical-align: middle; }
+    .ap-table thead th { background: var(--blue-soft); color: var(--blue-dark); font-weight: 700; white-space: nowrap; }
+    .ap-table td input { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; font-family: inherit; font-size: .85rem; }
+    .ap-table td input:focus { outline: none; border-color: var(--blue); }
+    .ap-del { border: 1px solid var(--red-dark); background: #fff; color: var(--red-dark); border-radius: 8px; padding: 4px 8px; font-size: .8rem; cursor: pointer; }
+    .ai-btn { display: block; width: 100%; text-align: left; margin-top: 12px; }
+
+    .summary-score { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px; }
+    .summary-score .cell { background: var(--primary-light); border: 1px solid var(--primary-soft); border-radius: 14px; padding: 10px; text-align: center; }
+    .summary-score .cell .v { font-size: 1.4rem; font-weight: 700; color: var(--primary-deep); }
+    .summary-score .cell .l { font-size: .74rem; color: var(--muted); font-weight: 600; }
+
     .total-box {
       background: linear-gradient(135deg, var(--primary), var(--blue-dark)); color: #fff;
       border-radius: 16px; padding: 16px; text-align: center; margin-top: 14px;
@@ -306,6 +341,13 @@
       .app-footer { font-size: .72rem; }
       .col-3, .col-md-3 { width: 50%; }
       .stat-grid { grid-template-columns: repeat(2, 1fr); }
+      .summary-score { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+      .summary-score .cell .v { font-size: 1.1rem; }
+      .summary-score .cell .l { font-size: .64rem; }
+      .ap-table { font-size: .78rem; }
+      .ap-table th, .ap-table td { padding: 6px 4px; }
+      .section-head .pts { font-size: .8rem; }
+      .q-evidence { font-size: .78rem; }
       #chat-widget { width: 100%; max-width: 100vw; bottom: 0; right: 0; border-radius: 16px 16px 0 0; }
       #chat-body { height: 45vh; }
     }
@@ -657,52 +699,136 @@
     const API_URL = 'https://script.google.com/macros/s/AKfycbxHLuOAJvHuBa3xTWe0FNZEilRxsFl_XVhQAJTo9U2uzcHfS384QM7GnVdTgB9c6UUP/exec';
     const TOTAL_FULL = 150;
 
-    // ---- Schema 5 ด้าน (แก้ไขข้อคำถาม / คะแนนเต็มได้ที่นี่) ----
+    // ---- Schema 5 แบบ ตามชุดเครื่องมือนิเทศตาดีกา (หน้า 24-38) ----
+    // แต่ละข้อ: คะแนน 0-3 · แบบที่ 1-3 รวม 150 คะแนน · แบบที่ 4 (15) แยก · แบบที่ 5 สรุปเชิงคุณภาพ
+    const S = (code, title, pts, items) => ({ code, title, pts, items });
+    const IT = (text, evidence) => ({ text, evidence });
+
     const FORMS = [
-      { no: 1, name: 'การบริหารจัดการ',    pts: 40,
-        questions: [
-          'ศูนย์มีคณะกรรมการบริหารและมีการประชุมอย่างสม่ำเสมอ',
-          'ศูนย์มีแผนพัฒนาคุณภาพและนโยบายที่ชัดเจน',
-          'ศูนย์มีหลักสูตรและเอกสารประกอบหลักสูตรครบถ้วน',
-          'ศูนย์มีระบบทะเบียนนักเรียนและเอกสารราชการเป็นระเบียบ',
-          'ศูนย์มีการบริหารจัดการด้านการเงินและบัญชีโปร่งใสตรวจสอบได้',
-          'ศูนย์มีการรายงานผลการดำเนินงานต่อหน่วยงานต้นสังกัด',
-          'ศูนย์มีการจัดหาทรัพยากรและงบประมาณมาสนับสนุนการเรียนการสอน',
-          'ศูนย์มีระบบการดูแลความปลอดภัยของนักเรียน'
+      { no: 1, name: 'การนำหลักสูตรไปใช้', short: 'นำหลักสูตรไปใช้', pts: 45, pages: 'หน้า 24-26',
+        sections: [
+          S('1.1', 'การวางแผนและบริหารหลักสูตร', 15, [
+            IT('ศูนย์มีหลักสูตรหรือแผนการใช้หลักสูตรที่สอดคล้องกับวิสัยทัศน์ จุดหมาย มาตรฐานและตัวชี้วัด', 'หลักสูตรศูนย์ แผนงาน คำสั่ง/บันทึกประชุม'),
+            IT('โครงสร้างรายวิชาและเวลาเรียนครอบคลุม 9 สาระพื้นฐาน รวมไม่น้อยกว่า 400 ชั่วโมงต่อปี', 'ตารางเรียน ปฏิทิน สรุปเวลาเรียนจริง'),
+            IT('จัดกิจกรรมพัฒนาผู้เรียนรวม 40 ชั่วโมงต่อปี และเหมาะกับบริบท', 'แผนกิจกรรม ภาพ/ผลงาน บันทึกการเข้าร่วม'),
+            IT('สาระเพิ่มเติมจัดตามความพร้อม โดยไม่กระทบเวลาและคุณภาพสาระพื้นฐาน', 'ตารางเรียน ครูผู้รับผิดชอบ สื่อ'),
+            IT('มีแผนรายปี/ภาคเรียนที่เชื่อมมาตรฐาน ตัวชี้วัด เนื้อหา กิจกรรม และการประเมิน', 'แผนหลักสูตร โครงสร้างรายวิชา หน่วยเรียนรู้')
+          ]),
+          S('1.2', 'การสนับสนุนครูและการจัดการเรียนรู้', 15, [
+            IT('ครูได้รับมอบหมายตรงความรู้ความสามารถและมีโอกาสพัฒนาวิชาชีพ', 'ทะเบียนครู วุฒิ/ประสบการณ์ แผนพัฒนา'),
+            IT('ศูนย์มีระบบร่วมวางแผน แลกเปลี่ยนเรียนรู้ หรือพี่เลี้ยงครู', 'บันทึก PLC ตัวอย่างแผนที่ปรับปรุง'),
+            IT('มีสื่อและแหล่งเรียนรู้เพียงพอ ถูกต้อง เหมาะกับวัย และไม่กระทบความมั่นคงหรือศีลธรรม', 'สำรวจสื่อ บัญชีสื่อ สัมภาษณ์ครู/ผู้เรียน'),
+            IT('สภาพแวดล้อมสะอาด ปลอดภัย เอื้อต่อการเรียนและการฝึกปฏิบัติ', 'สังเกตสถานที่ จุดวุฎอ์ ห้องเรียน'),
+            IT('มีการดูแลผู้เรียนที่มีความแตกต่าง หรือความต้องการจำเป็นเฉพาะ', 'รายชื่อ/แผนช่วยเหลือ บันทึกซ่อมเสริม')
+          ]),
+          S('1.3', 'การบริหารคุณภาพและการมีส่วนร่วม', 15, [
+            IT('มีระบบนิเทศภายในที่สังเกตชั้นเรียนและให้ข้อมูลย้อนกลับแก่ครู', 'แผนนิเทศ บันทึกสะท้อนผล หลักฐานติดตาม'),
+            IT('นำข้อมูลผลผู้เรียนและผลนิเทศมาปรับหลักสูตรหรือการจัดการเรียนรู้', 'รายงานวิเคราะห์ แผนปรับปรุง หลักฐานก่อน-หลัง'),
+            IT('รายงานความก้าวหน้าผู้เรียนแก่ผู้ปกครองอย่างน้อยภาคเรียนละ 1 ครั้ง', 'สมุดรายงาน ช่องทางสื่อสาร ตัวอย่างรายงาน'),
+            IT('ผู้ปกครอง อิหม่าม คณะกรรมการมัสยิด และชุมชนมีส่วนร่วมอย่างเหมาะสม', 'รายงานประชุม กิจกรรม/ทรัพยากรร่วม'),
+            IT('มีข้อมูลผู้เรียน เวลาเรียน ผลการเรียน และผู้จบหลักสูตรถูกต้องตรวจสอบได้', 'ทะเบียน บันทึกเวลาเรียน ปอ.1-ปอ.3')
+          ])
         ] },
-      { no: 2, name: 'ด้านครูผู้สอน',      pts: 40,
-        questions: [
-          'ครูมีวุฒิการศึกษาและความรู้ตรงตามเกณฑ์ที่กำหนด',
-          'ครูจัดทำแผนการจัดการเรียนรู้และนำไปใช้จริง',
-          'ครูใช้สื่อ/เทคนิคการสอนที่หลากหลายเหมาะสมกับวัย',
-          'ครูจัดกิจกรรมอบรมจริยธรรมและอิสลามศึกษา',
-          'ครูมีการประเมินผลและรายงานความก้าวหน้าของนักเรียน',
-          'ครูมีมนุษยสัมพันธ์และดูแลเอาใจใส่นักเรียน',
-          'ครูได้รับการพัฒนาตนเองและอบรมต่อเนื่อง',
-          'ครูจัดบรรยากาศห้องเรียนที่เอื้อต่อการเรียนรู้'
+
+      { no: 2, name: 'การสังเกตการจัดการเรียนรู้ของครู', short: 'สังเกตการสอน', pts: 54, pages: 'หน้า 27-29',
+        meta: { title: 'ข้อมูลการสังเกตชั้นเรียน',
+          fields: [
+            { id: 'f2_teacher',  label: 'ชื่อครูผู้สอน',     ph: 'ระบุชื่อและนามสกุลของครูผู้สอนที่ได้รับการสังเกตการจัดการเรียนรู้' },
+            { id: 'f2_subject',  label: 'สาระ/หน่วย',        ph: 'ระบุกลุ่มสาระการเรียนรู้และหน่วยการเรียนที่กำลังสอนในคาบนี้' },
+            { id: 'f2_class',    label: 'ชั้นปี (ห้องที่นิเทศ)', ph: 'ระบุระดับชั้นปีของนักเรียนที่เข้ารับการจัดการเรียนรู้' },
+            { id: 'f2_duration', label: 'ระยะเวลาสังเกต (เช่น 60 นาที)', ph: 'ระบุระยะเวลาจริงที่ใช้ในการสังเกตการจัดการเรียนรู้ในห้องเรียน' },
+            { id: 'f2_note',     label: 'บริบทพิเศษ (ถ้ามี)', ph: 'ระบุข้อมูลหรือจุดเด่นเพิ่มเติมที่พบเห็นในห้องเรียนนี้' }
+          ],
+          after: 'ข้อเสนอแนะหลังสังเกต' },
+        sections: [
+          S('2.1', 'การออกแบบและเป้าหมายการเรียนรู้', 12, [
+            IT('เป้าหมายสอดคล้องมาตรฐาน/ตัวชี้วัด และบอกได้ว่าผู้เรียนจะรู้อะไรหรือปฏิบัติอะไรได้', 'แผนการสอน การชี้แจงเป้าหมาย ผลงานท้ายคาบ'),
+            IT('กิจกรรม เนื้อหา สื่อ และเวลาเหมาะกับวัย ชั้นปี และความแตกต่างของผู้เรียน', 'แผน การสังเกต การปรับงานรายบุคคล'),
+            IT('เชื่อมหลักคำสอนกับชีวิตที่บ้าน โรงเรียน มัสยิดหรือชุมชน', 'คำถาม/สถานการณ์ ภารกิจนำไปใช้'),
+            IT('ออกแบบให้เกิดทั้งความรู้ ทักษะปฏิบัติ และคุณลักษณะตามธรรมชาติของบทเรียน', 'กิจกรรมและเกณฑ์ประเมินหลายด้าน')
+          ]),
+          S('2.2', 'กระบวนการเรียนรู้ที่เน้นผู้เรียน', 18, [
+            IT('ใช้คำถามหรือกิจกรรมนำเข้าสู่บทเรียน เชื่อมประสบการณ์เดิมของผู้เรียน', 'พฤติกรรมครูและการตอบสนองของผู้เรียน'),
+            IT('ผู้เรียนได้พูด อ่าน คิด ลงมือทำ ฝึกปฏิบัติ หรือสร้างผลงาน มากกว่าฟังบรรยายอย่างเดียว', 'สัดส่วนเวลามีส่วนร่วม ชิ้นงาน/การปฏิบัติ'),
+            IT('ใช้วิธีหลากหลาย เช่น เรื่องเล่า เกม ฐานเรียนรู้ งานคู่/กลุ่ม สถานการณ์ หรือโครงงานตามวัย', 'กิจกรรมจริงและความเหมาะสม'),
+            IT('ฝึกจากง่ายไปยาก สาธิตชัด ให้เวลาฝึก และให้ข้อมูลย้อนกลับทันที', 'ลำดับกิจกรรม การสาธิต การแก้ไข'),
+            IT('กระตุ้นการคิดด้วยคำถามที่ให้บอกเหตุผล เปรียบเทียบ ตัดสินใจ หรือแก้ปัญหาตามวัย', 'คำถามครู คำอธิบายของผู้เรียน'),
+            IT('ผู้เรียนส่วนใหญ่มีส่วนร่วม กล้าถาม และทำงานร่วมกันอย่างเคารพ', 'การกระจายโอกาส บรรยากาศห้องเรียน')
+          ]),
+          S('2.3', 'บรรยากาศ คุณธรรม และการดูแลผู้เรียน', 12, [
+            IT('ครูเป็นแบบอย่างที่ดี ใช้ถ้อยคำสุภาพ เมตตา ยุติธรรม และเคารพศักดิ์ศรีเด็ก', 'พฤติกรรมครู การจัดการข้อผิดพลาด'),
+            IT('ใช้การเสริมแรงเชิงบวก ไม่ประจาน ไม่เปรียบเทียบ และไม่ใช้ความรุนแรง', 'ภาษาและวิธีจัดการพฤติกรรม'),
+            IT('จัดโอกาสช่วยเหลือผู้เรียนที่ยังไม่เข้าใจหรือมีความต้องการแตกต่าง', 'การแบ่งกลุ่ม ตัวช่วย งานปรับระดับ'),
+            IT('ส่งเสริมมารยาท วินัย ความรับผิดชอบ ความสะอาด และจิตสาธารณะผ่านการปฏิบัติจริง', 'กิจวัตร บทบาทหน้าที่ การสะท้อนคิด')
+          ]),
+          S('2.4', 'การประเมินระหว่างเรียนและการสรุป', 12, [
+            IT('ตรวจสอบความเข้าใจระหว่างเรียนด้วยคำถาม สังเกต การปฏิบัติ หรือผลงาน', 'หลักฐานเช็กความเข้าใจระหว่างคาบ'),
+            IT('ให้ข้อมูลย้อนกลับเฉพาะเจาะจงว่าทำอะไรได้ดีและควรปรับอย่างไร', 'คำพูดครู ร่องรอยแก้ไขผลงาน'),
+            IT('ปรับการสอนเมื่อพบว่าผู้เรียนยังไม่เข้าใจ และจัดซ่อมเสริมหรือฝึกซ้ำ', 'การตัดสินใจระหว่างคาบ/แผนติดตาม'),
+            IT('สรุปสาระสำคัญและให้ผู้เรียนสะท้อนว่าจะนำไปใช้ในชีวิตอย่างไร', 'คำตอบผู้เรียน บัตรออกจากห้อง/ภารกิจ')
+          ])
         ] },
-      { no: 3, name: 'ด้านผู้เรียน',       pts: 35,
-        questions: [
-          'นักเรียนมีพัฒนาการทางร่างกายตามวัย',
-          'นักเรียนมีพัฒนาการด้านอารมณ์และสังคม',
-          'นักเรียนมีพัฒนาการด้านสติปัญญาและการคิด',
-          'นักเรียนสามารถอ่าน/ท่องจำซูเราะฮ์และดุอาอ์พื้นฐานได้',
-          'นักเรียนมีสุขนิสัยและวินัยที่ดี',
-          'นักเรียนมีความรับผิดชอบและใฝ่เรียนรู้',
-          'นักเรียนเข้าเรียนสม่ำเสมอและมีผู้ปกครองส่งเสริม'
+
+      { no: 3, name: 'การวัดและประเมินผลผู้เรียน', short: 'วัดและประเมินผล', pts: 51, pages: 'หน้า 30-32',
+        meta: { title: 'ข้อมูลการสุ่มตรวจการวัดผล',
+          fields: [
+            { id: 'f3_subject', label: 'สาระที่สุ่มตรวจ', ph: 'ระบุสาระ/หน่วยที่สุ่มตรวจ' },
+            { id: 'f3_class',   label: 'ชั้นปีที่ตรวจ',   ph: 'ระบุชั้นปีที่ตรวจ' },
+            { id: 'f3_period',  label: 'ช่วงเวลาที่ตรวจ', ph: 'ระบุช่วงเวลาที่ตรวจ' }
+          ] },
+        sections: [
+          S('3.1', 'การวางแผนและความสอดคล้อง', 12, [
+            IT('กำหนดสิ่งที่จะประเมินตรงตามมาตรฐาน ตัวชี้วัด และเป้าหมายการเรียนรู้', 'แผนการสอน ตารางวิเคราะห์ข้อสอบ/ภาระงาน'),
+            IT('เกณฑ์ประเมินครอบคลุมความรู้ ทักษะปฏิบัติ และคุณลักษณะที่เกี่ยวข้อง', 'แบบทดสอบ รูบริก แบบสังเกต'),
+            IT('วิธีประเมินเหมาะกับวัย ภาษา ความแตกต่าง และธรรมชาติของสาระ', 'เครื่องมือจริง ตัวช่วย/การปรับเงื่อนไข'),
+            IT('แจ้งเป้าหมายหรือเกณฑ์ให้ผู้เรียนเข้าใจล่วงหน้าด้วยภาษาที่เหมาะกับวัย', 'คำชี้แจง ตัวอย่างงาน แบบเกณฑ์')
+          ]),
+          S('3.2', 'การประเมินเพื่อพัฒนาระหว่างเรียน', 15, [
+            IT('ประเมินอย่างสม่ำเสมอด้วยวิธีหลากหลาย เช่น ถาม สังเกต ตรวจงาน แฟ้ม และการปฏิบัติ', 'บันทึกชั้นเรียน ตัวอย่างหลักฐานหลายแบบ'),
+            IT('บันทึกผลรายบุคคลและระบุจุดที่ผู้เรียนต้องพัฒนา', 'สมุดบันทึก รายการตรวจ พัฒนาการรายคน'),
+            IT('ให้ข้อมูลย้อนกลับทันเวลา ชัดเจน และเปิดโอกาสแก้ไขหรือฝึกซ้ำ', 'ร่องรอย feedback งานก่อน-หลัง'),
+            IT('มีการซ่อมเสริมและติดตามผู้เรียนที่ยังไม่ผ่านตัวชี้วัด', 'แผนซ่อมเสริม ผลติดตามรายบุคคล'),
+            IT('เปิดโอกาสให้ผู้เรียนประเมินตนเอง เพื่อนประเมิน หรือผู้ปกครองร่วมประเมินเมื่อเหมาะสม', 'แบบสะท้อนตนเอง/เพื่อน/ผู้ปกครอง')
+          ]),
+          S('3.3', 'คุณภาพเครื่องมือและการตัดสินผล', 12, [
+            IT('ข้อคำถามหรือภาระงานชัดเจน ถูกต้อง ไม่เกินระดับที่สอน และไม่ลำเอียง', 'ตรวจตัวอย่างเครื่องมือและคำตอบ'),
+            IT('การประเมินทักษะใช้การปฏิบัติจริง และมีเกณฑ์ระดับคุณภาพชัดเจน', 'รูบริกอ่านอัลกุรอาน วุฎอ์ ละหมาด ฯลฯ'),
+            IT('มีหลักฐานเพียงพอและใช้เกณฑ์เดียวกันในการตัดสินผู้เรียน', 'แฟ้มคะแนน การตรวจทานระหว่างครู'),
+            IT('ผลประเมินระดับชั้น ศูนย์ จังหวัด หรือชาติถูกวิเคราะห์เพื่อค้นหาจุดแข็งและช่องว่าง', 'รายงานวิเคราะห์รายตัวชี้วัด/กลุ่มผู้เรียน')
+          ]),
+          S('3.4', 'การรายงานและใช้ผล', 12, [
+            IT('รายงานผลแก่ผู้เรียนและผู้ปกครองอย่างน้อยภาคเรียนละ 1 ครั้ง ด้วยภาษาที่เข้าใจง่าย', 'รายงานผล ตัวอย่างการสื่อสาร'),
+            IT('รายงานแยกความรู้ ทักษะ และคุณลักษณะ ไม่รายงานเพียงคะแนนรวม', 'แบบรายงานรายด้าน'),
+            IT('รักษาความลับข้อมูลและใช้ผลเพื่อช่วยเหลือ ไม่ประจานหรือจัดอันดับเด็ก', 'วิธีจัดเก็บ/สื่อสาร สัมภาษณ์'),
+            IT('นำผลไปปรับแผนการสอน หลักสูตร สื่อ และการพัฒนาครู', 'แผนปรับปรุงและหลักฐานดำเนินการ')
+          ])
         ] },
-      { no: 4, name: 'ด้านอาคารสถานที่',   pts: 35,
-        questions: [
-          'อาคารเรียนมีความมั่นคงแข็งแรงและปลอดภัย',
-          'ห้องเรียนมีแสงสว่างและอากาศถ่ายเทสะดวก',
-          'มีพื้นที่เล่นและอุปกรณ์ที่ปลอดภัยเหมาะสม',
-          'มีห้องน้ำสะอาดและเพียงพอต่อจำนวนนักเรียน',
-          'มีการจัดสภาพแวดล้อมให้เอื้อต่อการเรียนรู้',
-          'มีมุมความรู้/ป้ายนิเทศที่ส่งเสริมการเรียนรู้',
-          'มีความสะอาดเป็นระเบียบเรียบร้อยโดยรวม'
+
+      { no: 4, name: 'การตรวจสอบผลลัพธ์ผู้เรียนแบบสุ่ม', short: 'สุ่มผลลัพธ์ผู้เรียน', pts: 15, pages: 'หน้า 33-34',
+        meta: { title: 'ข้อมูลการสุ่มตรวจผลลัพธ์ผู้เรียน',
+          fields: [
+            { id: 'f4_sampled', label: 'จำนวนผู้เรียนที่สุ่ม (คน)', ph: 'จำนวนผู้เรียนที่สุ่มตรวจ', oninput: 'calcForm4Pct()' },
+            { id: 'f4_passed',  label: 'จำนวนผู้เรียนที่ทำได้ตามเกณฑ์', ph: 'จำนวนที่ผ่านเกณฑ์', oninput: 'calcForm4Pct()' },
+            { id: 'f4_pct',     label: 'ร้อยละผู้เรียนที่บรรลุเป้าหมาย', ph: 'คำนวณอัตโนมัติ', readonly: true }
+          ] },
+        sections: [
+          S('4.1', 'ผลลัพธ์การเรียนรู้ของผู้เรียน', 15, [
+            IT('ความรู้และความเข้าใจ: อธิบายสาระสำคัญด้วยภาษาของตนเองและเชื่อมกับหลักคำสอน', 'อธิบายด้วยภาษาตนเอง'),
+            IT('การอ่านและการสื่อสาร: อ่าน/สื่อสารได้ตามตัวชี้วัดของชั้นปีและเข้าใจความหมาย', 'อ่านและสื่อสารตามตัวชี้วัด'),
+            IT('ทักษะการปฏิบัติศาสนกิจ: ปฏิบัติได้ถูกลำดับ ถูกต้องตามระดับชั้น และอธิบายข้อควรระวังได้', 'ปฏิบัติศาสนกิจถูกต้องตามระดับ'),
+            IT('การประยุกต์ใช้: เลือกแนวปฏิบัติที่เหมาะสมในสถานการณ์ชีวิตและให้เหตุผลได้', 'ประยุกต์ใช้ในชีวิตจริง'),
+            IT('คุณลักษณะและการอยู่ร่วมกัน: แสดงมารยาท วินัย ความรับผิดชอบ ความร่วมมือ และจิตสาธารณะ', 'มารยาท วินัย และจิตสาธารณะ')
+          ])
         ] }
     ];
-    // ทุกด้าน: คะแนนเต็ม 150 = 40+40+35+35 (ข้อละ 5 คะแนนเท่ากัน)
+
+    // แบบที่ 5 (หน้า 36-38): สรุปและแผนพัฒนา — ไม่มีคะแนน (เชิงคุณภาพ)
+    const FORM5_FIELDS = [
+      { id: 'f5_strengths', label: 'จุดแข็งสำคัญ (2-3 เรื่อง)', ph: 'ระบุจุดแข็งที่พบจากการนิเทศครั้งนี้' },
+      { id: 'f5_gaps',      label: 'ช่องว่างที่มีผลต่อผู้เรียนมากที่สุด', ph: 'ระบุจุดที่ควรพัฒนาเร่งด่วน' },
+      { id: 'f5_causes',    label: 'สาเหตุหรือเงื่อนไขที่เกี่ยวข้อง', ph: 'ระบุสาเหตุ/เงื่อนไขที่เกี่ยวข้องกับช่องว่าง' },
+      { id: 'f5_resources', label: 'ทรัพยากร/ความช่วยเหลือที่ศูนย์ต้องการ', ph: 'ระบุทรัพยากรหรือความช่วยเหลือที่ต้องการ' }
+    ];
 
     const LEVELS = [
       { min: 80, name: 'ดีมาก',        cls: 'lv-green' },
@@ -1204,69 +1330,212 @@
       });
     });
 
-    // ---- สร้างฟอร์ม 5 ด้าน (Tabs + คำถาม + ปุ่มคะแนน 0-5) ----
+    // ---- สร้างฟอร์ม 5 แบบ (Tabs + หัวข้อ/ตอน + ข้อ/หลักฐาน + คะแนน 0-3 + บันทึกข้อสังเกต) ----
+    const POINT_PER_ITEM = 3;   // ข้อละ 3 คะแนน ตามคู่มือ
+
+    function allItems(formNo) {
+      const f = FORMS.find(x => x.no === formNo);
+      const out = [];
+      (f.sections || []).forEach((s, si) => {
+        s.items.forEach((it, ii) => out.push({ f, s, si, ii, it }));
+      });
+      return out;
+    }
+
+    function renderMetaCard(f) {
+      if (!f.meta) return '';
+      const inputs = f.meta.fields.map(fd => `
+        <div class="col-6 col-md-4">
+          <label>${escHtml(fd.label)}</label>
+          <input type="${fd.type || 'text'}" id="${fd.id}" class="form-control" placeholder="${escHtml(fd.ph || '')}"
+                 ${fd.readonly ? 'readonly' : ''} ${fd.oninput ? `oninput="${fd.oninput}"` : ''}>
+        </div>`).join('');
+      return `<div class="form-meta-card"><div class="mtitle">${escHtml(f.meta.title || '')}</div><div class="row">${inputs}</div></div>`;
+    }
+
+    function renderSection(f, s, si) {
+      return `<div class="form-section" data-si="${si}">
+        <div class="section-head">
+          <div><span class="code">${escHtml(s.code)}</span> · <span class="title">${escHtml(s.title)}</span></div>
+          <span class="pts" id="secPts_${f.no}_${si}">0 / ${s.pts}</span>
+        </div>
+        <div class="section-body">
+          ${s.items.map((it, ii) => `
+            <div class="q-item">
+              <div class="q-text">${f.no}.${escHtml(s.code.split('.')[1])}.${ii + 1} ${escHtml(it.text)} <span class="small text-muted">(0-3)</span></div>
+              <div class="q-evidence">📎 หลักฐาน: ${escHtml(it.evidence)}</div>
+              <div class="q-scale" data-q="${ii}">
+                ${scaleButtons(f, si, ii)}
+              </div>
+              <div class="q-note">
+                <label>บันทึกข้อสังเกต</label>
+                <textarea id="note_${f.no}_${si}_${ii}" placeholder="จดบันทึกข้อสังเกต / หลักฐานที่พบเห็น..."></textarea>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>`;
+    }
+
+    function renderForm5Panel() {
+      const fields = FORM5_FIELDS.map(fd => `
+        <label>${escHtml(fd.label)}</label>
+        <textarea id="${fd.id}" class="form-control mb-2" placeholder="${escHtml(fd.ph || '')}"></textarea>`).join('');
+
+      return `<div class="form-panel${activeTab === 5 ? '' : ' d-none'}" data-form="5">
+        <div class="form-meta-card"><div class="mtitle">📋 แบบสรุปผลรายศูนย์และแผนพัฒนา (แบบที่ 5 · หน้า 36-38)</div></div>
+
+        <div class="card" style="box-shadow:none; border:1px solid var(--border); margin-bottom:12px;">
+          <div class="card-title"><h4>🎯 สรุปผลการนิเทศ</h4></div>
+          <div class="summary-score">
+            <div class="cell"><div class="v" id="sumF1">0 / 45</div><div class="l">แบบที่ 1 · การนำหลักสูตรไปใช้</div></div>
+            <div class="cell"><div class="v" id="sumF2">0 / 54</div><div class="l">แบบที่ 2 · การจัดการเรียนรู้ของครู</div></div>
+            <div class="cell"><div class="v" id="sumF3">0 / 51</div><div class="l">แบบที่ 3 · การวัดและประเมินผล</div></div>
+            <div class="cell"><div class="v" id="sumF4">0 / 15</div><div class="l">แบบที่ 4 · ผลลัพธ์ผู้เรียน (สุ่ม)</div></div>
+            <div class="cell"><div class="v" id="sumTotal">0 / 150</div><div class="l">คะแนนรวมทั้งหมด (150 คะแนน)</div></div>
+            <div class="cell"><div class="v" id="sumLevel" style="font-size:1rem;">รอประเมิน</div><div class="l">ระดับผลการนิเทศ</div></div>
+          </div>
+        </div>
+
+        <div class="card" style="box-shadow:none; border:1px solid var(--border); margin-bottom:12px;">
+          <div class="card-title"><h4>🤖 วิเคราะห์และร่างแผนพัฒนาด้วย AI</h4></div>
+          <p class="small text-muted" style="margin:0 0 4px;">ให้ระบบ AI สังเคราะห์คะแนนและข้อสังเกตจากทุกแบบฟอร์ม เพื่อสรุปจุดแข็ง ช่องว่าง และสร้างแผนพัฒนาร่วมกันโดยอัตโนมัติ</p>
+          <button type="button" class="btn btn-primary w-100" onclick="aiDraftPlan()">✨ ประมวลผลด้วย AI</button>
+        </div>
+
+        ${fields}
+
+        <h5>🗂️ แผนพัฒนาร่วมกัน (Action Plan)</h5>
+        <div class="table-wrap mt-1">
+          <table class="ap-table">
+            <thead><tr><th>ประเด็นพัฒนา</th><th>กิจกรรม / วิธีดำเนินการ</th><th>ผู้รับผิดชอบ</th><th>กำหนดเสร็จ</th><th>หลักฐานความสำเร็จ</th><th></th></tr></thead>
+            <tbody id="apBody"></tbody>
+          </table>
+        </div>
+        <button type="button" class="btn btn-outline btn-sm mt-2" onclick="addPlanRow()">➕ เพิ่มแถวแผนพัฒนา</button>
+
+        <h5>📎 อัปโหลดเอกสาร / รูปภาพประกอบ</h5>
+        <p class="small text-muted" style="margin:0 0 8px;">เลือกไฟล์เอกสาร แผนการสอน รูปถ่ายกิจกรรม หรือหลักฐานการนิเทศเพื่ออัปโหลดเก็บใน Google Drive</p>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="file" id="f5_files" class="form-control" multiple onchange="listUploadFiles()" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.mp4">
+          <button type="button" class="btn btn-outline2" onclick="document.getElementById('f5_files').value='';listUploadFiles();">✕ ล้าง</button>
+        </div>
+        <div id="f5_fileList" class="info-box d-none mt-1 small"></div>
+        <input type="hidden" id="f5_fileNames">
+      </div>`;
+    }
+
     function renderFormSchema() {
       const tabs = document.getElementById('formTabs');
       const panels = document.getElementById('formPanels');
-      tabs.innerHTML = FORMS.map(f => `
-        <button type="button" class="tab${f.no === activeTab ? ' active' : ''}" onclick="switchTab(${f.no})">
-          แบบที่ ${f.no}<span class="tab-pts">${f.name} (${f.pts})</span>
-        </button>`).join('');
+      const tabsHtml = FORMS.map(f =>
+        `<button type="button" class="tab${f.no === activeTab ? ' active' : ''}" onclick="switchTab(${f.no})">
+          ${f.no}. ${escHtml(f.short || f.name)}<span class="tab-pts">${f.pts} คะแนน</span>
+        </button>`).join('') +
+        `<button type="button" class="tab${activeTab === 5 ? ' active' : ''}" onclick="switchTab(5)">
+          5. สรุปและแผนพัฒนา<span class="tab-pts">รายศูนย์</span>
+        </button>`;
+      tabs.innerHTML = tabsHtml;
 
       panels.innerHTML = FORMS.map(f => `
         <div class="form-panel${f.no === activeTab ? '' : ' d-none'}" data-form="${f.no}">
-          ${f.questions.map((q, qi) => `
-            <div class="q-item">
-              <div class="q-text">${f.no}.${qi + 1} ${escHtml(q)} <span class="small text-muted">(เต็ม ${pointsPerQ(f)})</span></div>
-              <div class="q-scale" data-q="${qi}">
-                ${scaleButtons(f, qi)}
-              </div>
-            </div>`).join('')}
-        </div>`).join('');
+          <div class="form-meta-card"><div class="mtitle">📝 แบบที่ ${f.no} ${escHtml(f.name)} (${f.pages}) — คะแนนเต็ม ${f.pts}</div></div>
+          ${renderMetaCard(f)}
+          ${(f.sections || []).map((s, si) => renderSection(f, s, si)).join('')}
+          ${f.no === 2 ? `
+            <div class="form-meta-card"><div class="mtitle">💬 ข้อเสนอแนะหลังสังเกต</div>
+              <textarea id="f2_suggestion" class="form-control" placeholder="ระบุข้อเสนอแนะสำหรับครูหลังการสังเกต..."></textarea>
+              <button type="button" class="btn btn-primary btn-sm ai-btn" onclick="aiDraftSuggestion()">✨ แนะนำด้วย AI</button>
+            </div>` : ''}
+        </div>`).join('') +
+        renderForm5Panel();
     }
 
-    function pointsPerQ(f) {
-      return Math.round(f.pts / f.questions.length);
-    }
-    function scaleButtons(f, qi) {
-      const max = pointsPerQ(f);
+    function scaleButtons(f, si, ii) {
       let s = '';
-      for (let v = 0; v <= max; v++) {
-        s += `<button type="button" data-v="${v}" onclick="setScore(${f.no}, ${qi}, ${v})">${v}</button>`;
+      for (let v = 0; v <= POINT_PER_ITEM; v++) {
+        s += `<button type="button" data-v="${v}" onclick="setScore(${f.no}, ${si}, ${ii}, ${v})">${v}</button>`;
       }
       return s;
     }
 
     function switchTab(no) {
       activeTab = no;
-      document.querySelectorAll('.tab').forEach((b, i) => b.classList.toggle('active', i === no - 1));
+      document.querySelectorAll('#formTabs .tab').forEach((b, i) => {
+        const target = i === 4 ? 5 : i + 1;
+        b.classList.toggle('active', target === no);
+      });
       document.querySelectorAll('.form-panel').forEach(p => p.classList.toggle('d-none', Number(p.dataset.form) !== no));
     }
 
-    function setScore(formNo, qi, v) {
-      const panel = document.querySelector(`.form-panel[data-form="${formNo}"]`);
-      const btn = panel.querySelector(`.q-scale[data-q="${qi}"] button[data-v="${v}"]`);
-      panel.querySelectorAll(`.q-scale[data-q="${qi}"] button`).forEach(b => b.classList.remove('sel'));
+    function setScore(formNo, si, ii, v) {
+      const section = document.querySelector(`.form-panel[data-form="${formNo}"] .form-section[data-si="${si}"]`);
+      if (!section) return;
+      const btn = section.querySelector(`.q-scale[data-q="${ii}"] button[data-v="${v}"]`);
+      if (!btn) return;
+      section.querySelectorAll(`.q-scale[data-q="${ii}"] button`).forEach(b => b.classList.remove('sel'));
       btn.classList.add('sel');
+      updateSectionPts(formNo, si);
       recalcTotal();
     }
 
-    function getFormScores(formNo) {
-      const panel = document.querySelector(`.form-panel[data-form="${formNo}"]`);
-      const qs = panel.querySelectorAll('.q-item');
+    function updateSectionPts(formNo, si) {
+      const sum = getSectionScores(formNo, si).sum;
+      const sec = FORMS.find(x => x.no === formNo).sections[si];
+      const el = document.getElementById(`secPts_${formNo}_${si}`);
+      if (el) el.innerText = `${sum} / ${sec.pts}`;
+    }
+
+    function getSectionScores(formNo, si) {
+      const section = document.querySelector(`.form-panel[data-form="${formNo}"] .form-section[data-si="${si}"]`);
       const scores = [];
       let sum = 0;
-      qs.forEach(qi => {
-        const sel = qi.querySelector('.q-scale button.sel');
-        const v = sel ? Number(sel.dataset.v) : 0;
-        scores.push(v); sum += v;
-      });
+      if (section) {
+        section.querySelectorAll('.q-item').forEach(qi => {
+          const sel = qi.querySelector('.q-scale button.sel');
+          const v = sel ? Number(sel.dataset.v) : 0;
+          scores.push(v); sum += v;
+        });
+      }
       return { scores, sum };
     }
 
+    function getFormScores(formNo) {
+      const f = FORMS.find(x => x.no === formNo);
+      let sum = 0;
+      const bySection = [];
+      (f.sections || []).forEach((s, si) => {
+        const r = getSectionScores(formNo, si);
+        bySection.push(r.scores);
+        sum += r.sum;
+      });
+      return { sum, bySection, scores: bySection.flat() };
+    }
+
+    function getFormNotes(formNo) {
+      const notes = [];
+      const panel = document.querySelector(`.form-panel[data-form="${formNo}"]`);
+      (FORMS.find(x => x.no === formNo).sections || []).forEach((s, si) => {
+        s.items.forEach((it, ii) => {
+          const el = document.getElementById(`note_${formNo}_${si}_${ii}`);
+          notes.push(el ? el.value : '');
+        });
+      });
+      return notes;
+    }
+
+    function calcForm4Pct() {
+      const a = Number(document.getElementById('f4_sampled').value || 0);
+      const b = Number(document.getElementById('f4_passed').value || 0);
+      const el = document.getElementById('f4_pct');
+      el.value = (a > 0) ? Math.round((b / a) * 100) + '%' : '';
+    }
+
     function recalcTotal() {
-      let total = 0;
-      FORMS.forEach(f => { total += getFormScores(f.no).sum; });
+      const s1 = getFormScores(1).sum;
+      const s2 = getFormScores(2).sum;
+      const s3 = getFormScores(3).sum;
+      const s4 = getFormScores(4).sum;
+      const total = s1 + s2 + s3;   // แบบที่ 1-3 = 150 คะแนน
       const pct = Math.round((total / TOTAL_FULL) * 100);
       const lvl = LEVELS.find(l => pct >= l.min) || LEVELS[LEVELS.length - 1];
       document.getElementById('totalDisplay').innerText = total;
@@ -1276,6 +1545,112 @@
       const ld = document.getElementById('levelDisplay');
       ld.innerText = `${lvl.name} (${pct}%)`;
       ld.className = 'lvl ' + lvl.cls;
+
+      // อัปเดตหน้าแบบที่ 5 (สรุป)
+      const set = (id, txt) => { const el = document.getElementById(id); if (el) el.innerText = txt; };
+      set('sumF1', `${s1} / 45`);
+      set('sumF2', `${s2} / 54`);
+      set('sumF3', `${s3} / 51`);
+      set('sumF4', `${s4} / 15`);
+      set('sumTotal', `${total} / 150`);
+      const sl = document.getElementById('sumLevel');
+      if (sl) { sl.innerText = `${lvl.name} (${pct}%)`; sl.className = 'v lv ' + lvl.cls; sl.style.fontSize = '1rem'; }
+    }
+
+    // ---- Action Plan (แบบที่ 5) ----
+    function addPlanRow(data) {
+      const d = data || {};
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><input value="${escHtml(d.topic || '')}"></td>
+        <td><input value="${escHtml(d.activity || '')}"></td>
+        <td><input value="${escHtml(d.owner || '')}"></td>
+        <td><input value="${escHtml(d.deadline || '')}" placeholder="เช่น 30 ม.ค. 2569"></td>
+        <td><input value="${escHtml(d.evidence || '')}"></td>
+        <td style="text-align:center;"><button type="button" class="ap-del" onclick="this.closest('tr').remove()">🗑️</button></td>`;
+      document.getElementById('apBody').appendChild(tr);
+    }
+
+    function collectPlanRows() {
+      return [...document.querySelectorAll('#apBody tr')].map(tr => {
+        const ins = tr.querySelectorAll('input');
+        return {
+          topic: ins[0].value, activity: ins[1].value, owner: ins[2].value,
+          deadline: ins[3].value, evidence: ins[4].value
+        };
+      }).filter(r => r.topic || r.activity || r.owner);
+    }
+
+    function listUploadFiles() {
+      const files = document.getElementById('f5_files').files;
+      const box = document.getElementById('f5_fileList');
+      if (files.length === 0) { box.classList.add('d-none'); document.getElementById('f5_fileNames').value = ''; return; }
+      const names = [...files].map(x => x.name);
+      document.getElementById('f5_fileNames').value = names.join(' | ');
+      box.classList.remove('d-none');
+      box.innerHTML = `📎 เลือกแล้ว <b>${files.length}</b> ไฟล์: <br>${names.map(n => escHtml(n)).join('<br>')}`;
+    }
+
+    // ---- AI: ร่างข้อเสนอแนะ (แบบที่ 2) ----
+    function aiDraftSuggestion() {
+      const s = getFormScores(2);
+      const low = [];
+      (FORMS.find(x => x.no === 2).sections || []).forEach((sec, si) => {
+        sec.items.forEach((it, ii) => {
+          const v = s.bySection[si][ii];
+          if (v <= 1) low.push(`${sec.code}${ii + 1} ${it.text}`);
+        });
+      });
+      const el = document.getElementById('f2_suggestion');
+      let txt = 'จากการสังเกตครั้งนี้ ครูมีจุดเด่นด้านการจัดกิจกรรมที่หลากหลาย';
+      if (low.length) {
+        txt = 'ครูควรพัฒนาประเด็นต่อไปนี้:\n' + low.slice(0, 4).map(t => '• ' + t).join('\n') +
+          '\n\nควรเสริมด้วยการให้ผู้เรียนได้ฝึกปฏิบัติจริงและสะท้อนคิดมากขึ้น';
+      } else {
+        txt += '\nควรรักษามาตรฐานการจัดการเรียนรู้ที่ดีนี้ไว้อย่างต่อเนื่อง';
+      }
+      el.value = txt;
+      Swal.fire({ icon: 'success', title: 'แนะนำด้วย AI เรียบร้อย', text: 'สามารถแก้ไขข้อความได้ตามที่เห็นสมควร', timer: 2500, showConfirmButton: false });
+    }
+
+    // ---- AI: ร่างสรุปและแผนพัฒนา (แบบที่ 5) ----
+    function aiDraftPlan() {
+      const s1 = getFormScores(1), s2 = getFormScores(2), s3 = getFormScores(3), s4 = getFormScores(4);
+      const total = s1.sum + s2.sum + s3.sum;
+      const pct = Math.round((total / TOTAL_FULL) * 100);
+      const lvl = LEVELS.find(l => pct >= l.min) || LEVELS[LEVELS.length - 1];
+
+      const strong = [], weak = [];
+      [s1, s2, s3, s4].forEach((s, fi) => {
+        const f = FORMS[fi];
+        (f.sections || []).forEach((sec, si) => {
+          const avg = sec.pts > 0 ? s.bySection[si].reduce((a, b) => a + b, 0) : 0;
+          const ratio = avg / sec.pts;
+          if (ratio >= 0.8) strong.push(`${f.no}.${sec.code.split('.')[1]} ${sec.title}`);
+          else if (ratio < 0.5) weak.push(`${f.no}.${sec.code.split('.')[1]} ${sec.title}`);
+        });
+      });
+
+      document.getElementById('f5_strengths').value = strong.length
+        ? '1) ' + strong.slice(0, 3).map(t => t.split(' ').slice(1).join(' ')).join('\n2) ') || strong.slice(0, 3).join('\n')
+        : 'ยังไม่พบข้อที่ได้คะแนน 80% ขึ้นไป — ควรทบทวนข้อมูลและหลักฐานเพิ่มเติม';
+
+      const gaps = weak.length ? weak.slice(0, 3).map(t => '• ' + t).join('\n') : 'ไม่มีตอนที่ต่ำกว่า 50% — ควรรักษาคุณภาพ';
+      document.getElementById('f5_gaps').value = 'ช่องว่างที่พบ:\n' + gaps;
+      document.getElementById('f5_causes').value = '—';
+
+      // ร่าง Action Plan 1 แถว
+      if (!document.querySelector('#apBody tr')) {
+        const topic = weak[0] ? weak[0] : 'พัฒนาคุณภาพการจัดการเรียนรู้อย่างต่อเนื่อง';
+        addPlanRow({
+          topic: topic,
+          activity: 'ประชุม PLC / นิเทศภายใน / อบรมเชิงปฏิบัติการ',
+          owner: 'ครู/ผู้บริหารศูนย์',
+          deadline: '',
+          evidence: 'บันทึกประชุม รูปภาพ แผนปรับปรุง'
+        });
+      }
+      Swal.fire({ icon: 'success', title: 'AI ร่างแผนพัฒนาสำเร็จ', html: `ระดับผลการนิเทศเบื้องต้น: <b>${lvl.name} (${pct}%)</b><br>กรุณาตรวจสอบและปรับแก้ก่อนบันทึก`, confirmButtonText: 'ตกลง' });
     }
 
     // ---- พิกัด GPS (ปักหมุดตาดีกา) ----
@@ -1581,25 +1956,61 @@
       document.getElementById('editInfo').innerText = h.timestamp + ' (ผู้นิเทศ: ' + h.supervisor + ')';
       document.getElementById('finalSubmitBtn').innerText = '💾 บันทึกการแก้ไขและอัปเดตข้อมูลศูนย์';
 
-      // โหลดคะแนนจาก details.answers (ถ้ามี) หรือแจกจากคอลัมน์ score1-4 (บันทึกเก่าที่ไม่มี details)
-      const answers = (h.details && h.details.answers) || null;
+      const details = h.details || {};
+      const answers = details.answers || null;
+      const notes = details.notes || null;
       const colScores = [h.score1, h.score2, h.score3, h.score4];
-      FORMS.forEach((f, fi) => {
-        const qs = document.querySelectorAll(`.form-panel[data-form="${f.no}"] .q-item`);
+
+      // 1) คะแนนรายข้อ
+      FORMS.forEach((f) => {
+        const items = allItems(f.no);
         let src = null;
         if (answers && answers[f.no]) src = answers[f.no];
-        if (!src) src = distributePoints(Number(colScores[fi]) || 0, qs.length, pointsPerQ(f));
-        qs.forEach((qi, qii) => {
+        if (!src) {
+          // บันทึกเก่า: แจกคะแนนรวมรายแบบ (score1-4) ลงรายข้อ
+          const itemsPerForm = allItems(f.no).length;
+          src = distributePoints(Number(colScores[f.no - 1]) || 0, itemsPerForm, POINT_PER_ITEM);
+        }
+        items.forEach((it, i) => {
           let v = 0;
-          if (src && src[qii] != null) v = src[qii];
-          const btn = qi.querySelector(`.q-scale button[data-v="${v}"]`);
+          if (src && src[i] != null) v = Number(src[i]);
+          const btn = document.querySelector(`.form-panel[data-form="${f.no}"] .q-scale[data-q="${it.ii}"] button[data-v="${v}"]`);
           if (btn) {
-            qi.querySelectorAll('.q-scale button').forEach(b => b.classList.remove('sel'));
+            const scale = btn.closest('.q-scale');
+            scale.querySelectorAll('button').forEach(b => b.classList.remove('sel'));
             btn.classList.add('sel');
           }
         });
       });
+
+      // 2) บันทึกข้อสังเกต
+      FORMS.forEach(f => {
+        allItems(f.no).forEach((it, i) => {
+          const el = document.getElementById(`note_${f.no}_${it.si}_${it.ii}`);
+          if (el && notes && notes[f.no] && notes[f.no][i] != null) el.value = notes[f.no][i];
+        });
+      });
+
+      // 3) Meta (แบบ 2/3/4)
+      const m2 = details.form2 || {}, m3 = details.form3 || {}, m4 = details.form4 || {};
+      const setMeta = (obj) => Object.keys(obj).forEach(k => {
+        const el = document.getElementById(k);
+        if (el) el.value = obj[k] || '';
+      });
+      setMeta({ f2_teacher: m2.teacher, f2_subject: m2.subject, f2_class: m2.class, f2_duration: m2.duration, f2_note: m2.context, f2_suggestion: m2.suggestion });
+      setMeta({ f3_subject: m3.subject, f3_class: m3.class, f3_period: m3.period });
+      setMeta({ f4_sampled: m4.sampled, f4_passed: m4.passed });
+      if (m4.sampled || m4.passed) calcForm4Pct();
+
+      // 4) แบบที่ 5 สรุป + Action Plan
+      const f5 = details.form5 || {};
+      setMeta({ f5_strengths: f5.strengths, f5_gaps: f5.gaps, f5_causes: f5.causes, f5_resources: f5.resources });
+      const plan = details.actionPlan || [];
+      document.getElementById('apBody').innerHTML = '';
+      (plan.length ? plan : []).forEach(p => addPlanRow(p));
+
       recalcTotal();
+      switchTab(5);
       document.getElementById('mainForm').scrollIntoView({ behavior: 'smooth' });
     }
 
@@ -1618,6 +2029,19 @@
 
     function resetEvalForm() {
       document.querySelectorAll('.q-scale button').forEach(b => b.classList.remove('sel'));
+      document.querySelectorAll('.q-note textarea').forEach(t => t.value = '');
+      ['f2_teacher','f2_subject','f2_class','f2_duration','f2_note','f2_suggestion',
+       'f3_subject','f3_class','f3_period','f4_sampled','f4_passed','f4_pct',
+       'f5_strengths','f5_gaps','f5_causes','f5_resources'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+      document.getElementById('apBody').innerHTML = '';
+      addPlanRow({});
+      document.getElementById('f5_files').value = '';
+      document.getElementById('f5_fileNames').value = '';
+      document.getElementById('f5_fileList').classList.add('d-none');
+      FORMS.forEach(f => (f.sections || []).forEach((s, si) => updateSectionPts(f.no, si)));
       document.getElementById('totalScore').value = 0;
       document.getElementById('pctScore').value = 0;
       document.getElementById('levelScore').value = '';
@@ -1625,6 +2049,7 @@
       const ld = document.getElementById('levelDisplay');
       ld.innerText = 'ยังไม่กรอก';
       ld.className = 'lvl';
+      recalcTotal();
     }
 
     function resetEditState() {
@@ -1641,8 +2066,30 @@
     // ---- บันทึก ----
     function collectAnswers() {
       const answers = {};
-      FORMS.forEach(f => { answers[f.no] = getFormScores(f.no).scores; });
-      return answers;
+      const notes = {};
+      FORMS.forEach(f => {
+        answers[f.no] = getFormScores(f.no).scores;
+        notes[f.no] = getFormNotes(f.no);
+      });
+      return { answers, notes };
+    }
+
+    function collectMeta() {
+      const v = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+      return {
+        form2: {
+          teacher: v('f2_teacher'), subject: v('f2_subject'), class: v('f2_class'),
+          duration: v('f2_duration'), context: v('f2_note'), suggestion: v('f2_suggestion')
+        },
+        form3: { subject: v('f3_subject'), class: v('f3_class'), period: v('f3_period') },
+        form4: { sampled: v('f4_sampled'), passed: v('f4_passed'), pct: v('f4_pct') },
+        form5: {
+          strengths: v('f5_strengths'), gaps: v('f5_gaps'),
+          causes: v('f5_causes'), resources: v('f5_resources'),
+          files: v('f5_fileNames')
+        },
+        actionPlan: collectPlanRows()
+      };
     }
 
     async function submitFinal(e) {
@@ -1680,6 +2127,9 @@
       const btn = document.getElementById('finalSubmitBtn');
       btn.disabled = true;
       showLoading('กำลังบันทึกข้อมูลการนิเทศ...');
+
+      const collected = collectAnswers();
+      const meta = collectMeta();
 
       const payload = {
         supervisor: currentUser.fname,
@@ -1720,7 +2170,13 @@
           totalScore: document.getElementById('totalScore').value,
           pct: document.getElementById('pctScore').value,
           level: document.getElementById('levelScore').value,
-          answers: collectAnswers(),
+          answers: collected.answers,
+          notes: collected.notes,
+          form2: meta.form2,
+          form3: meta.form3,
+          form4: meta.form4,
+          form5: meta.form5,
+          actionPlan: meta.actionPlan,
           comment: '',
           strengths: '',
           improve: ''
@@ -1768,6 +2224,7 @@
 
     // ---- Init ----
     renderFormSchema();
+    addPlanRow({});
     renderAddrHeader();
     loadTadikaList();
     loadStats();
