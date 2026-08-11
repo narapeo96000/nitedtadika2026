@@ -34,6 +34,7 @@
       --pink: #db2777;
     }
     * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+    html, body { max-width: 100%; overflow-x: hidden; }
     body {
       margin: 0; background: #f4f7fa; color: var(--ink);
       font-family: 'Sarabun', sans-serif; font-size: 1rem;
@@ -161,9 +162,9 @@
     .total-box .lvl { display: inline-block; margin-top: 6px; background: rgba(255,255,255,.2); border-radius: 999px; padding: 4px 16px; font-weight: 600; }
 
     table { width: 100%; border-collapse: collapse; font-size: .85rem; }
-    th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #eef5f1; vertical-align: top; }
-    thead th { color: var(--blue-dark); background: var(--blue-soft); font-weight: 600; white-space: nowrap; }
-    .table-wrap { overflow-x: auto; }
+    th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #eef5f1; vertical-align: top; word-break: break-word; overflow-wrap: anywhere; }
+    thead th { color: var(--blue-dark); background: var(--blue-soft); font-weight: 600; }
+    .table-wrap { overflow-x: hidden; }
 
     .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
     .stat-card { background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 14px; }
@@ -267,6 +268,34 @@
     .app-footer .org { font-weight: 600; color: var(--primary-deep); }
 
     @media (max-width: 480px) {
+      body { font-size: .95rem; }
+      .container { padding: 12px 10px 90px; }
+      .card { padding: 14px; border-radius: 16px; margin-bottom: 12px; }
+      .card-title h4 { font-size: 1rem; }
+      .stat-card { padding: 10px; border-radius: 14px; }
+      .stat-card .val { font-size: 1.35rem; }
+      .stat-card .lbl { font-size: .74rem; }
+      .tk-cell { padding: 8px 4px; }
+      .tk-val { font-size: 1.05rem; }
+      .tk-lbl { font-size: .66rem; }
+      .btn { min-height: 44px; padding: 8px 12px; font-size: .95rem; }
+      .form-control, .form-select { min-height: 44px; padding: 8px 12px; font-size: .95rem; }
+      label { font-size: .86rem; }
+      table { font-size: .72rem; table-layout: fixed; }
+      th, td { padding: 7px 4px; }
+      .chip { font-size: .68rem; padding: 3px 8px; }
+      .q-text { font-size: .9rem; }
+      .q-scale button { min-width: 34px; padding: 7px 2px; font-size: .88rem; }
+      .lvl-row { font-size: .76rem; }
+      .lvl-row .lbl { min-width: 66px; }
+      .tabs { flex-wrap: wrap; overflow-x: hidden; }
+      .tab { flex: 1 1 30%; min-width: 0; white-space: normal; font-size: .8rem; padding: 8px 4px; }
+      .header-banner { padding: 14px 12px; }
+      .header-banner h3 { font-size: 1.05rem; }
+      .header-banner p { font-size: .8rem; }
+      .brand .logo { width: 64px; height: 64px; font-size: 2rem; }
+      .brand h1 { font-size: 1.25rem; }
+      .app-footer { font-size: .72rem; }
       .col-3, .col-md-3 { width: 50%; }
       .stat-grid { grid-template-columns: repeat(2, 1fr); }
       #chat-widget { width: 100%; max-width: 100vw; bottom: 0; right: 0; border-radius: 16px 16px 0 0; }
