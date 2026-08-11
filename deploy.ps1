@@ -2,15 +2,16 @@
 #  deploy.ps1 — อัปเดต GitHub + Apps Script (deploy) อัตโนมัติ
 #  วิธีใช้:  powershell -ExecutionPolicy Bypass -File deploy.ps1
 #
-#  หลักการ: index.html ชี้ไปที่ deployment @HEAD ของ Apps Script
-#  ซึ่งอ่านโค้ดเวอร์ชันล่าสุดเสมอ => แค่ clasp push ก็ deploy แล้ว
+#  หลักการ: push โค้ด -> สร้าง version ใหม่ -> ชี้ deployment เดิม
+#  ไปที่ version ใหม่ (URL ของเว็บแอปคงเดิม ไม่ต้องแก้ index.html)
 # ============================================================
 $ErrorActionPreference = 'Stop'
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $Root
 
-# URL ที่เว็บแอปใช้งาน (deployment @HEAD — อัปเดตโค้ดอัตโนมัติ)
-$WebAppURL = 'https://script.google.com/macros/s/AKfycbxA9i_YG_Kiuy-P4VQjZdoseN26_nG_HsIqs3qQ0INF/exec'
+# Deployment ID ที่ใช้งานจริง (URL คงเดิม = .../s/AKfycbxHLuOAJvHuBa3xTWe0FNZEilRxsFl_XVhQAJTo9U2uzcHfS384QM7GnVdTgB9c6UUP/exec)
+$DeploymentId = 'AKfycbxHLuOAJvHuBa3xTWe0FNZEilRxsFl_XVhQAJTo9U2uzcHfS384QM7GnVdTgB9c6UUP'
+$WebAppURL = 'https://script.google.com/macros/s/' + $DeploymentId + '/exec'
 $CommitMsg = "อัปเดตอัตโนมัติ " + (Get-Date -Format 'yyyy-MM-dd HH:mm')
 
 Write-Host "`n=== 1/4 ตรวจสอบ syntax ===" -ForegroundColor Cyan
@@ -34,21 +35,31 @@ if ($changed -gt 0) {
   Write-Host "ไม่มีไฟล์เปลี่ยนแปลง - ข้าม commit/push" -ForegroundColor Yellow
 }
 
-Write-Host "`n=== 3/4 Push โค้ดขึ้น Apps Script (deploy) ===" -ForegroundColor Cyan
+Write-Host "`n=== 3/4 Push โค้ดขึ้น Apps Script + สร้าง version ===" -ForegroundColor Cyan
 clasp push -f
 if ($LASTEXITCODE -ne 0) { throw "clasp push ล้มเหลว!" }
-Write-Host "Apps Script deploy เรียบร้อย" -ForegroundColor Green
+
+# สร้าง version ใหม่จากโค้ดที่เพิ่ง push (จับเลข version จากผลลัพธ์)
+$verOut = clasp version "auto $CommitMsg" 2>&1
+Write-Host $verOut
+$verNum = ($verOut | Select-String '(\d+)' | ForEach-Object { $_.Matches[0].Value } | Select-Object -First 1)
+if (-not $verNum) { $verNum = 'HEAD' }
+
+# ชี้ deployment เดิมไปที่ version ใหม่ (URL คงเดิม)
+clasp deploy -i $DeploymentId -V $verNum
+if ($LASTEXITCODE -ne 0) { throw "clasp deploy ล้มเหลว!" }
+Write-Host "Deploy version $verNum เรียบร้อย (URL คงเดิม)" -ForegroundColor Green
 
 Write-Host "`n=== 4/4 ตรวจสอบเว็บแอป ===" -ForegroundColor Cyan
 Write-Host "URL: $WebAppURL" -ForegroundColor Green
 try {
   $r = Invoke-WebRequest -Uri $WebAppURL -Method Post `
     -Body '{"action":"getTadikaList"}' `
-    -ContentType 'text/plain;charset=utf-8' -TimeoutSec 25 -UseBasicParsing
+    -ContentType 'text/plain;charset=utf-8' -TimeoutSec 30 -UseBasicParsing
   Write-Host "เว็บแอปตอบกลับ: $($r.StatusCode)" -ForegroundColor Green
   Write-Host ($r.Content.Substring(0, [Math]::Min(150, $r.Content.Length)))
 } catch {
-  Write-Host "ครั้งแรกหลัง push อาจ timeout (Apps Script กำลัง build) - ลองใหม่อีกครั้ง" -ForegroundColor Yellow
+  Write-Host "ครั้งแรกหลัง deploy อาจ timeout (Apps Script กำลัง build) - ลองใหม่อีกครั้ง" -ForegroundColor Yellow
 }
 
 Write-Host "`n=== เสร็จสิ้น (ระบบเป็นปัจจุบันแล้ว) ===" -ForegroundColor Green
