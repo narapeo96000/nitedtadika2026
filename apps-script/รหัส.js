@@ -120,6 +120,7 @@ function getTadikaList() {
 }
 
 // --- สถิติระบบนิเทศออนไลน์ (นับจากชีต ADDRESS/DATA/USERS) ---
+// --- สถิติระบบนิเทศออนไลน์ (นับจากชีต ADDRESS/DATA/USERS) ---
 function getStats() {
   const ss = SpreadsheetApp.openById(SHEET_ID);
   let totalTadika = 0, totalEval = 0, totalUsers = 0, sumPct = 0;
@@ -139,16 +140,23 @@ function getStats() {
   if(data) {
     const lastRow = data.getLastRow();
     if(lastRow >= 2) {
+      // หาตำแหน่งคอลัมน์จาก header เพื่อกันข้อมูลเลื่อนคอลัมน์
+      const header = data.getRange(1, 1, 1, 15).getValues()[0];
+      const colOf = name => {
+        for(let i = 0; i < header.length; i++) if(String(header[i]).trim() === name) return i;
+        return -1;
+      };
+      const ciName = colOf('ชื่อศูนย์'), ciPct = colOf('ร้อยละ'), ciLvl = colOf('ระดับ'), ciTs = colOf('Timestamp');
       const vals = data.getRange(2, 1, lastRow - 1, 15).getValues();
       totalEval = vals.length;
       vals.forEach(r => {
-        const pct = Number(r[9]);
+        const pct = Number(r[ciPct]);
         if(!isNaN(pct)) {
           sumPct += pct;
-          const lvl = String(r[10] || '').trim();
+          const lvl = String(r[ciLvl] || '').trim();
           if(lvl in levelCounts) levelCounts[lvl]++;
         }
-        latest.push({ name: String(r[2] || ''), timestamp: formatDate(r[0]), pct: isNaN(pct) ? 0 : pct, level: r[10] });
+        latest.push({ name: String(r[ciName] || ''), timestamp: formatDate(r[ciTs]), pct: isNaN(pct) ? 0 : pct, level: r[ciLvl] });
       });
       latest.sort((a, b) => a.timestamp < b.timestamp ? 1 : -1);
     }
