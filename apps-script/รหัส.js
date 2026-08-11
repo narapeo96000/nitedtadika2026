@@ -551,29 +551,42 @@ function saveEvaluation(payload) {
 // ============================================================
 // แชทบอท "น้องศึกษา" — ใช้ Gemini API
 // API Key เก็บที่: Apps Script > Project Settings > Script Properties
-//   ชื่อคีย์: GEMINI_API_KEY  ค่า: <key ของคุณ>
+//   ชื่อคีย์: geminiKey หรือ GEMINI_API_KEY (รองรับทั้งสอง)
 // (ไม่ฝัง key ในโค้ด เพื่อกันรั่วไหลบน GitHub สาธารณะ)
 // ============================================================
 
+// --- อ่านการตั้งค่าระบบจาก Script Properties (รองรับทั้ง geminiKey และ GEMINI_API_KEY) ---
 function getGeminiApiKey() {
-  const k = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
+  const k = PropertiesService.getScriptProperties().getProperty('geminiKey') || PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
   return k ? String(k).trim() : '';
+}
+
+function getSystemSettings() {
+  const p = PropertiesService.getScriptProperties();
+  const geminiKey = p.getProperty('geminiKey') || p.getProperty('GEMINI_API_KEY') || '';
+  return {
+    geminiKey: String(geminiKey).trim(),
+    models: ['gemini-3.5-flash', 'gemini-3-flash', 'gemini-3.1-flash-lite', 'gemini-1.5-flash']
+  };
 }
 
 function processChatbot(userMessage) {
   const msg = String(userMessage || '').toLowerCase();
 
-  // ดึงข้อมูลสถิติ + รายละเอียดศูนย์จาก Sheets มาเป็น Context ให้ AI ตอบเสมอ
-  const contextData = fetchStatisticsForAI();
+  // อ่านการตั้งค่าระบบ (รวม Gemini API Key)
+  const settings = getSystemSettings();
 
   // ถ้ายังไม่ได้ตั้ง API Key ให้ตอบแบบออฟไลน์ (ไม่ต้องใช้ Gemini)
-  if (!getGeminiApiKey()) {
+  if (!settings.geminiKey || settings.geminiKey.trim() === '') {
     return { reply: offlineChatReply(msg) };
   }
 
+  // ดึงข้อมูลสถิติ + รายละเอียดศูนย์จาก Sheets มาเป็น Context ให้ AI ตอบเสมอ
+  const contextData = fetchStatisticsForAI();
+
   // ส่งคำถามผู้ใช้ พร้อมข้อมูลบริบทไปให้ Gemini คิดคำตอบ
   // (ส่งกลับเป็น Markdown ธรรมดา — หน้าเว็บจะแปลงเป็น HTML ปลอดภัยเอง)
-  return { reply: callGeminiAPI(userMessage, contextData) };
+  return { reply: callGeminiAPI(userMessage, contextData, settings) };
 }
 
 // คำตอบสำรองเมื่อยังไม่ได้ตั้งค่า API Key หรือ API ขัดข้อง
@@ -686,10 +699,10 @@ function fetchStatisticsForAI() {
 // ---------------------------------------------------------
 // ฟังก์ชันเรียก Gemini API (ฝัง Context ไปด้วย)
 // ---------------------------------------------------------
-function callGeminiAPI(userMessage, contextData) {
-  const API_KEY = getGeminiApiKey();
+function callGeminiAPI(userMessage, contextData, settings) {
+  const API_KEY = (settings && settings.geminiKey) ? settings.geminiKey : getGeminiApiKey();
   // ลำดับโมเดลที่ต้องการใช้ (ตัวแรกดีที่สุด ถ้าล้มเหลวจะถอยไปตัวถัดไปอัตโนมัติ)
-  const MODELS = ['gemini-3.5-flash', 'gemini-3-flash', 'gemini-3.1-flash-lite', 'gemini-1.5-flash'];
+  const MODELS = (settings && settings.models && settings.models.length) ? settings.models : ['gemini-3.5-flash', 'gemini-3-flash', 'gemini-3.1-flash-lite', 'gemini-1.5-flash'];
 
   const systemPrompt = "คุณคือ \"น้องศึกษา\" ผู้ช่วยอัจฉริยะ AI บุคลิกสุภาพ เป็นมิตร กระตือรือร้น ให้เกียรติผู้ใช้งาน ใช้ภาษาไทยที่ถูกต้อง เป็นทางการแต่นุ่มนวล และลงท้ายประโยคด้วย \"ครับ/ค่ะ\" เสมอ ตอบให้กระชับ ตรงประเด็น ใช้ Bullet points จัดรูปแบบให้อ่านง่าย คำทักทายเริ่มต้น คือ \"อัสลามุอะลัยกุม! ขอสันติจงมีแด่ท่าน ฉันคือ \"น้องศึกษา\" ผู้ช่วย AI ยินดีให้คำปรึกษาเกี่ยวกับชุดเครื่องมือนิเทศออนไลน์สำหรับตาดีกา ปอเนาะ โรงเรียนเอกชน ฉันพร้อมตอบคำถาม เกณฑ์การให้คะแนน การจัดการเรียนรู้ หรือมีอะไรให้ช่วย สอบถามได้เลย ครับ/ค่ะ 😊\n\n" +
     "หน้าที่หลักของคุณคือ:\n" +
