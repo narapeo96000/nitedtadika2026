@@ -164,6 +164,7 @@
     table { width: 100%; border-collapse: collapse; font-size: .85rem; }
     th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #eef5f1; vertical-align: top; word-break: break-word; overflow-wrap: anywhere; }
     thead th { color: var(--blue-dark); background: var(--blue-soft); font-weight: 600; }
+    thead th .sort-arrow { font-size: .62em; color: var(--primary); }
     .table-wrap { overflow-x: hidden; }
 
     .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
@@ -427,10 +428,11 @@
         </div>
         <div class="table-wrap mt-2">
           <table>
-            <thead><tr><th>🆔 รหัส</th><th>🕌 ชื่อตาดีกา</th><th>🏯 มัสยิด</th><th>🏠 ที่อยู่ (หมู่/ตำบล/อำเภอ)</th><th>📌 สถานะ</th><th>👨‍🏫 ครู (ช/ญ)</th><th>🎒 นักเรียน (ช/ญ)</th><th>📍 พิกัด</th></tr></thead>
+            <thead id="addrHead"></thead>
             <tbody id="addrBody"></tbody>
           </table>
         </div>
+        <div class="small text-muted mt-1">👆 แตะหัวคอลัมน์เพื่อเรียงลำดับ A-Z / Z-A</div>
       </div>
 
       <div class="app-footer">
@@ -786,7 +788,54 @@
       renderAddrTable();
     }
 
-    // ---- ตารางข้อมูลตาดีกา (ADDRESS) แสดงตามที่เลือกจาก AutoComplete ----
+    // ---- ตารางข้อมูลตาดีกา (ADDRESS) แสดงตามที่เลือกจาก AutoComplete (หัว 2 แถว + เรียง A-Z/Z-A) ----
+    const ADDR_COLS = [
+      { key: 'id',        icon: '🆔', label: 'รหัส' },
+      { key: 'name',      icon: '🕌', label: 'ชื่อตาดีกา' },
+      { key: 'mosque',    icon: '🏯', label: 'มัสยิด' },
+      { key: 'address',   icon: '🏠', label: 'ที่อยู่ (หมู่/ตำบล/อำเภอ)' },
+      { key: 'status',    icon: '📌', label: 'สถานะ' },
+      { key: 'teachers',  icon: '👨‍🏫', label: 'ครู (ช/ญ)' },
+      { key: 'students',  icon: '🎒', label: 'นักเรียน (ช/ญ)' },
+      { key: 'pin',       icon: '📍', label: 'พิกัด' }
+    ];
+    let addrSort = { key: 'name', dir: 'asc' };
+
+    function renderAddrHeader() {
+      const arrow = addrSort.dir === 'asc' ? '▲' : '▼';
+      const head = document.getElementById('addrHead');
+      if (!head) return;
+      head.innerHTML =
+        '<tr>' + ADDR_COLS.map(c => `<th onclick="sortAddr('${c.key}')">${c.icon}</th>`).join('') + '</tr>' +
+        '<tr>' + ADDR_COLS.map(c =>
+          `<th onclick="sortAddr('${c.key}')">${c.label}${addrSort.key === c.key ? '<span class="sort-arrow"> ' + arrow + '</span>' : ''}</th>`
+        ).join('') + '</tr>';
+    }
+
+    function addrSortVal(t) {
+      switch (addrSort.key) {
+        case 'name':     return String(t.name || '').trim().toLowerCase();
+        case 'mosque':   return String(t.mosque || '').trim().toLowerCase();
+        case 'address':  return (tadikaAddr(t) || '').toLowerCase();
+        case 'status':   return String(t.status || '').trim().toLowerCase();
+        case 'teachers': return Number(t.teachers.male) || 0;
+        case 'students': return Number(t.students.male) || 0;
+        case 'pin':      return (t.lat && t.lng) ? 1 : 0;
+        default:         return String(t.id || '').trim().toLowerCase();
+      }
+    }
+
+    function sortAddr(key) {
+      if (addrSort.key === key) {
+        addrSort.dir = addrSort.dir === 'asc' ? 'desc' : 'asc';
+      } else {
+        addrSort.key = key;
+        addrSort.dir = 'asc';
+      }
+      renderAddrHeader();
+      renderAddrTable();
+    }
+
     function renderAddrTable() {
       const c = autoReg.addr;
       const q = (document.getElementById(c.search).value || '').trim().toLowerCase();
@@ -795,6 +844,15 @@
         rows = rows.filter(t => {
           const hay = [t.id, t.name, t.mosque, t.address, t.subdist, t.dist].filter(Boolean).join(' ').toLowerCase();
           return hay.includes(q);
+        });
+      }
+      if (!c.selected) {
+        rows = rows.slice().sort((a, b) => {
+          const va = addrSortVal(a), vb = addrSortVal(b);
+          let cmp;
+          if (typeof va === 'number' && typeof vb === 'number') cmp = va - vb;
+          else cmp = String(va).localeCompare(String(vb), 'th');
+          return addrSort.dir === 'asc' ? cmp : -cmp;
         });
       }
       document.getElementById('addrCount').innerText = rows.length + ' รายการ';
@@ -1701,6 +1759,7 @@
 
     // ---- Init ----
     renderFormSchema();
+    renderAddrHeader();
     loadTadikaList();
     loadStats();
   </script>
