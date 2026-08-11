@@ -21,6 +21,21 @@ function getDataSheet(type) { return type === TYPE_PONDOK ? SHEET_DATA_PONDOK : 
 // โครงสร้างใหม่ของชีต DATA (15 คอลัมน์ รองรับการประเมิน 4 ด้าน + สรุป)
 const DATA_HEADERS = ['Timestamp', 'ID ศูนย์', 'ชื่อศูนย์', 'ประเภทการประเมิน', 'คะแนนแบบ1', 'คะแนนแบบ2', 'คะแนนแบบ3', 'คะแนนแบบ4', 'รวม/150', 'ร้อยละ', 'ระดับ', 'รายละเอียด', 'ผู้นิเทศ', 'แก้ไขครั้งล่าสุด', 'ผู้แก้ไขล่าสุด'];
 
+function doGet() {
+  // หน้าเว็บหลัก (เพื่อให้เปิด URL ได้ใน browser และใช้หน้า Authorization ใหม่เมื่อ scope เปลี่ยน)
+  return HtmlService.createHtmlOutput(
+    '<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8">' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+    '<title>ระบบนิเทศออนไลน์จังหวัดนราธิวาส</title>' +
+    '<style>body{font-family:"Sarabun",sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#ecfdf5;color:#065f46}.box{text-align:center;background:#fff;padding:48px;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.08)}a{display:inline-block;margin-top:16px;padding:12px 24px;background:#059669;color:#fff;text-decoration:none;border-radius:10px}</style>' +
+    '</head><body><div class="box">' +
+    '<h1>🕌 ระบบนิเทศออนไลน์จังหวัดนราธิวาส</h1>' +
+    '<p>บริการนี้เป็น API ของระบบนิเทศออนไลน์ (ตาดีกา/ปอเนาะ)</p>' +
+    '<p style="color:#64748b;font-size:14px">หน้าเว็บหลักถูกเปิดใช้งานผ่านหน้าจอระบบแยกต่างหาก</p>' +
+    '</div></body></html>'
+  );
+}
+
 function doPost(e) {
   try {
     const req = JSON.parse(e.postData.contents);
