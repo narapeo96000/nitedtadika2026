@@ -868,6 +868,17 @@
     function escHtml(s) {
       return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
     }
+    // แปลง Markdown (จาก AI) เป็น HTML ปลอดภัย: escape ก่อน แล้วค่อยทำ bold/br/list
+    function renderChatReply(text) {
+      let s = escHtml(text);
+      s = s.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+           .replace(/^[-*] (.+)$/gm, '<li>$1</li>')
+           .replace(/(<li>[\s\S]*?<\/li>)/g, '<ul>$1</ul>')
+           .replace(/^#+ (.+)$/gm, '<b>$1</b>')
+           .replace(/\n{2,}/g, '</p><p>')
+           .replace(/\n/g, '<br>');
+      return '<p style="margin:0">' + s + '</p>';
+    }
     function tadikaLabel(t) {
       const m = (t.mosque && String(t.mosque).trim()) ? ' [' + t.mosque + ']' : '';
       return String(t.name || t.id) + m;
@@ -2218,7 +2229,7 @@
       try {
         const r = await api('chat', m);
         document.getElementById(id).remove();
-        b.innerHTML += `<div class="msg-bot">${escHtml(r.reply || '')}</div>`;
+        b.innerHTML += `<div class="msg-bot">${renderChatReply(r.reply || '')}</div>`;
       } catch (e) {
         document.getElementById(id).innerText = 'เครือข่ายขัดข้อง';
       }
