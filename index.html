@@ -225,6 +225,13 @@
     .addr-id { font-weight: 700; color: var(--primary-deep); font-size: .95rem; }
     .addr-name { margin-top: 2px; font-weight: 600; }
     .addr-name .lv { vertical-align: middle; }
+    .addr-mosque { margin-top: 2px; color: var(--muted); font-size: .85rem; }
+    .addr-pin { margin-top: 4px; }
+    .addr-pin a {
+      display: inline-block; text-decoration: none; font-weight: 600; font-size: .82rem;
+      color: var(--blue-dark); background: var(--blue-light); border: 1px solid var(--blue-soft);
+      border-radius: 999px; padding: 3px 12px;
+    }
     .cnt-line { white-space: nowrap; }
     .lvl-chart svg { width: 100%; height: auto; display: block; max-width: 100%; }
     .lvl-chart .grid { stroke: #e6ecf2; stroke-width: 1; }
@@ -985,7 +992,7 @@
       if (!body) return;
       document.getElementById('addrCount').innerText = 'กำลังโหลด...';
       body.innerHTML =
-        '<tr><td colspan="8" class="text-center py-4">' +
+        '<tr><td colspan="4" class="text-center py-4">' +
         '<div class="spinner" style="margin:0 auto 8px;"></div>' +
         '<div class="text-muted small">กำลังโหลดข้อมูลตาดีกา...</div></td></tr>';
     }
@@ -1000,14 +1007,10 @@
 
     // ---- ตารางข้อมูลตาดีกา (ADDRESS) แสดงตามที่เลือกจาก AutoComplete (หัว 2 แถว + เรียง A-Z/Z-A) ----
     const ADDR_COLS = [
-      { key: 'id',       icon: '🆔', label: 'รหัสตาดีกา' },
-      { key: 'mosque',   icon: '🏯', label: 'มัสยิด' },
-      { key: 'address',  icon: '🏠', label: 'หมู่บ้าน' },
-      { key: 'subdist',  icon: '🏘️', label: 'ตำบล' },
-      { key: 'dist',     icon: '🗺️', label: 'อำเภอ' },
+      { key: 'id',       icon: '🆔', label: 'รหัสตาดีกา/มัสยิด/แผนที่' },
+      { key: 'address',  icon: '🏠', label: 'ที่อยู่ (หมู่/ตำบล/อำเภอ)' },
       { key: 'status',   icon: '📌', label: 'สถานะ' },
-      { key: 'teachers', icon: '👨‍🏫', label: 'ครู/นักเรียน (ช/ญ)' },
-      { key: 'pin',      icon: '📍', label: 'แผนที่' }
+      { key: 'teachers', icon: '👨‍🏫', label: 'ครู/นักเรียน (ช/ญ)' }
     ];
     let addrSort = { key: 'id', dir: 'asc' };
 
@@ -1025,13 +1028,9 @@
     function addrSortVal(t) {
       switch (addrSort.key) {
         case 'id':       return String(t.id || '').trim().toLowerCase();
-        case 'mosque':   return String(t.mosque || '').trim().toLowerCase();
-        case 'address':  return String(t.address || '').trim().toLowerCase();
-        case 'subdist':  return String(t.subdist || '').trim().toLowerCase();
-        case 'dist':     return String(t.dist || '').trim().toLowerCase();
+        case 'address':  return (tadikaAddr(t) || '').toLowerCase();
         case 'status':   return String(t.status || '').trim().toLowerCase();
         case 'teachers': return Number(t.teachers.male) || 0;
-        case 'pin':      return (t.lat && t.lng) ? 1 : 0;
         default:         return String(t.id || '').trim().toLowerCase();
       }
     }
@@ -1072,20 +1071,18 @@
           <td data-label="รหัส/ชื่อ">
             <div class="addr-id">🆔 ${escHtml(t.id)}</div>
             <div class="addr-name">🕌 ${escHtml(t.name)} ${typeBadge(t.type)}</div>
+            <div class="addr-mosque">🏯 ${escHtml(t.mosque) || '—'}</div>
+            <div class="addr-pin">${t.lat && t.lng
+              ? `<a href="https://www.google.com/maps?q=${encodeURIComponent(t.lat + ',' + t.lng)}&z=17" target="_blank" rel="noopener" title="เปิดแผนที่ ${t.lat}, ${t.lng}">📍 แผนที่</a>`
+              : '<span class="text-muted">📍 —</span>'}</div>
           </td>
-          <td class="small" data-label="มัสยิด">🏯 ${escHtml(t.mosque) || '—'}</td>
-          <td class="small" data-label="หมู่บ้าน">${escHtml(t.address) || '—'}</td>
-          <td class="small" data-label="ตำบล">${escHtml(t.subdist) || '—'}</td>
-          <td class="small" data-label="อำเภอ">${escHtml(t.dist) || '—'}</td>
+          <td class="small" data-label="ที่อยู่">${escHtml(tadikaAddr(t)) || '—'}</td>
           <td data-label="สถานะ">${statusBadge(t.status)}</td>
           <td class="small" data-label="ครู/นักเรียน">
             <div class="cnt-line">👨‍🏫 ครู ${fmtNum(t.teachers.male + t.teachers.female)} (ช${fmtNum(t.teachers.male)}/ญ${fmtNum(t.teachers.female)})</div>
             <div class="cnt-line">🎒 นักเรียน ${fmtNum(t.students.male + t.students.female)} (ช${fmtNum(t.students.male)}/ญ${fmtNum(t.students.female)})</div>
           </td>
-          <td data-label="แผนที่">${t.lat && t.lng
-            ? `<a href="https://www.google.com/maps?q=${encodeURIComponent(t.lat + ',' + t.lng)}&z=17" target="_blank" rel="noopener" title="เปิดแผนที่ ${t.lat}, ${t.lng}">📍</a>`
-            : '—'}</td>
-        </tr>`).join('') || '<tr><td colspan="8" class="text-center text-muted py-3">ไม่พบข้อมูลที่ค้นหา</td></tr>';
+        </tr>`).join('') || '<tr><td colspan="4" class="text-center text-muted py-3">ไม่พบข้อมูลที่ค้นหา</td></tr>';
     }
 
     // ---- สถิติระบบนิเทศออนไลน์ (หน้าแรก) ----
