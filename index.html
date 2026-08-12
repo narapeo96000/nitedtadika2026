@@ -218,8 +218,7 @@
     .lvl-chart { overflow: hidden; }
     .addr-id { font-weight: 700; color: var(--primary-deep); font-size: .95rem; }
     .addr-name { margin-top: 2px; font-weight: 600; }
-    .addr-name .lv, .addr-mosque .lv { vertical-align: middle; }
-    .addr-mosque { margin-top: 2px; color: var(--muted); font-size: .85rem; }
+    .addr-name .lv { vertical-align: middle; }
     .cnt-line { white-space: nowrap; }
     .lvl-chart svg { width: 100%; height: auto; display: block; max-width: 100%; }
     .lvl-chart .grid { stroke: #e6ecf2; stroke-width: 1; }
@@ -968,15 +967,16 @@
 
     // ---- ตารางข้อมูลตาดีกา (ADDRESS) แสดงตามที่เลือกจาก AutoComplete (หัว 2 แถว + เรียง A-Z/Z-A) ----
     const ADDR_COLS = [
-      { key: 'name',     icon: '🆔', label: 'รหัสตาดีกา' },
-      { key: 'address',  icon: '🏠', label: 'ที่อยู่ หมู่บ้าน' },
-      { key: 'subdist',  icon: '🏘️', label: 'ที่อยู่ ตำบล' },
-      { key: 'dist',     icon: '🗺️', label: 'ที่อยู่ อำเภอ' },
+      { key: 'id',       icon: '🆔', label: 'รหัสตาดีกา' },
+      { key: 'mosque',   icon: '🏯', label: 'มัสยิด' },
+      { key: 'address',  icon: '🏠', label: 'หมู่บ้าน' },
+      { key: 'subdist',  icon: '🏘️', label: 'ตำบล' },
+      { key: 'dist',     icon: '🗺️', label: 'อำเภอ' },
       { key: 'status',   icon: '📌', label: 'สถานะ' },
       { key: 'teachers', icon: '👨‍🏫', label: 'ครู/นักเรียน (ช/ญ)' },
       { key: 'pin',      icon: '📍', label: 'แผนที่' }
     ];
-    let addrSort = { key: 'name', dir: 'asc' };
+    let addrSort = { key: 'id', dir: 'asc' };
 
     function renderAddrHeader() {
       const arrow = addrSort.dir === 'asc' ? '▲' : '▼';
@@ -991,7 +991,8 @@
 
     function addrSortVal(t) {
       switch (addrSort.key) {
-        case 'name':     return String(t.name || '').trim().toLowerCase();
+        case 'id':       return String(t.id || '').trim().toLowerCase();
+        case 'mosque':   return String(t.mosque || '').trim().toLowerCase();
         case 'address':  return String(t.address || '').trim().toLowerCase();
         case 'subdist':  return String(t.subdist || '').trim().toLowerCase();
         case 'dist':     return String(t.dist || '').trim().toLowerCase();
@@ -1038,8 +1039,8 @@
           <td>
             <div class="addr-id">🆔 ${escHtml(t.id)}</div>
             <div class="addr-name">🕌 ${escHtml(t.name)} ${typeBadge(t.type)}</div>
-            <div class="addr-mosque">🏯 ${escHtml(t.mosque) || '—'}</div>
           </td>
+          <td class="small">🏯 ${escHtml(t.mosque) || '—'}</td>
           <td class="small">${escHtml(t.address) || '—'}</td>
           <td class="small">${escHtml(t.subdist) || '—'}</td>
           <td class="small">${escHtml(t.dist) || '—'}</td>
@@ -1051,7 +1052,7 @@
           <td>${t.lat && t.lng
             ? `<a href="https://www.google.com/maps?q=${encodeURIComponent(t.lat + ',' + t.lng)}&z=17" target="_blank" rel="noopener" title="เปิดแผนที่ ${t.lat}, ${t.lng}">📍</a>`
             : '—'}</td>
-        </tr>`).join('') || '<tr><td colspan="7" class="text-center text-muted py-3">ไม่พบข้อมูลที่ค้นหา</td></tr>';
+        </tr>`).join('') || '<tr><td colspan="8" class="text-center text-muted py-3">ไม่พบข้อมูลที่ค้นหา</td></tr>';
     }
 
     // ---- สถิติระบบนิเทศออนไลน์ (หน้าแรก) ----
