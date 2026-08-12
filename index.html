@@ -1079,7 +1079,7 @@
             <div class="addr-mosque">🏯 ${escHtml(t.mosque) || '—'}</div>
             <div class="addr-pin">${t.lat && t.lng
               ? `<a href="https://www.google.com/maps?q=${encodeURIComponent(t.lat + ',' + t.lng)}&z=17" target="_blank" rel="noopener" title="เปิดแผนที่ ${t.lat}, ${t.lng}">📍 แผนที่</a>`
-              : '<span class="text-muted">📍 —</span>'}</div>
+              : ''}</div>
           </td>
           <td class="small" data-label="ที่อยู่">${escHtml(tadikaAddr(t)) || '—'}</td>
           <td data-label="สถานะ">${statusBadge(t.status)}</td>
