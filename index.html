@@ -505,12 +505,8 @@
           <h4>🏫 ข้อมูลตาดีกา / ศอม. ทั้งหมด</h4>
           <span class="badge" id="addrCount">0 รายการ</span>
         </div>
-        <label>🔍 ค้นหาตาดีกา <span class="small text-muted">(พิมพ์แล้วเลือกจากรายการแนะนำอัตโนมัติ)</span></label>
-        <div class="position-relative">
-          <input type="text" id="addrSearch" class="form-control" placeholder="พิมพ์ รหัส / ชื่อตาดีกา / มัสยิด / หมู่ที่ / ตำบล / อำเภอ..."
-                 autocomplete="off" oninput="filterTadika('addr')" onkeydown="tadikaKey('addr', event)">
-          <div id="addrSuggest" class="suggest-box d-none"></div>
-        </div>
+        <label>🔍 ค้นหาตาดีกา <span class="small text-muted">(กรองข้อมูลแบบทันที)</span></label>
+        <input type="text" id="addrSearch" class="form-control" placeholder="พิมพ์ รหัส / ชื่อตาดีกา / มัสยิด / หมู่ที่ / ตำบล / อำเภอ..." autocomplete="off" oninput="filterAddrTable()">
         <div id="addrSelInfo" class="info-box d-none mt-2">
           <b id="addrSelName"></b><br>
           <span id="addrSelDetail" class="small text-muted"></span>
@@ -1046,6 +1042,15 @@
       renderAddrTable();
     }
 
+    // ---- กรองตารางข้อมูลตาดีกาแบบทันที (พิมพ์แล้วตารางกรองเอง ไม่ต้องเลือกจาก dropdown) ----
+    function filterAddrTable() {
+      const c = autoReg.addr;
+      c.selected = null;
+      const info = document.getElementById(c.info);
+      if (info) info.classList.add('d-none');
+      renderAddrTable();
+    }
+
     function renderAddrTable() {
       const c = autoReg.addr;
       const q = (document.getElementById(c.search).value || '').trim().toLowerCase();
@@ -1288,7 +1293,7 @@
     const autoReg = {
       lg:  { search:'lgTadikaSearch', suggest:'lgTadikaSuggest', info:'lgSelInfo', selName:'lgSelName', selDetail:'lgSelDetail', btn:null, selected:null, matches:[] },
       sel: { search:'tadikaSearch', suggest:'tadikaSuggest', info:'selectedTadikaInfo', selName:'selName', selDetail:'selDetail', btn:'selectBtn', selected:null, matches:[] },
-      addr:{ search:'addrSearch',    suggest:'addrSuggest',    info:'addrSelInfo', selName:'addrSelName', selDetail:'addrSelDetail', btn:null, selected:null, matches:[] }
+      addr:{ search:'addrSearch',    suggest:null,      info:'addrSelInfo', selName:'addrSelName', selDetail:'addrSelDetail', btn:null, selected:null, matches:[] }
     };
 
     const fmtNum = n => Number(n || 0).toLocaleString();
