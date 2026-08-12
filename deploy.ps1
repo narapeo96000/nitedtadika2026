@@ -9,8 +9,8 @@ $ErrorActionPreference = 'Stop'
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $Root
 
-# Deployment ID ที่ใช้งานจริง (URL คงเดิม = .../s/AKfycbxHLuOAJvHuBa3xTWe0FNZEilRxsFl_XVhQAJTo9U2uzcHfS384QM7GnVdTgB9c6UUP/exec)
-$DeploymentId = 'AKfycbxHLuOAJvHuBa3xTWe0FNZEilRxsFl_XVhQAJTo9U2uzcHfS384QM7GnVdTgB9c6UUP'
+# Deployment ID ที่ใช้งานจริง (URL คงเดิม = .../s/AKfycbxnmbY96u9qCj0dBzPBJK9glPlcibkDkD1r4p1i6tW9vkoAotX0LVpCHE-1-guglsCohw/exec)
+$DeploymentId = 'AKfycbxnmbY96u9qCj0dBzPBJK9glPlcibkDkD1r4p1i6tW9vkoAotX0LVpCHE-1-guglsCohw'
 $WebAppURL = 'https://script.google.com/macros/s/' + $DeploymentId + '/exec'
 $CommitMsg = "อัปเดตอัตโนมัติ " + (Get-Date -Format 'yyyy-MM-dd HH:mm')
 

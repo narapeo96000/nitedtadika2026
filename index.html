@@ -911,7 +911,7 @@
     // ---- กราฟเส้นระดับผลการนิเทศ (SVG) ----
     const LABEL_BREAKS = { 'ต้องปรับปรุง': ['ต้อง', 'ปรับปรุง'], 'ไม่ระบุ': ['ไม่', 'ระบุ'] };
     function drawLevelChart(labels, pcts, colors) {
-      const W = 340, H = 165, padL = 30, padR = 72, padT = 20, padB = 36;
+      const W = 560, H = 190, padL = 34, padR = 70, padT = 20, padB = 38;
       const maxY = 100, minY = 0;
       const n = labels.length;
       const x = i => padL + (W - padL - padR) * (n <= 1 ? 0.5 : (i / (n - 1)));
@@ -935,7 +935,7 @@
           parts.map((p, j) => `<tspan x="${x(i).toFixed(1)}" dy="${j ? 10 : 0}">${p}</tspan>`).join('') +
           `</text>`;
       }).join('');
-      return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="กราฟระดับผลการนิเทศ">${grid}
+      return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;display:block;" role="img" aria-label="กราฟระดับผลการนิเทศ">${grid}
         <path class="area" d="${area}"></path>
         <path class="line" d="${line}"></path>
         ${dots}${xLabels}</svg>`;
