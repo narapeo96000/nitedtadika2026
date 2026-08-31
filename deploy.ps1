@@ -45,8 +45,8 @@ Write-Host $verOut
 $verNum = ($verOut | Select-String '(\d+)' | ForEach-Object { $_.Matches[0].Value } | Select-Object -First 1)
 if (-not $verNum) { $verNum = 'HEAD' }
 
-# ชี้ deployment เดิมไปที่ version ใหม่ (URL คงเดิม)
-clasp deploy -i $DeploymentId -V $verNum
+# ชี้ deployment เดิมไปที่ version ใหม่ (URL คงเดิม) — clasp 3.x ใช้ redeploy
+clasp redeploy $DeploymentId -V $verNum
 if ($LASTEXITCODE -ne 0) { throw "clasp deploy ล้มเหลว!" }
 Write-Host "Deploy version $verNum เรียบร้อย (URL คงเดิม)" -ForegroundColor Green
 

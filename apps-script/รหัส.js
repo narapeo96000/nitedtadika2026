@@ -1,22 +1,17 @@
 const SHEET_ID = '1qk9eLhwKgPvh2fLwWNSthV4JKyDkJGqJojhLDus5460';
-// ชื่อชีตตาม Google Sheets: แยกข้อมูลตามประเภทศูนย์ (ตาดีกา / ปอเนาะ)
+// ชื่อชีตตาม Google Sheets: ระบบนิเทศตาดีกา จ.นราธิวาส (ไม่รวมปอเนาะ)
 const SHEET_DATA_TADEKA = 'DATA_TADEKA';
 const SHEET_ADDR_TADEKA  = 'ADDR_TADEKA';
-const SHEET_DATA_PONDOK = 'DATA_PONDOK';
-const SHEET_ADDR_PONDOK = 'ADDR_PONDOK';
 const SHEET_USERS = 'USERS';
 const TYPE_TADEKA = 'ตาดีกา';
-const TYPE_PONDOK = 'ปอเนาะ';
 const ADDR_SHEETS = [
-  { name: SHEET_ADDR_TADEKA, type: TYPE_TADEKA },
-  { name: SHEET_ADDR_PONDOK, type: TYPE_PONDOK }
+  { name: SHEET_ADDR_TADEKA, type: TYPE_TADEKA }
 ];
 const DATA_SHEETS = [
-  { name: SHEET_DATA_TADEKA, type: TYPE_TADEKA },
-  { name: SHEET_DATA_PONDOK, type: TYPE_PONDOK }
+  { name: SHEET_DATA_TADEKA, type: TYPE_TADEKA }
 ];
-function getAddrSheet(type) { return type === TYPE_PONDOK ? SHEET_ADDR_PONDOK : SHEET_ADDR_TADEKA; }
-function getDataSheet(type) { return type === TYPE_PONDOK ? SHEET_DATA_PONDOK : SHEET_DATA_TADEKA; }
+function getAddrSheet() { return SHEET_ADDR_TADEKA; }
+function getDataSheet() { return SHEET_DATA_TADEKA; }
 
 // โครงสร้างใหม่ของชีต DATA (15 คอลัมน์ รองรับการประเมิน 4 ด้าน + สรุป)
 const DATA_HEADERS = ['Timestamp', 'ID ศูนย์', 'ชื่อศูนย์', 'ประเภทการประเมิน', 'คะแนนแบบ1', 'คะแนนแบบ2', 'คะแนนแบบ3', 'คะแนนแบบ4', 'รวม/150', 'ร้อยละ', 'ระดับ', 'รายละเอียด', 'ผู้นิเทศ', 'แก้ไขครั้งล่าสุด', 'ผู้แก้ไขล่าสุด'];
@@ -30,7 +25,7 @@ function doGet() {
     '<style>body{font-family:"Sarabun",sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#ecfdf5;color:#065f46}.box{text-align:center;background:#fff;padding:48px;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.08)}a{display:inline-block;margin-top:16px;padding:12px 24px;background:#059669;color:#fff;text-decoration:none;border-radius:10px}</style>' +
     '</head><body><div class="box">' +
     '<h1>🕌 ระบบนิเทศออนไลน์จังหวัดนราธิวาส</h1>' +
-    '<p>บริการนี้เป็น API ของระบบนิเทศออนไลน์ (ตาดีกา/ปอเนาะ)</p>' +
+    '<p>บริการนี้เป็น API ของระบบนิเทศออนไลน์ตาดีกา</p>' +
     '<p style="color:#64748b;font-size:14px">หน้าเว็บหลักถูกเปิดใช้งานผ่านหน้าจอระบบแยกต่างหาก</p>' +
     '</div></body></html>'
   );
@@ -592,7 +587,7 @@ function processChatbot(userMessage) {
 // คำตอบสำรองเมื่อยังไม่ได้ตั้งค่า API Key หรือ API ขัดข้อง
 function offlineChatReply(msg) {
   if (msg.includes('สวัสดี') || msg.includes('hello') || msg.includes('hi') || msg.includes('เป็นใคร') || msg.includes('อะไร') || msg.includes('ชื่ออะไร') || msg.length <= 10) {
-    return "อัสลามุอะลัยกุม! ขอสันติจงมีแด่ท่าน ฉันคือ \"น้องศึกษา\" ผู้ช่วย AI ยินดีให้คำปรึกษาเกี่ยวกับชุดเครื่องมือนิเทศออนไลน์สำหรับตาดีกา ปอเนาะ และโรงเรียนเอกชน จังหวัดนราธิวาสครับ<br>สอบถามเรื่องเกณฑ์การให้คะแนน การจัดการเรียนรู้ หรือข้อมูลศูนย์ได้เลยครับ";
+    return "อัสลามุอะลัยกุม! ขอสันติจงมีแด่ท่าน ฉันคือ \"น้องศึกษา\" ผู้ช่วย AI ยินดีให้คำปรึกษาเกี่ยวกับชุดเครื่องมือนิเทศออนไลน์สำหรับศูนย์ตาดีกา จังหวัดนราธิวาสครับ<br>สอบถามเรื่องเกณฑ์การให้คะแนน การจัดการเรียนรู้ หรือข้อมูลศูนย์ได้เลยครับ";
   }
   if (msg.includes('เกณฑ์') || msg.includes('คะแนน')) {
     return "เกณฑ์การประเมินตามชุดเครื่องมือนิเทศตาดีกา มี 5 แบบฟอร์มครับ:<br>• แบบที่ 1 การนำหลักสูตรไปใช้ (45 คะแนน)<br>• แบบที่ 2 การสังเกตการจัดการเรียนรู้ของครู (54 คะแนน)<br>• แบบที่ 3 การวัดและประเมินผลผู้เรียน (51 คะแนน)<br>• แบบที่ 4 การตรวจสอบผลลัพธ์ผู้เรียนแบบสุ่ม (15 คะแนน)<br>• แบบที่ 5 สรุปผลรายศูนย์และแผนพัฒนา (เชิงคุณภาพ)<br>รวมแบบที่ 1-3 = 150 คะแนน คิดเป็นร้อยละและจัดระดับผลการนิเทศครับ";
@@ -621,10 +616,6 @@ function offlineChatReply(msg) {
 //   J=เลขที่/หมู่/ถนน, K=ตำบล, L=อำเภอ, M=โทรศัพท์, N=ขนาดศูนย์,
 //   O=ผู้สอน(ชาย), P=ผู้สอน(หญิง), Q=ผู้สอน(รวม), R=ผู้เรียน(ชาย),
 //   S=ผู้เรียน(หญิง), T=ผู้เรียน(รวม)
-//
-// โครงสร้างชีต ADDR_PONDOK (เริ่มข้อมูลจริงที่แถว 6):
-//   A=รหัส, B=ชื่อปอเนาะ, C=ที่อยู่, D=อำเภอ, E=ตำบล, F=โทรศัพท์,
-//   G=จำนวนบุคลากร, H=จำนวนผู้เรียน, I=จำนวนผู้เรียนต่างชาติ
 // ---------------------------------------------------------
 function fetchStatisticsForAI() {
   const ss = SpreadsheetApp.openById(SHEET_ID);
@@ -657,44 +648,13 @@ function fetchStatisticsForAI() {
     }
   }
 
-  // --- ดึงข้อมูลปอเนาะ ---
-  const sheetPondok = ss.getSheetByName(SHEET_ADDR_PONDOK);
-  const pondokStats = { count: 0, staff: 0, students: 0, foreign: 0 };
-  const pondokLines = [];
-
-  if (sheetPondok) {
-    const lastRow = sheetPondok.getLastRow();
-    if (lastRow >= 6) {
-      const dataP = sheetPondok.getRange(6, 1, lastRow - 5, 9).getValues();
-      for (let i = 0; i < dataP.length; i++) {
-        if (String(dataP[i][0]).trim() != "") { // นับเฉพาะแถวที่มีรหัส
-          pondokStats.count++;
-          pondokStats.staff    += Number(dataP[i][6]) || 0;
-          pondokStats.students += Number(dataP[i][7]) || 0;
-          pondokStats.foreign  += Number(dataP[i][8]) || 0;
-          pondokLines.push(
-            "• " + (dataP[i][1] || '-') +
-            " | ที่ตั้ง: " + [dataP[i][4], dataP[i][3]].filter(Boolean).join(' ') +
-            " | โทร: " + (dataP[i][5] || '-') +
-            " | บุคลากร " + (dataP[i][6] || 0) + " คน | นร. " + (dataP[i][7] || 0) + " คน" +
-            (Number(dataP[i][8]) ? " | ต่างชาติ " + dataP[i][8] + " คน" : "")
-          );
-        }
-      }
-    }
-  }
-
   // สร้างข้อความ Context ส่งให้ AI รับรู้
   let contextText = "" +
-    "[ข้อมูลจริงจากฐานข้อมูลระบบนิเทศออนไลน์ — ใช้ตัวเลขเหล่านี้ตอบ ไม่ควรแต่งตัวเลข]\n\n" +
+    "[ข้อมูลจริงจากฐานข้อมูลระบบนิเทศออนไลน์ตาดีกา — ใช้ตัวเลขเหล่านี้ตอบ ไม่ควรแต่งตัวเลข]\n\n" +
     "1. ศูนย์ตาดีกา: ทั้งหมด " + tadikaStats.count + " แห่ง\n" +
     "   - ครูผู้สอนรวม " + (tadikaStats.tMale + tadikaStats.tFemale) + " คน (ชาย " + tadikaStats.tMale + " / หญิง " + tadikaStats.tFemale + ")\n" +
     "   - ผู้เรียนรวม " + (tadikaStats.sMale + tadikaStats.sFemale) + " คน (ชาย " + tadikaStats.sMale + " / หญิง " + tadikaStats.sFemale + ")\n\n" +
-    "2. สถาบันปอเนาะ: ทั้งหมด " + pondokStats.count + " แห่ง\n" +
-    "   - บุคลากรรวม " + pondokStats.staff + " คน\n" +
-    "   - ผู้เรียนรวม " + pondokStats.students + " คน (ในนั้นเป็นผู้เรียนต่างชาติ " + pondokStats.foreign + " คน)\n\n" +
-    "รายชื่อศูนย์ตาดีกา (ข้อมูลสำหรับตอบคำถามรายศูนย์):\n" + tadikaLines.join('\n') + "\n\n" +
-    "รายชื่อสถาบันปอเนาะ (ข้อมูลสำหรับตอบคำถามรายศูนย์):\n" + pondokLines.join('\n');
+    "รายชื่อศูนย์ตาดีกา (ข้อมูลสำหรับตอบคำถามรายศูนย์):\n" + tadikaLines.join('\n');
 
   return contextText;
 }
@@ -707,7 +667,7 @@ function callGeminiAPI(userMessage, contextData, settings) {
   // ลำดับโมเดลที่ต้องการใช้ (ตัวแรกดีที่สุด ถ้าล้มเหลวจะถอยไปตัวถัดไปอัตโนมัติ)
   const MODELS = (settings && settings.models && settings.models.length) ? settings.models : ['gemini-3.5-flash', 'gemini-3-flash', 'gemini-3.1-flash-lite', 'gemini-1.5-flash'];
 
-  const systemPrompt = "คุณคือ \"น้องศึกษา\" ผู้ช่วยอัจฉริยะ AI บุคลิกสุภาพ เป็นมิตร กระตือรือร้น ให้เกียรติผู้ใช้งาน ใช้ภาษาไทยที่ถูกต้อง เป็นทางการแต่นุ่มนวล และลงท้ายประโยคด้วย \"ครับ/ค่ะ\" เสมอ ตอบให้กระชับ ตรงประเด็น ใช้ Bullet points จัดรูปแบบให้อ่านง่าย กฎสำคัญ: เมื่อใดก็ตามที่ผู้ใช้ทักทาย (เช่น \"สวัสดี\", \"hello\", \"hi\") หรือเป็นการสนทนาเริ่มต้น ให้เริ่มคำตอบด้วย \"อัสลามุอะลัยกุม! ขอสันติจงมีแด่ท่าน\" เสมอ ตามด้วยแนะนำตัว \"ฉันคือ \"น้องศึกษา\" ผู้ช่วย AI ยินดีให้คำปรึกษาเกี่ยวกับชุดเครื่องมือนิเทศออนไลน์สำหรับตาดีกา ปอเนาะ โรงเรียนเอกชน\" และเสนอความช่วยเหลือ ตัวอย่างคำตอบแรกสุดของบทสนทนา คือ \"อัสลามุอะลัยกุม! ขอสันติจงมีแด่ท่าน ฉันคือ \"น้องศึกษา\" ผู้ช่วย AI ยินดีให้คำปรึกษาเกี่ยวกับชุดเครื่องมือนิเทศออนไลน์สำหรับตาดีกา ปอเนาะ โรงเรียนเอกชน ฉันพร้อมตอบคำถาม เกณฑ์การให้คะแนน การจัดการเรียนรู้ หรือมีอะไรให้ช่วย สอบถามได้เลย ครับ/ค่ะ 😊\"\n\n" +
+  const systemPrompt = "คุณคือ \"น้องศึกษา\" ผู้ช่วยอัจฉริยะ AI บุคลิกสุภาพ เป็นมิตร กระตือรือร้น ให้เกียรติผู้ใช้งาน ใช้ภาษาไทยที่ถูกต้อง เป็นทางการแต่นุ่มนวล และลงท้ายประโยคด้วย \"ครับ/ค่ะ\" เสมอ ตอบให้กระชับ ตรงประเด็น ใช้ Bullet points จัดรูปแบบให้อ่านง่าย กฎสำคัญ: เมื่อใดก็ตามที่ผู้ใช้ทักทาย (เช่น \"สวัสดี\", \"hello\", \"hi\") หรือเป็นการสนทนาเริ่มต้น ให้เริ่มคำตอบด้วย \"อัสลามุอะลัยกุม! ขอสันติจงมีแด่ท่าน\" เสมอ ตามด้วยแนะนำตัว \"ฉันคือ \"น้องศึกษา\" ผู้ช่วย AI ยินดีให้คำปรึกษาเกี่ยวกับชุดเครื่องมือนิเทศออนไลน์สำหรับศูนย์ตาดีกา จังหวัดนราธิวาส\" และเสนอความช่วยเหลือ ตัวอย่างคำตอบแรกสุดของบทสนทนา คือ \"อัสลามุอะลัยกุม! ขอสันติจงมีแด่ท่าน ฉันคือ \"น้องศึกษา\" ผู้ช่วย AI ยินดีให้คำปรึกษาเกี่ยวกับชุดเครื่องมือนิเทศออนไลน์สำหรับศูนย์ตาดีกา จังหวัดนราธิวาส ฉันพร้อมตอบคำถาม เกณฑ์การให้คะแนน การจัดการเรียนรู้ หรือมีอะไรให้ช่วย สอบถามได้เลย ครับ/ค่ะ 😊\"\n\n" +
     "หน้าที่หลักของคุณคือ:\n" +
     "ให้ข้อมูล คำแนะนำ และตอบคำถามที่เกี่ยวข้องกับการศึกษาเอกชนในจังหวัดนราธิวาส โดยอ้างอิงจากฐานข้อมูลและระเบียบปฏิบัติที่ถูกต้อง ดังนี้:\n\n" +
     "1. ข้อมูลสถิติสถานศึกษา (ต้องให้ข้อมูลตามที่ผู้ใช้ถาม ทั้งภาพรวมและรายศูนย์):\n" +
