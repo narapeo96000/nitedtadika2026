@@ -6,6 +6,7 @@
   <title>ระบบนิเทศออนไลน์จังหวัดนราธิวาส</title>
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.20/dist/sweetalert2.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@ckeditor/ckeditor5-build-classic@41.3.1/build/ckeditor.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.20/dist/sweetalert2.all.min.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -171,6 +172,8 @@
     .q-note { width: 100%; margin-top: 10px; }
     .q-note textarea { width: 100%; min-height: 48px; border: 1.5px solid var(--border); border-radius: 10px; padding: 8px 12px; font-family: inherit; font-size: .88rem; resize: vertical; background: #fbfdff; }
     .q-note textarea:focus { outline: none; border-color: var(--blue); }
+    .ck-editor__editable_inline { min-height: 90px; max-height: 300px; overflow-y: auto; border-radius: 10px; }
+    .q-note .ck-editor__editable_inline { min-height: 48px; }
     .q-note label { font-size: .78rem; color: var(--muted); font-weight: 600; margin: 0 0 3px; }
 
     .form-meta-card { background: var(--primary-light); border: 1px solid var(--primary-soft); border-radius: 14px; padding: 12px 14px; margin-bottom: 14px; }
@@ -347,6 +350,7 @@
       .btn-sm { min-height: 40px; padding: 6px 12px; }
       .logout-btn { min-height: 40px; padding: 6px 14px; }
       .q-note textarea { min-height: 56px; }
+      .q-note .ck-editor__editable_inline { min-height: 56px; }
       .ap-del { min-height: 40px; padding: 6px 12px; }
       .suggest-item { padding: 12px 14px; }
       .form-control, .form-select { min-height: 44px; padding: 8px 12px; font-size: .95rem; }
@@ -1551,6 +1555,44 @@
         b.classList.toggle('active', target === no);
       });
       document.querySelectorAll('.form-panel').forEach(p => p.classList.toggle('d-none', Number(p.dataset.form) !== no));
+      window.dispatchEvent(new Event('resize'));
+    }
+
+    // ---- CKEditor สำหรับกล่องข้อความ/หมายเหตุ (บันทึกเป็นข้อความธรรมดา) ----
+    function tkToText(html) {
+      let s = String(html || '').replace(/<\/(p|div|li|h\d)>/gi, '\n').replace(/<br\s*\/?>/gi, '\n').replace(/<li[^>]*>/gi, '• ');
+      const tmp = document.createElement('div'); tmp.innerHTML = s;
+      return ((tmp.textContent || tmp.innerText || '').replace(/[ \t]+/g, ' ').replace(/[ \t]*\n[ \t]*/g, '\n').replace(/\n{3,}/g, '\n\n')).trim();
+    }
+
+    function tkCk(id) { return (window.__tkCk || {})[id]; }
+
+    function tkGet(id) {
+      const e = tkCk(id), t = document.getElementById(id);
+      if (e) return tkToText(e.getData());
+      return t ? String(t.value || '').trim() : '';
+    }
+
+    function tkSet(id, txt) {
+      txt = (txt == null ? '' : String(txt));
+      const e = tkCk(id), t = document.getElementById(id);
+      if (e) e.setData(txt);
+      if (t) t.value = txt;
+    }
+
+    function initTadikaCk() {
+      if (!window.ClassicEditor) return;
+      window.__tkCk = {};
+      const targets = Array.prototype.slice.call(document.querySelectorAll('.q-note textarea, textarea[id="f2_suggestion"], textarea[id^="f5_"]'));
+      targets.forEach(t => {
+        ClassicEditor.create(t, {
+          toolbar: ['bold', 'italic', 'underline', 'link', 'bulletedList', 'numberedList', 'blockQuote', 'undo', 'redo'],
+          placeholder: t.getAttribute('placeholder') || ''
+        }).then(ed => {
+          window.__tkCk[t.id] = ed;
+          ed.model.document.on('change:data', () => { t.value = tkToText(ed.getData()); });
+        }).catch(() => {});
+      });
     }
 
     function setScore(formNo, si, ii, v) {
@@ -1603,7 +1645,7 @@
       (FORMS.find(x => x.no === formNo).sections || []).forEach((s, si) => {
         s.items.forEach((it, ii) => {
           const el = document.getElementById(`note_${formNo}_${si}_${ii}`);
-          notes.push(el ? el.value : '');
+          notes.push(el ? tkGet(el.id) : '');
         });
       });
       return notes;
@@ -1687,7 +1729,6 @@
           if (v <= 1) low.push(`${sec.code}${ii + 1} ${it.text}`);
         });
       });
-      const el = document.getElementById('f2_suggestion');
       let txt = 'จากการสังเกตครั้งนี้ ครูมีจุดเด่นด้านการจัดกิจกรรมที่หลากหลาย';
       if (low.length) {
         txt = 'ครูควรพัฒนาประเด็นต่อไปนี้:\n' + low.slice(0, 4).map(t => '• ' + t).join('\n') +
@@ -1695,7 +1736,7 @@
       } else {
         txt += '\nควรรักษามาตรฐานการจัดการเรียนรู้ที่ดีนี้ไว้อย่างต่อเนื่อง';
       }
-      el.value = txt;
+      tkSet('f2_suggestion', txt);
       Swal.fire({ icon: 'success', title: 'แนะนำด้วย AI เรียบร้อย', text: 'สามารถแก้ไขข้อความได้ตามที่เห็นสมควร', timer: 2500, showConfirmButton: false });
     }
 
@@ -1717,13 +1758,13 @@
         });
       });
 
-      document.getElementById('f5_strengths').value = strong.length
+      tkSet('f5_strengths', strong.length
         ? '1) ' + strong.slice(0, 3).map(t => t.split(' ').slice(1).join(' ')).join('\n2) ') || strong.slice(0, 3).join('\n')
-        : 'ยังไม่พบข้อที่ได้คะแนน 80% ขึ้นไป — ควรทบทวนข้อมูลและหลักฐานเพิ่มเติม';
+        : 'ยังไม่พบข้อที่ได้คะแนน 80% ขึ้นไป — ควรทบทวนข้อมูลและหลักฐานเพิ่มเติม');
 
       const gaps = weak.length ? weak.slice(0, 3).map(t => '• ' + t).join('\n') : 'ไม่มีตอนที่ต่ำกว่า 50% — ควรรักษาคุณภาพ';
-      document.getElementById('f5_gaps').value = 'ช่องว่างที่พบ:\n' + gaps;
-      document.getElementById('f5_causes').value = '—';
+      tkSet('f5_gaps', 'ช่องว่างที่พบ:\n' + gaps);
+      tkSet('f5_causes', '—');
 
       // ร่าง Action Plan 1 แถว
       if (!document.querySelector('#apBody tr')) {
@@ -2075,7 +2116,7 @@
       FORMS.forEach(f => {
         allItems(f.no).forEach((it, i) => {
           const el = document.getElementById(`note_${f.no}_${it.si}_${it.ii}`);
-          if (el && notes && notes[f.no] && notes[f.no][i] != null) el.value = notes[f.no][i];
+          if (el && notes && notes[f.no] && notes[f.no][i] != null) tkSet(el.id, notes[f.no][i]);
         });
       });
 
@@ -2083,7 +2124,7 @@
       const m2 = details.form2 || {}, m3 = details.form3 || {}, m4 = details.form4 || {};
       const setMeta = (obj) => Object.keys(obj).forEach(k => {
         const el = document.getElementById(k);
-        if (el) el.value = obj[k] || '';
+        if (el) tkSet(k, obj[k] || '');
       });
       setMeta({ f2_teacher: m2.teacher, f2_subject: m2.subject, f2_class: m2.class, f2_duration: m2.duration, f2_note: m2.context, f2_suggestion: m2.suggestion });
       setMeta({ f3_subject: m3.subject, f3_class: m3.class, f3_period: m3.period });
@@ -2117,12 +2158,12 @@
 
     function resetEvalForm() {
       document.querySelectorAll('.q-scale button').forEach(b => b.classList.remove('sel'));
-      document.querySelectorAll('.q-note textarea').forEach(t => t.value = '');
+      document.querySelectorAll('.q-note textarea').forEach(t => { const e = tkCk(t.id); if (e) e.setData(''); t.value = ''; });
       ['f2_teacher','f2_subject','f2_class','f2_duration','f2_note','f2_suggestion',
        'f3_subject','f3_class','f3_period','f4_sampled','f4_passed','f4_pct',
        'f5_strengths','f5_gaps','f5_causes','f5_resources'].forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.value = '';
+        if (el) tkSet(id, '');
       });
       document.getElementById('apBody').innerHTML = '';
       addPlanRow({});
@@ -2163,7 +2204,7 @@
     }
 
     function collectMeta() {
-      const v = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+      const v = id => tkGet(id);
       return {
         form2: {
           teacher: v('f2_teacher'), subject: v('f2_subject'), class: v('f2_class'),
@@ -2314,6 +2355,7 @@
 
     // ---- Init ----
     renderFormSchema();
+    initTadikaCk();
     addPlanRow({});
     renderAddrHeader();
     loadTadikaList();
