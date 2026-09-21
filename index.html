@@ -464,7 +464,7 @@
         <input type="text" id="loginUser" class="form-control mb-3">
         <label>Password</label>
         <input type="password" id="loginPass" class="form-control mb-3" onkeypress="if(event.key==='Enter') handleLogin(event)">
-        <label>เลือกศูนย์ตาดีกาที่จะนิเทศ <span class="small text-muted">(พิมพ์ค้นหาได้)</span></label>
+        <label>เลือกศูนย์ที่จะนิเทศ (ตาดีกา/ปอเนาะ) <span class="small text-muted">(พิมพ์ค้นหาได้)</span></label>
         <div class="position-relative">
           <input type="text" id="lgTadikaSearch" class="form-control" placeholder="ชื่อตาดีกา / มัสยิด / ตำบล / อำเภอ..."
                  autocomplete="off" oninput="filterTadika('lg')" onkeydown="tadikaKey('lg', event)">
@@ -607,7 +607,7 @@
 
       <!-- เลือกศูนย์ -->
       <div class="card">
-        <div class="card-title"><h4>เลือกศูนย์ตาดีกา / ศอม.</h4><span class="badge" id="selTadikaBadge">ยังไม่ได้เลือก</span></div>
+        <div class="card-title"><h4>เลือกศูนย์ตาดีกา / ปอเนาะ / ศอม.</h4><span class="badge" id="selTadikaBadge">ยังไม่ได้เลือก</span></div>
         <div class="position-relative">
           <input type="text" id="tadikaSearch" class="form-control" placeholder="พิมพ์ชื่อตาดีกา / มัสยิด / ที่อยู่ / ตำบล / อำเภอ..."
                  autocomplete="off" oninput="filterTadika('sel')" onkeydown="tadikaKey('sel', event)">
@@ -1330,7 +1330,7 @@
         return Swal.fire({ icon: 'warning', title: 'กรอกข้อมูลไม่ครบ', text: 'กรุณากรอก Username และ Password ให้ครบ' });
       }
       if (!autoReg.lg.selected) {
-        return Swal.fire({ icon: 'warning', title: 'ยังไม่ได้เลือกศูนย์ตาดีกา', text: 'กรุณาพิมพ์ค้นหาและเลือกศูนย์ตาดีกาที่จะนิเทศก่อนเข้าสู่ระบบ' });
+        return Swal.fire({ icon: 'warning', title: 'ยังไม่ได้เลือกศูนย์', text: 'กรุณาพิมพ์ค้นหาและเลือกศูนย์ที่จะนิเทศก่อนเข้าสู่ระบบ' });
       }
       const btn = document.getElementById('loginBtn');
       btn.disabled = true;
@@ -2002,7 +2002,7 @@
         attribution: '&copy; OpenStreetMap contributors'
       }).addTo(pinMapObj);
       pinMapObj.on('click', (e) => {
-        if (!selectedTadika) return Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณาเลือกศูนย์ตาดีกาก่อนปักหมุด' });
+        if (!selectedTadika) return Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณาเลือกศูนย์ก่อนปักหมุด' });
         setPinCoords(e.latlng.lat, e.latlng.lng);
       });
       updatePinMap();
@@ -2056,7 +2056,7 @@
 
     function pinByGPS() {
       if (!selectedTadika) {
-        return Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณาเลือกศูนย์ตาดีกาก่อนปักหมุด' });
+        return Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณาเลือกศูนย์ก่อนปักหมุด' });
       }
       if (!navigator.geolocation) {
         return Swal.fire({ icon: 'error', title: 'ไม่รองรับ', text: 'เบราว์เซอร์นี้ไม่รองรับการระบุตำแหน่ง (GPS)' });
@@ -2117,7 +2117,7 @@
     // ---- ดึงข้อมูลศูนย์ ----
     async function fetchTadikaData() {
       const t = selectedTadika;
-      if (!t) return Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณาเลือกศูนย์ตาดีกาที่ต้องการนิเทศ' });
+      if (!t) return Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณาเลือกศูนย์ที่ต้องการนิเทศ' });
       const btn = document.getElementById('selectBtn');
       btn.disabled = true;
       showLoading('กำลังดึงข้อมูลศูนย์...');

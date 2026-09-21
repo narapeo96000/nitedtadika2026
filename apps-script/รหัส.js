@@ -216,13 +216,14 @@ function setUserStatus(data) {
   return {success: false, message: 'สถานะไม่ถูกต้อง'};
 }
 
-// --- ดึงรายชื่อศูนย์มาให้เลือก (Autocomplete) จากชีต ADDR_TADEKA เท่านั้น ---
+// --- ดึงรายชื่อศูนย์มาให้เลือกจาก ADDR_TADEKA และ ADDR_PONDOK โดยข้อมูลเริ่มแถว 6 ---
 function getTadikaList() {
   const ss = SpreadsheetApp.openById(SHEET_ID);
   let list = [];
 
-  const sheet = ss.getSheetByName(SHEET_ADDR_TADEKA);
-  if(sheet) {
+  ADDR_SHEETS.forEach(cfg => {
+    const sheet = ss.getSheetByName(cfg.name);
+    if(!sheet) return;
     const lastRow = sheet.getLastRow();
     if(lastRow >= 6) {
       // คอลัมน์: A=ID, B=สถานะ, C=มัสยิด, D=ชื่อศูนย์, E=ประธาน, J=ที่อยู่, K=ตำบล, L=อำเภอ,
@@ -232,7 +233,7 @@ function getTadikaList() {
         if(rows[i][0] != "") {
           list.push({
             id: rows[i][0],
-            type: TYPE_TADEKA,
+            type: cfg.type,
             status: rows[i][1],
             name: rows[i][3],
             mosque: rows[i][2],
@@ -250,7 +251,7 @@ function getTadikaList() {
         }
       }
     }
-  }
+  });
   return {success: true, data: list};
 }
 
