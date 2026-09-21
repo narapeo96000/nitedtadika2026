@@ -183,6 +183,9 @@
     .ck-editor__editable_inline { min-height: 90px; max-height: 300px; overflow-y: auto; border-radius: 10px; }
     .q-note .ck-editor__editable_inline { min-height: 48px; }
     .q-note label { font-size: .78rem; color: var(--muted); font-weight: 600; margin: 0 0 3px; }
+    .check-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:8px; padding:8px 0; }
+    .check-item { display:flex; align-items:flex-start; gap:7px; margin:0; padding:8px 10px; border:1px solid var(--border); border-radius:10px; background:#fff; font-weight:500; color:var(--ink); }
+    .check-item input { width:18px; height:18px; accent-color:var(--primary); flex:0 0 auto; }
 
     .form-meta-card { background: var(--primary-light); border: 1px solid var(--primary-soft); border-radius: 14px; padding: 12px 14px; margin-bottom: 14px; }
     .form-meta-card .mtitle { font-weight: 700; color: var(--primary-deep); margin-bottom: 10px; font-size: .95rem; }
@@ -933,13 +936,14 @@
     const GENERAL_FIELDS = [
       { id: 'g_strengths', label: 'สิ่งที่ศูนย์ทำได้ดี (ไม่เกิน 3 เรื่อง)', ph: 'สรุปจุดแข็งจากการนิเทศ' },
       { id: 'g_gaps', label: 'เรื่องที่ควรพัฒนา (เลือก 1–2 เรื่อง)', ph: 'ระบุเรื่องสำคัญที่สุดที่ควรพัฒนา' },
-      { id: 'g_help', label: 'ศูนย์ต้องการความช่วยเหลือเรื่องใด', ph: 'หลักสูตร ตารางเรียน แผนการสอน สื่อ การวัดผล หรือการพัฒนาครู' },
+      { id: 'g_help', label: 'ศูนย์ต้องการความช่วยเหลือเรื่องใด', ph: 'เลือกหัวข้อด้านล่างได้มากกว่า 1 ข้อ' },
       { id: 'g_agreement', label: 'เรื่องที่ตกลงร่วมกันเพื่อการพัฒนา', ph: 'ประเด็นที่ศูนย์และทีมนิเทศตกลงร่วมกัน' },
       { id: 'g_action', label: 'สิ่งที่ศูนย์จะดำเนินการ', ph: 'การดำเนินงานที่ตกลงกัน' },
       { id: 'g_supporter', label: 'ผู้ที่จะช่วยสนับสนุน', ph: 'บุคคล/หน่วยงาน/เครือข่าย' },
       { id: 'g_followDate', label: 'กำหนดติดตามครั้งต่อไป', ph: 'วัน/เดือน โดยประมาณ' },
       { id: 'g_followLook', label: 'เมื่อติดตามครั้งต่อไป ขอให้ดูว่า', ph: 'หลักฐานหรือการเปลี่ยนแปลงที่จะติดตาม' },
-      { id: 'g_followStatus', label: 'ผลการติดตามและสิ่งที่จะดำเนินการต่อ', ph: 'ทำแล้ว / กำลังทำ / ยังไม่ได้ทำ และแนวทางต่อเนื่อง' },
+      { id: 'g_followStatus', label: 'ผลการติดตามและสิ่งที่จะดำเนินการต่อ', ph: 'เลือกผลการติดตามด้านล่าง' },
+      { id: 'g_change', label: 'หลังดำเนินการแล้ว มีอะไรเปลี่ยนแปลง', ph: 'บันทึกการเปลี่ยนแปลงที่พบ' },
       { id: 'g_evidence', label: 'หลักฐานหรือสรุปสำหรับผู้นิเทศ', ph: 'หลักฐานการเปลี่ยนแปลงและเรื่องสำคัญที่ควรช่วย' }
     ];
 
@@ -1634,8 +1638,15 @@
         renderForm5Panel() + renderGeneralFormPanel();
     }
 
+    const GENERAL_HELP_OPTIONS = ['การทำความเข้าใจหลักสูตร', 'การจัดตารางเรียน/เวลาเรียน', 'การเตรียมแผนหรือกิจกรรมการสอน', 'การจัดกิจกรรมให้เหมาะกับวัย', 'การจัดกิจกรรมให้ผู้เรียนลงมือปฏิบัติ', 'การใช้สื่อและอุปกรณ์', 'การวัดและประเมินผู้เรียน', 'การดูแลผู้เรียนที่ต้องได้รับการช่วยเหลือ', 'การพัฒนาครู', 'อื่น ๆ'];
+    const GENERAL_FOLLOW_OPTIONS = ['ทำแล้ว', 'กำลังทำ', 'ยังไม่ได้ทำ', 'อื่น ๆ'];
+    function checkboxGroup(prefix, options) {
+      return `<div class="check-grid">${options.map((label, i) => `<label class="check-item"><input type="checkbox" data-group="${prefix}" id="${prefix}_${i}" value="${escHtml(label)}"> <span>${escHtml(label)}</span></label>`).join('')}</div>`;
+    }
+
     function renderGeneralFormPanel() {
       const f = GENERAL_SCHEMA;
+      const summaryFields = GENERAL_FIELDS.filter(fd => !['g_help', 'g_followStatus', 'g_change', 'g_evidence'].includes(fd.id));
       return `<div class="form-panel${activeTab === 6 ? '' : ' d-none'}" data-form="6">
         <div class="form-meta-card"><div class="mtitle">📋 แบบบันทึกสำหรับผู้ไม่ใช่ศึกษานิเทศก์ (หน้า 6–10)</div></div>
         ${renderMetaCard(f)}
@@ -1651,7 +1662,17 @@
         </div>
         ${f.sections.map((s, si) => renderSection(f, s, si)).join('')}
         <div class="form-meta-card"><div class="mtitle">📝 สรุปผลและข้อตกลงเพื่อการพัฒนา</div>
-          ${GENERAL_FIELDS.map(fd => `<label>${escHtml(fd.label)}</label><textarea id="${fd.id}" class="form-control" placeholder="${escHtml(fd.ph || '')}"></textarea>`).join('')}
+          ${summaryFields.map(fd => `<label>${escHtml(fd.label)}</label><textarea id="${fd.id}" class="form-control" placeholder="${escHtml(fd.ph || '')}"></textarea>`).join('')}
+          <label>ศูนย์ต้องการความช่วยเหลือเรื่องใด <span class="small text-muted">(เลือกได้มากกว่า 1 ข้อ)</span></label>
+          ${checkboxGroup('g_help_option', GENERAL_HELP_OPTIONS)}
+          <textarea id="g_help" class="form-control mt-2" placeholder="สรุปหรือขยายรายละเอียดความช่วยเหลือที่ต้องการ"></textarea>
+          <label>9. แบบติดตามครั้งต่อไป: เรื่องที่ตกลงจะพัฒนา ได้ดำเนินการแล้วหรือไม่</label>
+          ${checkboxGroup('g_follow_option', GENERAL_FOLLOW_OPTIONS)}
+          <input id="g_follow_other_detail" class="form-control mt-2" placeholder="ระบุรายละเอียดเมื่อเลือก อื่น ๆ">
+          <label>หลังดำเนินการแล้ว มีอะไรเปลี่ยนแปลง</label>
+          <textarea id="g_change" class="form-control" placeholder="บันทึกการเปลี่ยนแปลงที่พบ"></textarea>
+          <label>มีหลักฐานอะไรที่แสดงถึงการเปลี่ยนแปลง</label>
+          <textarea id="g_evidence" class="form-control" placeholder="ระบุหลักฐาน เช่น ตารางเรียน แผน ผลงาน หรือการสังเกต"></textarea>
         </div>
       </div>`;
     }
@@ -2263,6 +2284,16 @@
         f5_change: f5.change, f5_evidence: f5.evidence,
         f5_nextAction: f5.nextAction, f5_summary: f5.summary
       });
+      const gr = details.generalRecord || {};
+      const gm = gr.meta || {}, gs = gr.summary || {};
+      setMeta({
+        g_date: gm.date, g_contact: gm.contact, g_levels: gm.levels, g_students: gm.students, g_teachers: gm.teachers,
+        g_teacher: gm.teacher, g_subject: gm.subject, g_class: gm.class, g_duration: gm.duration,
+        ...Object.fromEntries(GENERAL_FIELDS.map(fd => [fd.id, gs[fd.id]])),
+        g_follow_other_detail: gs.followOther
+      });
+      (gs.helpOptions || []).forEach(value => { const el = [...document.querySelectorAll('[data-group="g_help_option"]')].find(x => x.value === value); if (el) el.checked = true; });
+      (gs.followOptions || []).forEach(value => { const el = [...document.querySelectorAll('[data-group="g_follow_option"]')].find(x => x.value === value); if (el) el.checked = true; });
       const plan = details.actionPlan || [];
       document.getElementById('apBody').innerHTML = '';
       (plan.length ? plan : []).forEach(p => addPlanRow(p));
@@ -2295,9 +2326,11 @@
        'f3_subject','f3_class','f3_period','f4_sampled','f4_passed','f4_pct',
        'f5_strengths','f5_gaps','f5_help','f5_agreement','f5_centerAction','f5_supporter',
        'f5_followDate','f5_followLook','f5_followStatus','f5_change','f5_evidence','f5_nextAction','f5_summary'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) tkSet(id, '');
+       const el = document.getElementById(id);
+       if (el) tkSet(id, '');
       });
+      document.querySelectorAll('#formPanels input[type="checkbox"][data-group]').forEach(el => { el.checked = false; });
+      tkSet('g_follow_other_detail', '');
       document.getElementById('apBody').innerHTML = '';
       addPlanRow({});
       document.getElementById('f5_files').value = '';
@@ -2365,6 +2398,7 @@
 
     function collectGeneralRecord() {
       const v = id => tkGet(id);
+      const selected = group => [...document.querySelectorAll(`input[data-group="${group}"]:checked`)].map(el => el.value);
       return {
         answers: getFormScores(6).scores,
         notes: getFormNotes(6),
@@ -2373,7 +2407,12 @@
           students: v('g_students'), teachers: v('g_teachers'),
           teacher: v('g_teacher'), subject: v('g_subject'), class: v('g_class'), duration: v('g_duration')
         },
-        summary: Object.fromEntries(GENERAL_FIELDS.map(fd => [fd.id, v(fd.id)]))
+        summary: {
+          ...Object.fromEntries(GENERAL_FIELDS.map(fd => [fd.id, v(fd.id)])),
+          helpOptions: selected('g_help_option'),
+          followOptions: selected('g_follow_option'),
+          followOther: v('g_follow_other_detail')
+        }
       };
     }
 
