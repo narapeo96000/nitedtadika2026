@@ -461,9 +461,19 @@
       <div class="card auth-card">
         <h4 class="text-center mb-3" style="color:var(--primary-deep); margin-top:0;">เข้าสู่ระบบ</h4>
         <label>Username</label>
-        <input type="text" id="loginUser" class="form-control mb-3">
+        <input type="text" id="loginUser" class="form-control mb-3" autocomplete="username">
         <label>Password</label>
-        <input type="password" id="loginPass" class="form-control mb-3" onkeypress="if(event.key==='Enter') handleLogin(event)">
+        <input type="password" id="loginPass" class="form-control mb-3" autocomplete="current-password" onkeypress="if(event.key==='Enter') handleLogin(event)">
+        <div class="mb-3 small" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <label class="mb-0" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="showPassword" onchange="togglePasswordVisibility()">
+            <span>แสดงรหัสผ่าน</span>
+          </label>
+          <label class="mb-0" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="rememberPassword">
+            <span>จดจำรหัสผ่าน</span>
+          </label>
+        </div>
         <label>เลือกศูนย์ที่จะนิเทศ (ตาดีกา/ปอเนาะ) <span class="small text-muted">(พิมพ์ค้นหาได้)</span></label>
         <div class="position-relative">
           <input type="text" id="lgTadikaSearch" class="form-control" placeholder="ชื่อตาดีกา / มัสยิด / ตำบล / อำเภอ..."
@@ -1321,6 +1331,23 @@
       document.getElementById('regCaptcha').value = '';
     }
 
+    function togglePasswordVisibility() {
+      const input = document.getElementById('loginPass');
+      const checkbox = document.getElementById('showPassword');
+      if (!input || !checkbox) return;
+      input.type = checkbox.checked ? 'text' : 'password';
+    }
+
+    function loadRememberedLogin() {
+      if (!window.PasswordCredential || !navigator.credentials || !navigator.credentials.get) return;
+      navigator.credentials.get({ password: true, mediation: 'optional' }).then(credential => {
+        if (!credential) return;
+        if (credential.id) document.getElementById('loginUser').value = credential.id;
+        if (credential.password) document.getElementById('loginPass').value = credential.password;
+        document.getElementById('rememberPassword').checked = true;
+      }).catch(() => { /* เบราว์เซอร์ไม่รองรับหรือผู้ใช้ปฏิเสธ */ });
+    }
+
     async function handleLogin(e) {
       e.preventDefault();
       const user = document.getElementById('loginUser').value.trim();
@@ -1340,6 +1367,12 @@
           password: pass
         });
         if (res.success) {
+          const remember = document.getElementById('rememberPassword').checked;
+          if (remember && window.PasswordCredential && navigator.credentials && navigator.credentials.store) {
+            navigator.credentials.store(new PasswordCredential({ id: user, password: pass, name: user })).catch(() => {});
+          } else if (!remember && navigator.credentials && navigator.credentials.preventSilentAccess) {
+            navigator.credentials.preventSilentAccess().catch(() => {});
+          }
           currentUser = res.userData;
           Swal.close();
           Swal.fire({ icon: 'success', title: 'เข้าสู่ระบบสำเร็จ!', html: 'ยินดีต้อนรับ <b>' + escHtml(currentUser.fname) + '</b>', timer: 1800, showConfirmButton: false });
@@ -2583,6 +2616,7 @@
     renderAddrHeader();
     loadTadikaList();
     loadStats();
+    loadRememberedLogin();
     window.addEventListener('online', () => setConnectionStatus(true));
     window.addEventListener('offline', () => setConnectionStatus(false));
     setConnectionStatus(navigator.onLine);
