@@ -16,8 +16,9 @@ $CommitMsg = "อัปเดตอัตโนมัติ " + (Get-Date -Forma
 
 Write-Host "`n=== 1/4 ตรวจสอบ syntax ===" -ForegroundColor Cyan
 $html = Get-Content "$Root\index.html" -Raw
-$m = [regex]::Match($html, '<script>([\s\S]*?)</script>')
-if (-not $m.Success) { throw "ไม่พบ <script> ใน index.html" }
+$matches = [regex]::Matches($html, '<script>([\s\S]*?)</script>')
+$m = if ($matches.Count -gt 0) { $matches[$matches.Count - 1] } else { $null }
+if (-not $m) { throw "ไม่พบ inline app script ใน index.html" }
 $tmp = Join-Path $env:TEMP "deploy_check.js"
 $m.Groups[1].Value | Set-Content $tmp -Encoding UTF8
 node --check $tmp; if ($LASTEXITCODE -ne 0) { throw "index.html JS syntax ผิด!" }

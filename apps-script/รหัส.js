@@ -16,8 +16,27 @@ function getDataSheet() { return SHEET_DATA_TADEKA; }
 // โครงสร้างใหม่ของชีต DATA (15 คอลัมน์ รองรับการประเมิน 4 ด้าน + สรุป)
 const DATA_HEADERS = ['Timestamp', 'ID ศูนย์', 'ชื่อศูนย์', 'ประเภทการประเมิน', 'คะแนนแบบ1', 'คะแนนแบบ2', 'คะแนนแบบ3', 'คะแนนแบบ4', 'รวม/150', 'ร้อยละ', 'ระดับ', 'รายละเอียด', 'ผู้นิเทศ', 'แก้ไขครั้งล่าสุด', 'ผู้แก้ไขล่าสุด'];
 
-function doGet() {
-  // หน้าเว็บหลัก (เพื่อให้เปิด URL ได้ใน browser และใช้หน้า Authorization ใหม่เมื่อ scope เปลี่ยน)
+function doGet(e) {
+  // GET API สำหรับข้อมูลอ่านอย่างเดียว: /exec?action=getTadikaList
+  if (e && e.parameter && e.parameter.action) {
+    try {
+      const action = String(e.parameter.action || '').trim();
+      let payload = e.parameter.payload || '';
+      if (payload) {
+        try { payload = JSON.parse(payload); } catch (_) {}
+      } else if (e.parameter.id) {
+        payload = e.parameter.id;
+      } else if (e.parameter.username) {
+        payload = { username: e.parameter.username };
+      } else {
+        payload = {};
+      }
+      return jsonResponse(routeAction(action, payload));
+    } catch (error) {
+      return jsonResponse({ success: false, message: error.message });
+    }
+  }
+
   return HtmlService.createHtmlOutput(
     '<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8">' +
     '<meta name="viewport" content="width=device-width, initial-scale=1">' +
@@ -34,40 +53,32 @@ function doGet() {
 function doPost(e) {
   try {
     const req = JSON.parse(e.postData.contents);
-    const action = req.action;
-    const payload = req.payload;
-    let res = {};
-
-    if (action === 'login') {
-      res = loginUser(payload);
-    } else if (action === 'register') {
-      res = registerUser(payload);
-    } else if (action === 'getTadikaList') {
-      res = getTadikaList();
-    } else if (action === 'getStats') {
-      res = getStats();
-    } else if (action === 'getUsers') {
-      res = getUsers(payload);
-    } else if (action === 'setUserStatus') {
-      res = setUserStatus(payload);
-    } else if (action === 'getTadikaData') {
-      res = getTadikaData(payload);
-    } else if (action === 'getEvaluations') {
-      res = getEvaluations(payload);
-    } else if (action === 'saveEvaluation') {
-      res = saveEvaluation(payload);
-    } else if (action === 'savePin') {
-      res = savePin(payload);
-    } else if (action === 'chat') {
-      res = processChatbot(payload);
-    }
-
-    return ContentService.createTextOutput(JSON.stringify(res))
-      .setMimeType(ContentService.MimeType.JSON);
+    return jsonResponse(routeAction(req.action, req.payload));
   } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({ success: false, message: error.message }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return jsonResponse({ success: false, message: error.message });
   }
+}
+
+function jsonResponse(value) {
+  return ContentService.createTextOutput(JSON.stringify(value || { success: false, message: 'ไม่พบผลลัพธ์' }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// จุดรวม routing เดียวกันสำหรับ GET และ POST เพื่อป้องกันพฤติกรรมของ API ไม่ตรงกัน
+function routeAction(action, payload) {
+  action = String(action || '').trim();
+  if (action === 'login') return loginUser(payload || {});
+  if (action === 'register') return registerUser(payload || {});
+  if (action === 'getTadikaList') return getTadikaList();
+  if (action === 'getStats') return getStats();
+  if (action === 'getUsers') return getUsers(payload || {});
+  if (action === 'setUserStatus') return setUserStatus(payload || {});
+  if (action === 'getTadikaData') return getTadikaData(payload);
+  if (action === 'getEvaluations') return getEvaluations(payload);
+  if (action === 'saveEvaluation') return saveEvaluation(payload || {});
+  if (action === 'savePin') return savePin(payload || {});
+  if (action === 'chat') return processChatbot(payload);
+  return { success: false, message: 'ไม่รองรับ action: ' + action };
 }
 
 const USERS_HEADERS = ['Username','Password','ชื่อ-นามสกุล','เบอร์โทร','สถานะ','บทบาท'];
@@ -590,16 +601,16 @@ function offlineChatReply(msg) {
     return "อัสลามุอะลัยกุม! ขอสันติจงมีแด่ท่าน ฉันคือ \"น้องศึกษา\" ผู้ช่วย AI ยินดีให้คำปรึกษาเกี่ยวกับชุดเครื่องมือนิเทศออนไลน์สำหรับศูนย์ตาดีกา จังหวัดนราธิวาสครับ<br>สอบถามเรื่องเกณฑ์การให้คะแนน การจัดการเรียนรู้ หรือข้อมูลศูนย์ได้เลยครับ";
   }
   if (msg.includes('เกณฑ์') || msg.includes('คะแนน')) {
-    return "เกณฑ์การประเมินตามชุดเครื่องมือนิเทศตาดีกา มี 5 แบบฟอร์มครับ:<br>• แบบที่ 1 การนำหลักสูตรไปใช้ (45 คะแนน)<br>• แบบที่ 2 การสังเกตการจัดการเรียนรู้ของครู (54 คะแนน)<br>• แบบที่ 3 การวัดและประเมินผลผู้เรียน (51 คะแนน)<br>• แบบที่ 4 การตรวจสอบผลลัพธ์ผู้เรียนแบบสุ่ม (15 คะแนน)<br>• แบบที่ 5 สรุปผลรายศูนย์และแผนพัฒนา (เชิงคุณภาพ)<br>รวมแบบที่ 1-3 = 150 คะแนน คิดเป็นร้อยละและจัดระดับผลการนิเทศครับ";
+    return "แบบบันทึกสำหรับผู้นิเทศทั่วไปมี 2 ด้าน รวม 12 ข้อครับ: ด้านที่ 1 การนำหลักสูตรไปใช้ 6 ข้อ และด้านที่ 2 การจัดการเรียนรู้ของครู 6 ข้อ ใช้เกณฑ์ 2 = ทำได้ชัดเจน, 1 = กำลังพัฒนา, 0 = ต้องได้รับการช่วยเหลือ และ N/A = พิจารณาไม่ได้ในครั้งนี้ โดยใช้เพื่อค้นหาจุดแข็งและวางแผนช่วยเหลือ ไม่ใช้จัดอันดับศูนย์หรือบุคลากรครับ";
   }
   if (msg.includes('ระดับ')) {
-    return "การจัดระดับผลการนิเทศครับ:<br>• ร้อยละ 80 ขึ้นไป → ดีมาก<br>• ร้อยละ 60-79 → ดี<br>• ร้อยละ 40-59 → พอใช้<br>• ต่ำกว่าร้อยละ 40 → ต้องปรับปรุง";
+    return "ระบบแสดงภาพรวมเพื่อช่วยกำหนดการสนับสนุน ไม่ใช่การจัดอันดับครับ โดยพิจารณาจากสิ่งที่พบจริง หลักฐาน การสนทนา และการสังเกตชั้นเรียนร่วมกัน";
   }
   if (msg.includes('แบบที่ 4') || msg.includes('สุ่ม')) {
-    return "แบบที่ 4 การตรวจสอบผลลัพธ์ผู้เรียนแบบสุ่ม ให้กรอกจำนวนผู้เรียนที่สุ่ม และจำนวนที่ทำได้ตามเกณฑ์ ระบบคำนวณร้อยละให้อัตโนมัติ แล้วให้คะแนนข้อ 1-5 (ข้อละ 0-3) ครับ";
+    return "แบบบันทึกนี้ให้สังเกตผู้เรียนว่ามีส่วนร่วม คิด สื่อสาร และฝึกปฏิบัติจริงหรือไม่ หากพิจารณาไม่ได้ในครั้งนี้ให้เลือก N/A และบันทึกเหตุผลหรือหลักฐานไว้ครับ";
   }
   if (msg.includes('แบบที่ 5') || msg.includes('แผนพัฒนา')) {
-    return "แบบที่ 5 สรุปผลรายศูนย์และแผนพัฒนา ให้กรอกจุดแข็ง ช่องว่าง สาเหตุ ทรัพยากรที่ต้องการ และจัดทำ Action Plan (ประเด็นพัฒนา/กิจกรรม/ผู้รับผิดชอบ/กำหนดเสร็จ/หลักฐาน) ใช้ปุ่ม \"ประมวลผลด้วย AI\" ช่วยร่างได้ครับ";
+    return "ส่วนสรุปให้บันทึกจุดแข็งไม่เกิน 3 เรื่อง ประเด็นพัฒนา 1–2 เรื่อง ความช่วยเหลือที่ต้องการ ข้อตกลง สิ่งที่จะดำเนินการ ผู้สนับสนุน และสิ่งที่จะติดตามครั้งต่อไปครับ";
   }
   if (msg.includes('กี่') || msg.includes('จำนวน') || msg.includes('สถิติ') || msg.includes('ทั้งหมด')) {
     return "ขณะนี้ยังไม่ได้เชื่อมต่อ AI สำหรับข้อมูลสถิติ กรุณาตั้งค่า Gemini API Key ก่อนครับ (หรือถามเรื่องเกณฑ์การประเมินได้ทันที)";
@@ -688,8 +699,8 @@ function callGeminiAPI(userMessage, contextData, settings) {
     "- หลักสูตรและการจัดการเรียนรู้ในปอเนาะ (8 สาระการเรียนรู้พื้นฐาน)\n\n" +
     "4. ระบบนิเทศออนไลน์ตาดีกาและ ศอม. จังหวัดนราธิวาส:\n" +
     "- อธิบายวิธีการเข้าใช้งานระบบ การล็อกอิน\n" +
-    "- อธิบายรูปแบบการประเมินทั้ง 5 แบบฟอร์ม (แบบที่ 1 การนำหลักสูตรไปใช้ 45 คะแนน, แบบที่ 2 การสังเกตการจัดการเรียนรู้ของครู 54 คะแนน, แบบที่ 3 การวัดและประเมินผลผู้เรียน 51 คะแนน, แบบที่ 4 การตรวจสอบผลลัพธ์ผู้เรียนแบบสุ่ม 15 คะแนน, แบบที่ 5 สรุปผลรายศูนย์และแผนพัฒนาเชิงคุณภาพ)\n" +
-    "- อธิบายเกณฑ์การให้คะแนน (ข้อละ 0-3 คะแนน แบบที่ 1-3 รวม 150 คะแนน) และการตัดระดับคุณภาพ (80%+ ดีมาก, 60-79% ดี, 40-59% พอใช้, ต่ำกว่า 40% ต้องปรับปรุง)\n\n" +
+    "- อธิบายแบบบันทึกสำหรับผู้นิเทศทั่วไป 2 ด้าน 12 ข้อ และส่วนสรุป/ติดตามผล\n" +
+    "- อธิบายเกณฑ์ 2 = ทำได้ชัดเจน, 1 = กำลังพัฒนา, 0 = ต้องได้รับการช่วยเหลือ, N/A = พิจารณาไม่ได้ โดยไม่ใช้เพื่อจัดอันดับ\n\n" +
     "ข้อควรระวังและขอบเขต (Boundaries):\n" +
     "- หากคำถามไม่อยู่ในขอบเขตการศึกษาเอกชนจังหวัดนราธิวาส ให้ตอบอย่างสุภาพว่า \"ขออภัยค่ะ น้องศึกษามีข้อมูลเฉพาะด้านการจัดการศึกษาเอกชน ศูนย์ตาดีกา สถาบันศึกษาปอเนาะ และระบบนิเทศออนไลน์ของจังหวัดนราธิวาสเท่านั้นค่ะ\"\n" +
     "- หากผู้ใช้ถามข้อมูลสถิติ ให้ตอบเป็นตารางหรือ Bullet points เพื่อให้อ่านง่าย\n" +
