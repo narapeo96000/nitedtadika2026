@@ -1125,7 +1125,7 @@
       { key: 'id',       icon: '🆔', label: 'รหัสตาดีกา/มัสยิด/แผนที่' },
       { key: 'address',  icon: '🏠', label: 'ที่อยู่ (หมู่/ตำบล/อำเภอ)' },
       { key: 'status',   icon: '📌', label: 'สถานะ' },
-      { key: 'teachers', icon: '👨‍🏫', label: 'ครู/นักเรียน (ช/ญ)' }
+      { key: 'teachers', icon: '👥', label: 'บุคลากร/ผู้เรียน/ต่างชาติ' }
     ];
     let addrSort = { key: 'id', dir: 'asc' };
 
@@ -1202,9 +1202,8 @@
           </td>
           <td class="small" data-label="ที่อยู่">${escHtml(tadikaAddr(t)) || '—'}</td>
           <td data-label="สถานะ">${statusBadge(t.status)}</td>
-          <td class="small" data-label="ครู/นักเรียน">
-            <div class="cnt-line">👨‍🏫 ครู ${fmtNum(t.teachers.male + t.teachers.female)} (ช${fmtNum(t.teachers.male)}/ญ${fmtNum(t.teachers.female)})</div>
-            <div class="cnt-line">🎒 นักเรียน ${fmtNum(t.students.male + t.students.female)} (ช${fmtNum(t.students.male)}/ญ${fmtNum(t.students.female)})</div>
+          <td class="small" data-label="บุคลากร/ผู้เรียน/ต่างชาติ">
+            <div class="cnt-line">${fmtNum(t.teachers.total || (Number(t.teachers.male || 0) + Number(t.teachers.female || 0)))} / ${fmtNum(t.students.total || (Number(t.students.male || 0) + Number(t.students.female || 0)))} / ${t.foreignStudents === '' || t.foreignStudents == null ? '—' : fmtNum(t.foreignStudents)}</div>
           </td>
         </tr>`).join('') || '<tr><td colspan="4" class="text-center text-muted py-3">ไม่พบข้อมูลที่ค้นหา</td></tr>';
     }
@@ -1486,8 +1485,7 @@
         ['📍 อำเภอ', escHtml(t.dist) || '—'],
         ['📞 โทรศัพท์', escHtml(t.phone) || '—'],
         ['📏 ขนาดศูนย์', escHtml(t.size) || '—'],
-        ['👨‍🏫 ครู (ช/ญ/รวม)', fmtNum(t.teachers.male) + ' / ' + fmtNum(t.teachers.female) + ' / ' + fmtNum(t.teachers.total)],
-        ['🎒 นักเรียน (ช/ญ/รวม)', fmtNum(t.students.male) + ' / ' + fmtNum(t.students.female) + ' / ' + fmtNum(t.students.total)],
+        ['👥 บุคลากร / ผู้เรียน / ต่างชาติ', fmtNum(t.teachers.total || (Number(t.teachers.male || 0) + Number(t.teachers.female || 0))) + ' / ' + fmtNum(t.students.total || (Number(t.students.male || 0) + Number(t.students.female || 0))) + ' / ' + (t.foreignStudents === '' || t.foreignStudents == null ? '—' : fmtNum(t.foreignStudents))],
         ['📍 แผนที่', (t.lat && t.lng) ? t.lat + ', ' + t.lng : 'ยังไม่มีแผนที่']
       ];
       document.getElementById('addrSelExtra').innerHTML = '<div class="tk-row">' + cells.map(([k, v]) =>

@@ -232,32 +232,22 @@ function getTadikaList() {
     const startRow = cfg.startRow || 6;
     const lastRow = sheet.getLastRow();
     if(lastRow >= startRow) {
-      // คอลัมน์: A=ID, B=สถานะ, C=มัสยิด, D=ชื่อศูนย์, E=ประธาน, J=ที่อยู่, K=ตำบล, L=อำเภอ,
-      // M=โทร, N=ขนาด, O/P/Q=ครู ช/ญ/รวม, R/S/T=นักเรียน ช/ญ/รวม, U=ละติจูด, V=ลองจิจูด
-      const rows = sheet.getRange(startRow, 1, lastRow - startRow + 1, 22).getValues();
+      const width = cfg.type === TYPE_PONDOK ? 11 : 22;
+      const rows = sheet.getRange(startRow, 1, lastRow - startRow + 1, width).getValues();
       for(let i = 0; i < rows.length; i++) {
         if(rows[i][0] != "") {
-          list.push({
-            id: rows[i][0],
-            type: cfg.type,
-            status: rows[i][1],
-            name: rows[i][3],
-            mosque: rows[i][2],
-            head: rows[i][4],
-            generalEducation: rows[i][5],
-            religiousEducation: rows[i][6],
-            foundedDate: rows[i][7],
-            regNum: rows[i][8],
-            phone: rows[i][12],
-            size: rows[i][13],
-            teachers: { male: rows[i][14], female: rows[i][15], total: rows[i][16] },
-            students: { male: rows[i][17], female: rows[i][18], total: rows[i][19] },
-            address: rows[i][9],
-            subdist: rows[i][10],
-            dist: rows[i][11],
-            lat: rows[i][20],
-            lng: rows[i][21]
-          });
+          if (cfg.type === TYPE_PONDOK) {
+            list.push({ id: rows[i][0], type: cfg.type, status: '', name: rows[i][1], mosque: '', head: '',
+              phone: rows[i][5], size: '', teachers: { male: 0, female: 0, total: rows[i][6] },
+              students: { male: 0, female: 0, total: rows[i][7] }, foreignStudents: rows[i][8],
+              address: rows[i][2], subdist: rows[i][4], dist: rows[i][3], lat: rows[i][9], lng: rows[i][10] });
+          } else {
+            list.push({ id: rows[i][0], type: cfg.type, status: rows[i][1], name: rows[i][3], mosque: rows[i][2], head: rows[i][4],
+              generalEducation: rows[i][5], religiousEducation: rows[i][6], foundedDate: rows[i][7], regNum: rows[i][8],
+              phone: rows[i][12], size: rows[i][13], teachers: { male: rows[i][14], female: rows[i][15], total: rows[i][16] },
+              students: { male: rows[i][17], female: rows[i][18], total: rows[i][19] }, foreignStudents: '',
+              address: rows[i][9], subdist: rows[i][10], dist: rows[i][11], lat: rows[i][20], lng: rows[i][21] });
+          }
         }
       }
     }
@@ -389,22 +379,24 @@ function getTadikaData(id) {
     const startRow = cfg.startRow || 6;
     const lastRow = sheet.getLastRow();
     if(lastRow < startRow) continue;
-    const rows = sheet.getRange(startRow, 1, lastRow - startRow + 1, 23).getValues();
+    const width = cfg.type === TYPE_PONDOK ? 11 : 23;
+    const rows = sheet.getRange(startRow, 1, lastRow - startRow + 1, width).getValues();
     for(let i = 0; i < rows.length; i++) {
       if(String(rows[i][0]).trim() === id) {
-        return {
-          success: true,
-          data: {
-            row: i + startRow,
-            type: cfg.type,
-            id: rows[i][0], status: rows[i][1], mosque: rows[i][2], name: rows[i][3],
-            head: rows[i][4], eduSec: rows[i][5], eduRel: rows[i][6], foundedDate: rows[i][7],
-            regNum: rows[i][8], address: rows[i][9], subdist: rows[i][10], dist: rows[i][11],
-            phone: rows[i][12], size: rows[i][13], tMale: rows[i][14], tFemale: rows[i][15],
-            tTotal: rows[i][16], sMale: rows[i][17], sFemale: rows[i][18], sTotal: rows[i][19],
-            lat: rows[i][20], lng: rows[i][21], rooms: rows[i][22]
-          }
-        };
+        if (cfg.type === TYPE_PONDOK) return { success: true, data: {
+          row: i + startRow, type: cfg.type, id: rows[i][0], status: '', mosque: '', name: rows[i][1],
+          head: '', eduSec: '', eduRel: '', foundedDate: '', regNum: '', address: rows[i][2],
+          subdist: rows[i][4], dist: rows[i][3], phone: rows[i][5], size: '', tMale: 0, tFemale: 0,
+          tTotal: rows[i][6], sMale: 0, sFemale: 0, sTotal: rows[i][7], foreignStudents: rows[i][8],
+          lat: rows[i][9], lng: rows[i][10], rooms: ''
+        }};
+        return { success: true, data: {
+          row: i + startRow, type: cfg.type, id: rows[i][0], status: rows[i][1], mosque: rows[i][2], name: rows[i][3],
+          head: rows[i][4], eduSec: rows[i][5], eduRel: rows[i][6], foundedDate: rows[i][7], regNum: rows[i][8],
+          address: rows[i][9], subdist: rows[i][10], dist: rows[i][11], phone: rows[i][12], size: rows[i][13],
+          tMale: rows[i][14], tFemale: rows[i][15], tTotal: rows[i][16], sMale: rows[i][17], sFemale: rows[i][18],
+          sTotal: rows[i][19], foreignStudents: '', lat: rows[i][20], lng: rows[i][21], rooms: rows[i][22]
+        }};
       }
     }
   }
@@ -427,13 +419,16 @@ function savePin(data) {
     const startRow = cfg.startRow || 6;
     const lastRow = sheet.getLastRow();
     if(lastRow < startRow) continue;
-    const rows = sheet.getRange(startRow, 1, lastRow - startRow + 1, 22).getValues();
+    const width = cfg.type === TYPE_PONDOK ? 11 : 22;
+    const rows = sheet.getRange(startRow, 1, lastRow - startRow + 1, width).getValues();
     for(let i = 0; i < rows.length; i++) {
       if(String(rows[i][0]).trim() === id) {
         const row = i + startRow;
-        sheet.getRange(row, 21).setValue(Number(lat));
-        sheet.getRange(row, 22).setValue(Number(lng));
-        return {success: true, message: "บันทึกพิกัดเรียบร้อย (U=ละติจูด, V=ลองจิจูด)", row: row};
+        const latCol = cfg.type === TYPE_PONDOK ? 10 : 21;
+        const lngCol = cfg.type === TYPE_PONDOK ? 11 : 22;
+        sheet.getRange(row, latCol).setValue(Number(lat));
+        sheet.getRange(row, lngCol).setValue(Number(lng));
+        return {success: true, message: "บันทึกพิกัดเรียบร้อย", row: row};
       }
     }
   }
@@ -516,13 +511,22 @@ function saveEvaluation(payload) {
 
   // อัปเดตข้อมูลศูนย์ลงชีต ADDR ที่ตรงตามประเภท
   const addressSheet = ss.getSheetByName(getAddrSheet(type));
-  const updateValues = [[
-    t.status, t.mosque, t.name, t.head, t.eduSec, t.eduRel, t.foundedDate, t.regNum,
-    t.address, t.subdist, t.dist, t.phone, t.size, t.tMale, t.tFemale, t.tTotal,
-    t.sMale, t.sFemale, t.sTotal, t.lat, t.lng, t.rooms
-  ]];
   if(addressSheet && t.row) {
-    addressSheet.getRange(t.row, 2, 1, 22).setValues(updateValues);
+    if (type === TYPE_PONDOK) {
+      // ADDR_PONDOK: A รหัส, B ชื่อ, C ที่อยู่, D อำเภอ, E ตำบล, F โทร,
+      // G บุคลากร, H ผู้เรียน, I ผู้เรียนต่างชาติ, J พิกัด x, K พิกัด y
+      addressSheet.getRange(t.row, 2, 1, 10).setValues([[
+        t.name, t.address, t.dist, t.subdist, t.phone, t.tTotal, t.sTotal,
+        t.foreignStudents || '', t.lat, t.lng
+      ]]);
+    } else {
+      const updateValues = [[
+        t.status, t.mosque, t.name, t.head, t.eduSec, t.eduRel, t.foundedDate, t.regNum,
+        t.address, t.subdist, t.dist, t.phone, t.size, t.tMale, t.tFemale, t.tTotal,
+        t.sMale, t.sFemale, t.sTotal, t.lat, t.lng, t.rooms
+      ]];
+      addressSheet.getRange(t.row, 2, 1, 22).setValues(updateValues);
+    }
   }
 
   // บันทึก/แก้ไขผลนิเทศลงชีต DATA ที่ตรงตามประเภท
