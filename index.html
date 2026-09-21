@@ -153,6 +153,26 @@
     }
     .tab.active { background: linear-gradient(135deg, var(--primary), var(--blue-dark)); color: #fff; border-color: transparent; }
     .tab .tab-pts { display: block; font-size: .72rem; font-weight: 500; opacity: .85; }
+    #formTabs .tab[data-form="1"] { --tab-color:#059669; border-top:4px solid #059669; }
+    #formTabs .tab[data-form="2"] { --tab-color:#2563eb; border-top:4px solid #2563eb; }
+    #formTabs .tab[data-form="3"] { --tab-color:#d97706; border-top:4px solid #d97706; }
+    #formTabs .tab[data-form="4"] { --tab-color:#7c3aed; border-top:4px solid #7c3aed; }
+    #formTabs .tab[data-form="5"] { --tab-color:#db2777; border-top:4px solid #db2777; }
+    #formTabs .tab[data-form="6"] { --tab-color:#0891b2; border-top:4px solid #0891b2; }
+    #formTabs .tab.active { background:var(--tab-color, var(--primary)); box-shadow:0 4px 10px rgba(15,23,42,.14); }
+    .form-panel[data-form="1"] { --form-color:#059669; --form-soft:#ecfdf5; }
+    .form-panel[data-form="2"] { --form-color:#2563eb; --form-soft:#eff6ff; }
+    .form-panel[data-form="3"] { --form-color:#d97706; --form-soft:#fffbeb; }
+    .form-panel[data-form="4"] { --form-color:#7c3aed; --form-soft:#f5f3ff; }
+    .form-panel[data-form="5"] { --form-color:#db2777; --form-soft:#fdf2f8; }
+    .form-panel[data-form="6"] { --form-color:#0891b2; --form-soft:#ecfeff; }
+    .form-panel[data-form] > .form-meta-card:first-child { border-left:7px solid var(--form-color); background:var(--form-soft); }
+    .form-panel[data-form] > .form-meta-card:first-child .mtitle { color:var(--form-color); }
+    .form-panel[data-form] .section-head { background:linear-gradient(135deg, var(--form-soft), #fff); border-left:5px solid var(--form-color); }
+    .form-panel[data-form] .section-head .code,
+    .form-panel[data-form] .section-head .pts { color:var(--form-color); }
+    .form-panel[data-form] .q-scale button.sel { background:var(--form-color); border-color:var(--form-color); }
+    .form-panel[data-form] .form-meta-card { border-color:var(--form-color); }
 
     .q-item { border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; background: #fff; }
     .q-text { font-weight: 600; margin-bottom: 8px; font-size: .95rem; }
@@ -1613,13 +1633,13 @@
       const tabs = document.getElementById('formTabs');
       const panels = document.getElementById('formPanels');
       const tabsHtml = FORMS.map(f =>
-        `<button type="button" class="tab${f.no === activeTab ? ' active' : ''}" onclick="switchTab(${f.no})">
+        `<button type="button" data-form="${f.no}" class="tab${f.no === activeTab ? ' active' : ''}" onclick="switchTab(${f.no})">
           ${f.no}. ${escHtml(f.short || f.name)}<span class="tab-pts">${f.pts} คะแนน</span>
         </button>`).join('') +
-        `<button type="button" class="tab${activeTab === 5 ? ' active' : ''}" onclick="switchTab(5)">
+        `<button type="button" data-form="5" class="tab${activeTab === 5 ? ' active' : ''}" onclick="switchTab(5)">
           5. สรุปและแผนพัฒนา<span class="tab-pts">รายศูนย์</span>
         </button>` +
-        `<button type="button" class="tab${activeTab === 6 ? ' active' : ''}" onclick="switchTab(6)">
+        `<button type="button" data-form="6" class="tab${activeTab === 6 ? ' active' : ''}" onclick="switchTab(6)">
           6. ผู้นิเทศทั่วไป<span class="tab-pts">หน้า 6–10</span>
         </button>`;
       tabs.innerHTML = tabsHtml;
