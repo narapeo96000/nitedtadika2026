@@ -221,37 +221,26 @@ function setUserStatus(data) {
   return {success: false, message: 'สถานะไม่ถูกต้อง'};
 }
 
-// --- ดึงรายชื่อศูนย์มาให้เลือก โดยแต่ละชีตมีแถวเริ่มต้นต่างกัน ---
+// --- ดึงรายชื่อศูนย์ตาดีกา/ศอม. จาก ADDR_TADEKA เท่านั้น ---
 function getTadikaList() {
   const ss = SpreadsheetApp.openById(SHEET_ID);
-  let list = [];
+  const sheet = ss.getSheetByName(SHEET_ADDR_TADEKA);
+  const list = [];
+  const startRow = 6;
+  if(!sheet) return {success: true, data: list};
 
-  ADDR_SHEETS.forEach(cfg => {
-    const sheet = ss.getSheetByName(cfg.name);
-    if(!sheet) return;
-    const startRow = cfg.startRow || 6;
-    const lastRow = sheet.getLastRow();
-    if(lastRow >= startRow) {
-      const width = cfg.type === TYPE_PONDOK ? 11 : 22;
-      const rows = sheet.getRange(startRow, 1, lastRow - startRow + 1, width).getValues();
-      for(let i = 0; i < rows.length; i++) {
-        if(rows[i][0] != "") {
-          if (cfg.type === TYPE_PONDOK) {
-            list.push({ id: rows[i][0], type: cfg.type, status: '', name: rows[i][1], mosque: '', head: '',
-              phone: rows[i][5], size: '', teachers: { male: 0, female: 0, total: rows[i][6] },
-              students: { male: 0, female: 0, total: rows[i][7] }, foreignStudents: rows[i][8],
-              address: rows[i][2], subdist: rows[i][4], dist: rows[i][3], lat: rows[i][9], lng: rows[i][10] });
-          } else {
-            list.push({ id: rows[i][0], type: cfg.type, status: rows[i][1], name: rows[i][3], mosque: rows[i][2], head: rows[i][4],
-              generalEducation: rows[i][5], religiousEducation: rows[i][6], foundedDate: rows[i][7], regNum: rows[i][8],
-              phone: rows[i][12], size: rows[i][13], teachers: { male: rows[i][14], female: rows[i][15], total: rows[i][16] },
-              students: { male: rows[i][17], female: rows[i][18], total: rows[i][19] }, foreignStudents: '',
-              address: rows[i][9], subdist: rows[i][10], dist: rows[i][11], lat: rows[i][20], lng: rows[i][21] });
-          }
-        }
-      }
-    }
-  });
+  const lastRow = sheet.getLastRow();
+  if(lastRow < startRow) return {success: true, data: list};
+
+  const rows = sheet.getRange(startRow, 1, lastRow - startRow + 1, 22).getValues();
+  for(let i = 0; i < rows.length; i++) {
+    if(rows[i][0] == "") continue;
+    list.push({ id: rows[i][0], type: TYPE_TADEKA, status: rows[i][1], name: rows[i][3], mosque: rows[i][2], head: rows[i][4],
+      generalEducation: rows[i][5], religiousEducation: rows[i][6], foundedDate: rows[i][7], regNum: rows[i][8],
+      phone: rows[i][12], size: rows[i][13], teachers: { male: rows[i][14], female: rows[i][15], total: rows[i][16] },
+      students: { male: rows[i][17], female: rows[i][18], total: rows[i][19] }, foreignStudents: '',
+      address: rows[i][9], subdist: rows[i][10], dist: rows[i][11], lat: rows[i][20], lng: rows[i][21] });
+  }
   return {success: true, data: list};
 }
 
