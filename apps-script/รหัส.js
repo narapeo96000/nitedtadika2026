@@ -1,17 +1,22 @@
 const SHEET_ID = '1qk9eLhwKgPvh2fLwWNSthV4JKyDkJGqJojhLDus5460';
-// ชื่อชีตตาม Google Sheets: ระบบนิเทศตาดีกา จ.นราธิวาส (ไม่รวมปอเนาะ)
+// ชื่อชีตตาม Google Sheets: แยกข้อมูลตามประเภทศูนย์
 const SHEET_DATA_TADEKA = 'DATA_TADEKA';
 const SHEET_ADDR_TADEKA  = 'ADDR_TADEKA';
+const SHEET_DATA_PONDOK = 'DATA_PONDOK';
+const SHEET_ADDR_PONDOK = 'ADDR_PONDOK';
 const SHEET_USERS = 'USERS';
 const TYPE_TADEKA = 'ตาดีกา';
+const TYPE_PONDOK = 'ปอเนาะ';
 const ADDR_SHEETS = [
-  { name: SHEET_ADDR_TADEKA, type: TYPE_TADEKA }
+  { name: SHEET_ADDR_TADEKA, type: TYPE_TADEKA, startRow: 3 },
+  { name: SHEET_ADDR_PONDOK, type: TYPE_PONDOK, startRow: 6 }
 ];
 const DATA_SHEETS = [
-  { name: SHEET_DATA_TADEKA, type: TYPE_TADEKA }
+  { name: SHEET_DATA_TADEKA, type: TYPE_TADEKA },
+  { name: SHEET_DATA_PONDOK, type: TYPE_PONDOK }
 ];
-function getAddrSheet() { return SHEET_ADDR_TADEKA; }
-function getDataSheet() { return SHEET_DATA_TADEKA; }
+function getAddrSheet(type) { return type === TYPE_PONDOK ? SHEET_ADDR_PONDOK : SHEET_ADDR_TADEKA; }
+function getDataSheet(type) { return type === TYPE_PONDOK ? SHEET_DATA_PONDOK : SHEET_DATA_TADEKA; }
 
 // โครงสร้างใหม่ของชีต DATA (15 คอลัมน์ รองรับการประเมิน 4 ด้าน + สรุป)
 const DATA_HEADERS = ['Timestamp', 'ID ศูนย์', 'ชื่อศูนย์', 'ประเภทการประเมิน', 'คะแนนแบบ1', 'คะแนนแบบ2', 'คะแนนแบบ3', 'คะแนนแบบ4', 'รวม/150', 'ร้อยละ', 'ระดับ', 'รายละเอียด', 'ผู้นิเทศ', 'แก้ไขครั้งล่าสุด', 'ผู้แก้ไขล่าสุด'];
@@ -216,7 +221,7 @@ function setUserStatus(data) {
   return {success: false, message: 'สถานะไม่ถูกต้อง'};
 }
 
-// --- ดึงรายชื่อศูนย์มาให้เลือกจาก ADDR_TADEKA และ ADDR_PONDOK โดยข้อมูลเริ่มแถว 6 ---
+// --- ดึงรายชื่อศูนย์มาให้เลือก โดยแต่ละชีตมีแถวเริ่มต้นต่างกัน ---
 function getTadikaList() {
   const ss = SpreadsheetApp.openById(SHEET_ID);
   let list = [];
@@ -224,11 +229,12 @@ function getTadikaList() {
   ADDR_SHEETS.forEach(cfg => {
     const sheet = ss.getSheetByName(cfg.name);
     if(!sheet) return;
+    const startRow = cfg.startRow || 6;
     const lastRow = sheet.getLastRow();
-    if(lastRow >= 6) {
+    if(lastRow >= startRow) {
       // คอลัมน์: A=ID, B=สถานะ, C=มัสยิด, D=ชื่อศูนย์, E=ประธาน, J=ที่อยู่, K=ตำบล, L=อำเภอ,
       // M=โทร, N=ขนาด, O/P/Q=ครู ช/ญ/รวม, R/S/T=นักเรียน ช/ญ/รวม, U=ละติจูด, V=ลองจิจูด
-      const rows = sheet.getRange(6, 1, lastRow - 5, 22).getValues();
+      const rows = sheet.getRange(startRow, 1, lastRow - startRow + 1, 22).getValues();
       for(let i = 0; i < rows.length; i++) {
         if(rows[i][0] != "") {
           list.push({
@@ -300,8 +306,8 @@ function getStats() {
   const addr = ss.getSheetByName(SHEET_ADDR_TADEKA);
   if(addr) {
     const lastRow = addr.getLastRow();
-    if(lastRow >= 6) {
-      const vals = addr.getRange(6, 1, lastRow - 5, 22).getValues();
+    if(lastRow >= 3) {
+      const vals = addr.getRange(3, 1, lastRow - 2, 22).getValues();
       vals.forEach(r => {
         const id = String(r[0]).trim();
         if(id === '' || !evaluatedIds[id]) return;
@@ -329,8 +335,8 @@ function getStats() {
   let tkTMale = 0, tkTFemale = 0, tkTTotal = 0, tkSMale = 0, tkSFemale = 0, tkSTotal = 0;
   if(addr) {
     const lastRow = addr.getLastRow();
-    if(lastRow >= 6) {
-      const vals = addr.getRange(6, 1, lastRow - 5, 22).getValues();
+    if(lastRow >= 3) {
+      const vals = addr.getRange(3, 1, lastRow - 2, 22).getValues();
       vals.forEach(r => {
         if(String(r[0]).trim() === '') return;
         tkTotal++;
@@ -376,15 +382,16 @@ function getTadikaData(id) {
   for(const cfg of ADDR_SHEETS) {
     const sheet = ss.getSheetByName(cfg.name);
     if(!sheet) continue;
+    const startRow = cfg.startRow || 6;
     const lastRow = sheet.getLastRow();
-    if(lastRow < 6) continue;
-    const rows = sheet.getRange(6, 1, lastRow - 5, 23).getValues();
+    if(lastRow < startRow) continue;
+    const rows = sheet.getRange(startRow, 1, lastRow - startRow + 1, 23).getValues();
     for(let i = 0; i < rows.length; i++) {
       if(String(rows[i][0]).trim() === id) {
         return {
           success: true,
           data: {
-            row: i + 6,
+            row: i + startRow,
             type: cfg.type,
             id: rows[i][0], status: rows[i][1], mosque: rows[i][2], name: rows[i][3],
             head: rows[i][4], eduSec: rows[i][5], eduRel: rows[i][6], foundedDate: rows[i][7],
@@ -413,12 +420,13 @@ function savePin(data) {
   for(const cfg of ADDR_SHEETS) {
     const sheet = ss.getSheetByName(cfg.name);
     if(!sheet) continue;
+    const startRow = cfg.startRow || 6;
     const lastRow = sheet.getLastRow();
-    if(lastRow < 6) continue;
-    const rows = sheet.getRange(6, 1, lastRow - 5, 22).getValues();
+    if(lastRow < startRow) continue;
+    const rows = sheet.getRange(startRow, 1, lastRow - startRow + 1, 22).getValues();
     for(let i = 0; i < rows.length; i++) {
       if(String(rows[i][0]).trim() === id) {
-        const row = i + 6;
+        const row = i + startRow;
         sheet.getRange(row, 21).setValue(Number(lat));
         sheet.getRange(row, 22).setValue(Number(lng));
         return {success: true, message: "บันทึกพิกัดเรียบร้อย (U=ละติจูด, V=ลองจิจูด)", row: row};
@@ -624,7 +632,7 @@ function offlineChatReply(msg) {
 // ---------------------------------------------------------
 // ฟังก์ชันสำหรับคำนวณและสรุปสถิติจาก Sheet ให้เป็นข้อความ Text
 //
-// โครงสร้างชีต ADDR_TADEKA (เริ่มข้อมูลจริงที่แถว 6):
+// โครงสร้างชีต ADDR_TADEKA (เริ่มข้อมูลจริงที่แถว 3) และ ADDR_PONDOK (เริ่มแถว 6):
 //   A=ID, B=สถานะ, C=ชื่อมัสยิด, D=ชื่อศูนย์, E=ประธานศูนย์,
 //   F=วุฒิ(สามัญ), G=วุฒิ(ศาสนา), H=วันก่อตั้ง, I=เลขจดทะเบียน,
 //   J=เลขที่/หมู่/ถนน, K=ตำบล, L=อำเภอ, M=โทรศัพท์, N=ขนาดศูนย์,
@@ -641,8 +649,8 @@ function fetchStatisticsForAI() {
 
   if (sheetTadika) {
     const lastRow = sheetTadika.getLastRow();
-    if (lastRow >= 6) {
-      const dataT = sheetTadika.getRange(6, 1, lastRow - 5, 20).getValues();
+    if (lastRow >= 3) {
+      const dataT = sheetTadika.getRange(3, 1, lastRow - 2, 20).getValues();
       for (let i = 0; i < dataT.length; i++) {
         if (String(dataT[i][0]).trim() != "") { // นับเฉพาะแถวที่มี ID
           tadikaStats.count++;
