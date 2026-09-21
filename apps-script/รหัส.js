@@ -519,6 +519,7 @@ function saveEvaluation(payload) {
   const detailsJSON = JSON.stringify({
     answers: e.answers || {},
     notes: e.notes || {},
+    generalRecord: e.generalRecord || {},
     form1: e.form1 || {},
     form2: e.form2 || {},
     form3: e.form3 || {},

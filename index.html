@@ -754,7 +754,7 @@
 
   <script>
     const API_URL = 'https://script.google.com/macros/s/AKfycbxnmbY96u9qCj0dBzPBJK9glPlcibkDkD1r4p1i6tW9vkoAotX0LVpCHE-1-guglsCohw/exec';
-    const TOTAL_FULL = 24;
+    const TOTAL_FULL = 150;
 
     // ---- แบบบันทึกสำหรับผู้นิเทศทั่วไปตามเอกสารแนบ ----
     // 2 ด้าน 12 ข้อ: 2 = ทำได้ชัดเจน, 1 = กำลังพัฒนา, 0 = ต้องช่วยเหลือ, N/A = พิจารณาไม่ได้
@@ -880,14 +880,14 @@
     ];
 
     // แบบปัจจุบันตามเอกสารแนบ: 2 ด้าน 12 ข้อ สำหรับผู้นิเทศทั่วไป
-    const FORMS = [
+    const GENERAL_FORM = [
       { no: 1, name: 'การนำหลักสูตรตาดีกาไปใช้', short: 'นำหลักสูตรไปใช้', pts: 12, pages: 'ส่วนที่ 1',
         meta: { title: 'ข้อมูลทั่วไปตามแบบหน้า 6', fields: [
-          { id: 'f1_date', label: 'วันที่นิเทศ', ph: 'วัน/เดือน/ปี', type: 'date' },
-          { id: 'f1_contact', label: 'ผู้รับผิดชอบศูนย์/ผู้ให้ข้อมูล', ph: 'ชื่อผู้ให้ข้อมูล' },
-          { id: 'f1_levels', label: 'ชั้นปีที่เปิดสอน', ph: 'เช่น 1–6' },
-          { id: 'f1_students', label: 'จำนวนผู้เรียน (คน)', ph: 'จำนวนผู้เรียน', type: 'number' },
-          { id: 'f1_teachers', label: 'จำนวนครูผู้สอน (คน)', ph: 'จำนวนครู', type: 'number' }
+          { id: 'g_date', label: 'วันที่นิเทศ', ph: 'วัน/เดือน/ปี', type: 'date' },
+          { id: 'g_contact', label: 'ผู้รับผิดชอบศูนย์/ผู้ให้ข้อมูล', ph: 'ชื่อผู้ให้ข้อมูล' },
+          { id: 'g_levels', label: 'ชั้นปีที่เปิดสอน', ph: 'เช่น 1–6' },
+          { id: 'g_students', label: 'จำนวนผู้เรียน (คน)', ph: 'จำนวนผู้เรียน', type: 'number' },
+          { id: 'g_teachers', label: 'จำนวนครูผู้สอน (คน)', ph: 'จำนวนครู', type: 'number' }
         ] },
         sections: [S('1', 'การนำหลักสูตรตาดีกาไปใช้', 12, [
           IT('ศูนย์มีหลักสูตรหรือแนวทางการจัดการเรียนรู้ที่ครูสามารถนำไปใช้ได้', 'ดูหลักสูตร/แนวทางและสนทนากับผู้รับผิดชอบ'),
@@ -899,10 +899,10 @@
         ])] },
       { no: 2, name: 'การจัดการเรียนรู้ของครู', short: 'จัดการเรียนรู้', pts: 12, pages: 'ส่วนที่ 2',
         meta: { title: 'ข้อมูลการเยี่ยมชั้นเรียน', fields: [
-          { id: 'f2_teacher', label: 'ชื่อครูผู้สอน', ph: 'ชื่อผู้สอนที่สังเกต' },
-          { id: 'f2_subject', label: 'สาระ/เรื่อง', ph: 'สาระหรือเรื่องที่สอน' },
-          { id: 'f2_class', label: 'ชั้นเรียนที่ตรวจเยี่ยม', ph: 'ชั้นปี/ห้องเรียน' },
-          { id: 'f2_duration', label: 'ระยะเวลาสังเกต', ph: 'ประมาณ 20–30 นาที' }
+          { id: 'g_teacher', label: 'ชื่อครูผู้สอน', ph: 'ชื่อผู้สอนที่สังเกต' },
+          { id: 'g_subject', label: 'สาระ/เรื่อง', ph: 'สาระหรือเรื่องที่สอน' },
+          { id: 'g_class', label: 'ชั้นเรียนที่ตรวจเยี่ยม', ph: 'ชั้นปี/ห้องเรียน' },
+          { id: 'g_duration', label: 'ระยะเวลาสังเกต', ph: 'ประมาณ 20–30 นาที' }
         ] },
         sections: [S('2', 'การจัดการเรียนรู้ของครู', 12, [
           IT('ครูบอกหรือทำให้ผู้เรียนเข้าใจว่า วันนี้กำลังเรียนเรื่องอะไร', 'สังเกตการนำเข้าสู่บทเรียน/การชี้แจงเป้าหมาย'),
@@ -914,27 +914,40 @@
         ])] }
     ];
 
-    // แบบสรุป/ติดตามตามหน้า 8–10 ของเอกสารแนบ
+    // แบบคะแนนเดิม 5 แบบยังคงใช้เป็นแบบบันทึกผลหลัก
+    const FORMS = LEGACY_FORMS;
+
+    // แบบสรุป/ติดตามตามหน้า 8–10 ของเอกสารแนบ (ใช้เฉพาะแบบแยกสำหรับผู้นิเทศทั่วไป)
     const FORM5_FIELDS = [
-      { id: 'f5_strengths', label: 'สิ่งที่ศูนย์ทำได้ดี (ไม่เกิน 3 เรื่อง)', ph: 'สรุปจุดแข็งจากการนิเทศ' },
-      { id: 'f5_gaps', label: 'เรื่องที่ควรพัฒนา (เลือก 1–2 เรื่อง)', ph: 'ระบุเรื่องสำคัญที่สุดที่ควรพัฒนา' },
-      { id: 'f5_help', label: 'ศูนย์ต้องการความช่วยเหลือเรื่องใด', ph: 'เช่น หลักสูตร ตารางเรียน แผนการสอน สื่อ การวัดผล หรือการพัฒนาครู' },
-      { id: 'f5_agreement', label: 'เรื่องที่ตกลงร่วมกันเพื่อการพัฒนา', ph: 'ประเด็นที่ศูนย์และทีมนิเทศตกลงร่วมกัน' },
-      { id: 'f5_centerAction', label: 'สิ่งที่ศูนย์จะดำเนินการ', ph: 'ระบุการดำเนินงานที่ตกลงกัน' },
-      { id: 'f5_supporter', label: 'ผู้ที่จะช่วยสนับสนุน', ph: 'บุคคล/หน่วยงาน/เครือข่าย' },
-      { id: 'f5_followDate', label: 'กำหนดติดตามครั้งต่อไป', ph: 'วันที่/เดือน โดยประมาณ' },
-      { id: 'f5_followLook', label: 'เมื่อติดตามครั้งต่อไป ขอให้ดูว่า', ph: 'หลักฐานหรือการเปลี่ยนแปลงที่จะติดตาม' },
-      { id: 'f5_followStatus', label: 'ผลการติดตาม', ph: 'ทำแล้ว / กำลังทำ / ยังไม่ได้ทำ หรือมีความก้าวหน้าอย่างไร' },
-      { id: 'f5_change', label: 'หลังดำเนินการแล้ว มีอะไรเปลี่ยนแปลง', ph: 'สรุปการเปลี่ยนแปลงที่พบ' },
-      { id: 'f5_evidence', label: 'หลักฐานที่แสดงถึงการเปลี่ยนแปลง', ph: 'ตารางเรียน แผน ผลงาน การสังเกต หรือหลักฐานจากการปฏิบัติ' },
-      { id: 'f5_nextAction', label: 'สิ่งที่จะดำเนินการต่อ', ph: 'แนวทางต่อเนื่อง' },
-      { id: 'f5_summary', label: 'สรุปสำหรับผู้นิเทศ', ph: 'ศูนย์นำหลักสูตรไปใช้จริงหรือไม่ เด็กมีส่วนร่วม/ฝึกปฏิบัติหรือไม่ และเรื่องสำคัญที่สุดที่ควรช่วย' }
+      { id: 'f5_strengths', label: 'จุดแข็งสำคัญ (2-3 เรื่อง)', ph: 'ระบุจุดแข็งที่พบจากการนิเทศครั้งนี้' },
+      { id: 'f5_gaps', label: 'ช่องว่างที่มีผลต่อผู้เรียนมากที่สุด', ph: 'ระบุจุดที่ควรพัฒนาเร่งด่วน' },
+      { id: 'f5_causes', label: 'สาเหตุหรือเงื่อนไขที่เกี่ยวข้อง', ph: 'ระบุสาเหตุ/เงื่อนไขที่เกี่ยวข้องกับช่องว่าง' },
+      { id: 'f5_resources', label: 'ทรัพยากร/ความช่วยเหลือที่ศูนย์ต้องการ', ph: 'ระบุทรัพยากรหรือความช่วยเหลือที่ต้องการ' }
+    ];
+    const GENERAL_SCHEMA = {
+      no: 6, name: 'แบบบันทึกสำหรับผู้ไม่ใช่ศึกษานิเทศก์', short: 'ผู้นิเทศทั่วไป', pts: 24, pages: 'หน้า 6–10',
+      meta: { title: 'ข้อมูลทั่วไปและการเยี่ยมชั้นเรียน', fields: [...GENERAL_FORM[0].meta.fields, ...GENERAL_FORM[1].meta.fields] },
+      sections: [...GENERAL_FORM[0].sections, ...GENERAL_FORM[1].sections]
+    };
+
+    const GENERAL_FIELDS = [
+      { id: 'g_strengths', label: 'สิ่งที่ศูนย์ทำได้ดี (ไม่เกิน 3 เรื่อง)', ph: 'สรุปจุดแข็งจากการนิเทศ' },
+      { id: 'g_gaps', label: 'เรื่องที่ควรพัฒนา (เลือก 1–2 เรื่อง)', ph: 'ระบุเรื่องสำคัญที่สุดที่ควรพัฒนา' },
+      { id: 'g_help', label: 'ศูนย์ต้องการความช่วยเหลือเรื่องใด', ph: 'หลักสูตร ตารางเรียน แผนการสอน สื่อ การวัดผล หรือการพัฒนาครู' },
+      { id: 'g_agreement', label: 'เรื่องที่ตกลงร่วมกันเพื่อการพัฒนา', ph: 'ประเด็นที่ศูนย์และทีมนิเทศตกลงร่วมกัน' },
+      { id: 'g_action', label: 'สิ่งที่ศูนย์จะดำเนินการ', ph: 'การดำเนินงานที่ตกลงกัน' },
+      { id: 'g_supporter', label: 'ผู้ที่จะช่วยสนับสนุน', ph: 'บุคคล/หน่วยงาน/เครือข่าย' },
+      { id: 'g_followDate', label: 'กำหนดติดตามครั้งต่อไป', ph: 'วัน/เดือน โดยประมาณ' },
+      { id: 'g_followLook', label: 'เมื่อติดตามครั้งต่อไป ขอให้ดูว่า', ph: 'หลักฐานหรือการเปลี่ยนแปลงที่จะติดตาม' },
+      { id: 'g_followStatus', label: 'ผลการติดตามและสิ่งที่จะดำเนินการต่อ', ph: 'ทำแล้ว / กำลังทำ / ยังไม่ได้ทำ และแนวทางต่อเนื่อง' },
+      { id: 'g_evidence', label: 'หลักฐานหรือสรุปสำหรับผู้นิเทศ', ph: 'หลักฐานการเปลี่ยนแปลงและเรื่องสำคัญที่ควรช่วย' }
     ];
 
     const LEVELS = [
-      { min: 80, name: 'เห็นการดำเนินงานชัดเจน', cls: 'lv-green' },
-      { min: 50, name: 'กำลังพัฒนา', cls: 'lv-blue' },
-      { min: 0, name: 'ควรได้รับการช่วยเหลือ', cls: 'lv-amber' }
+      { min: 80, name: 'ดีมาก', cls: 'lv-green' },
+      { min: 60, name: 'ดี', cls: 'lv-blue' },
+      { min: 40, name: 'พอใช้', cls: 'lv-amber' },
+      { min: 0, name: 'ต้องปรับปรุง', cls: 'lv-red' }
     ];
 
     let currentUser = {};
@@ -1499,7 +1512,7 @@
     });
 
     // ---- สร้างแบบบันทึก 2 ด้าน (Tabs + ข้อ/หลักฐาน + คะแนน 2/1/0/N/A + บันทึกข้อสังเกต) ----
-    const POINT_PER_ITEM = 2;   // เอกสารแนบกำหนด 2, 1, 0 และ N/A
+    const POINT_PER_ITEM = 3;   // แบบคะแนนเดิม: ข้อละ 0–3 คะแนน
 
     function allItems(formNo) {
       const f = FORMS.find(x => x.no === formNo);
@@ -1555,12 +1568,12 @@
         <div class="card" style="box-shadow:none; border:1px solid var(--border); margin-bottom:12px;">
           <div class="card-title"><h4>🎯 สรุปผลการนิเทศ</h4></div>
           <div class="summary-score">
-            <div class="cell"><div class="v" id="sumF1">0 / 12</div><div class="l">ด้านที่ 1 · นำหลักสูตรไปใช้</div></div>
-            <div class="cell"><div class="v" id="sumF2">0 / 12</div><div class="l">ด้านที่ 2 · จัดการเรียนรู้</div></div>
-            <div class="cell"><div class="v" id="sumF3">—</div><div class="l">เกณฑ์ N/A จะไม่นับในตัวหาร</div></div>
-            <div class="cell"><div class="v" id="sumF4">—</div><div class="l">ใช้เพื่อการพัฒนา ไม่จัดอันดับ</div></div>
-            <div class="cell"><div class="v" id="sumTotal">0 / 24</div><div class="l">คะแนนจากข้อที่พิจารณาได้</div></div>
-            <div class="cell"><div class="v" id="sumLevel" style="font-size:1rem;">รอประเมิน</div><div class="l">ภาพรวมเพื่อกำหนดการช่วยเหลือ</div></div>
+            <div class="cell"><div class="v" id="sumF1">0 / 45</div><div class="l">แบบที่ 1 · การนำหลักสูตรไปใช้</div></div>
+            <div class="cell"><div class="v" id="sumF2">0 / 54</div><div class="l">แบบที่ 2 · การจัดการเรียนรู้ของครู</div></div>
+            <div class="cell"><div class="v" id="sumF3">0 / 51</div><div class="l">แบบที่ 3 · การวัดและประเมินผล</div></div>
+            <div class="cell"><div class="v" id="sumF4">0 / 15</div><div class="l">แบบที่ 4 · ผลลัพธ์ผู้เรียน (สุ่ม)</div></div>
+            <div class="cell"><div class="v" id="sumTotal">0 / 150</div><div class="l">คะแนนรวมทั้งหมด (150 คะแนน)</div></div>
+            <div class="cell"><div class="v" id="sumLevel" style="font-size:1rem;">รอประเมิน</div><div class="l">ระดับผลการนิเทศ</div></div>
           </div>
         </div>
 
@@ -1601,6 +1614,9 @@
         </button>`).join('') +
         `<button type="button" class="tab${activeTab === 5 ? ' active' : ''}" onclick="switchTab(5)">
           5. สรุปและแผนพัฒนา<span class="tab-pts">รายศูนย์</span>
+        </button>` +
+        `<button type="button" class="tab${activeTab === 6 ? ' active' : ''}" onclick="switchTab(6)">
+          6. ผู้นิเทศทั่วไป<span class="tab-pts">หน้า 6–10</span>
         </button>`;
       tabs.innerHTML = tabsHtml;
 
@@ -1608,7 +1624,6 @@
         <div class="form-panel${f.no === activeTab ? '' : ' d-none'}" data-form="${f.no}">
           <div class="form-meta-card"><div class="mtitle">📝 แบบที่ ${f.no} ${escHtml(f.name)} (${f.pages}) — คะแนนเต็ม ${f.pts}</div></div>
           ${renderMetaCard(f)}
-          ${f.no === 1 ? '<div class="alert alert-info"><b>วิธีใช้แบบนิเทศ:</b> ถามผู้รับผิดชอบหรือครู · ดูข้อมูลที่จำเป็น · สังเกตชั้นเรียนประมาณ 20–30 นาที แล้วสะท้อนผลและตกลงสิ่งที่จะติดตาม โดยใช้หลักฐานเท่าที่จำเป็น</div>' : ''}
           ${(f.sections || []).map((s, si) => renderSection(f, s, si)).join('')}
           ${f.no === 2 ? `
             <div class="form-meta-card"><div class="mtitle">💬 ข้อเสนอแนะหลังสังเกต</div>
@@ -1616,7 +1631,20 @@
               <button type="button" class="btn btn-primary btn-sm ai-btn" onclick="aiDraftSuggestion()">✨ แนะนำด้วย AI</button>
             </div>` : ''}
         </div>`).join('') +
-        renderForm5Panel();
+        renderForm5Panel() + renderGeneralFormPanel();
+    }
+
+    function renderGeneralFormPanel() {
+      const f = GENERAL_SCHEMA;
+      return `<div class="form-panel${activeTab === 6 ? '' : ' d-none'}" data-form="6">
+        <div class="form-meta-card"><div class="mtitle">📋 แบบบันทึกสำหรับผู้ไม่ใช่ศึกษานิเทศก์ (หน้า 6–10)</div></div>
+        ${renderMetaCard(f)}
+        <div class="alert alert-info"><b>วิธีใช้:</b> ถามผู้รับผิดชอบหรือครู · ดูข้อมูลที่จำเป็น · สังเกตชั้นเรียนประมาณ 20–30 นาที · สะท้อนผล · กำหนดสิ่งที่จะติดตาม โดยใช้หลักฐานเท่าที่จำเป็น</div>
+        ${f.sections.map((s, si) => renderSection(f, s, si)).join('')}
+        <div class="form-meta-card"><div class="mtitle">📝 สรุปผลและข้อตกลงเพื่อการพัฒนา</div>
+          ${GENERAL_FIELDS.map(fd => `<label>${escHtml(fd.label)}</label><textarea id="${fd.id}" class="form-control" placeholder="${escHtml(fd.ph || '')}"></textarea>`).join('')}
+        </div>
+      </div>`;
     }
 
     function scaleButtons(f, si, ii) {
@@ -1624,14 +1652,14 @@
       for (let v = 0; v <= POINT_PER_ITEM; v++) {
         s += `<button type="button" data-v="${v}" onclick="setScore(${f.no}, ${si}, ${ii}, ${v})">${v}</button>`;
       }
-      s += `<button type="button" data-v="NA" onclick="setScore(${f.no}, ${si}, ${ii}, 'NA')">N/A</button>`;
+      if (f.no === 6) s += `<button type="button" data-v="NA" onclick="setScore(${f.no}, ${si}, ${ii}, 'NA')">N/A</button>`;
       return s;
     }
 
     function switchTab(no) {
       activeTab = no;
       document.querySelectorAll('#formTabs .tab').forEach((b, i) => {
-        const target = i === FORMS.length ? 5 : i + 1;
+        const target = i < FORMS.length ? i + 1 : (i === FORMS.length ? 5 : 6);
         b.classList.toggle('active', target === no);
       });
       document.querySelectorAll('.form-panel').forEach(p => p.classList.toggle('d-none', Number(p.dataset.form) !== no));
@@ -1688,7 +1716,8 @@
 
     function updateSectionPts(formNo, si) {
       const sum = getSectionScores(formNo, si).sum;
-      const sec = FORMS.find(x => x.no === formNo).sections[si];
+      const schema = formNo === 6 ? GENERAL_SCHEMA : FORMS.find(x => x.no === formNo);
+      const sec = schema.sections[si];
       const el = document.getElementById(`secPts_${formNo}_${si}`);
       if (el) el.innerText = `${sum} / ${sec.pts}`;
     }
@@ -1709,7 +1738,7 @@
     }
 
     function getFormScores(formNo) {
-      const f = FORMS.find(x => x.no === formNo);
+      const f = formNo === 6 ? GENERAL_SCHEMA : FORMS.find(x => x.no === formNo);
       let sum = 0;
       const bySection = [];
       (f.sections || []).forEach((s, si) => {
@@ -1723,7 +1752,8 @@
     function getFormNotes(formNo) {
       const notes = [];
       const panel = document.querySelector(`.form-panel[data-form="${formNo}"]`);
-      (FORMS.find(x => x.no === formNo).sections || []).forEach((s, si) => {
+      const f = formNo === 6 ? GENERAL_SCHEMA : FORMS.find(x => x.no === formNo);
+      (f.sections || []).forEach((s, si) => {
         s.items.forEach((it, ii) => {
           const el = document.getElementById(`note_${formNo}_${si}_${ii}`);
           notes.push(el ? tkGet(el.id) : '');
@@ -1742,10 +1772,10 @@
     function recalcTotal() {
       const s1 = getFormScores(1).sum;
       const s2 = getFormScores(2).sum;
-      const total = s1 + s2;
-      const allScores = [...getFormScores(1).scores, ...getFormScores(2).scores];
-      const max = Math.max(0, allScores.filter(v => v !== 'N/A').length * POINT_PER_ITEM);
-      const pct = max ? Math.round((total / max) * 100) : 0;
+      const s3 = getFormScores(3).sum;
+      const s4 = getFormScores(4).sum;
+      const total = s1 + s2 + s3;
+      const pct = Math.round((total / TOTAL_FULL) * 100);
       const lvl = LEVELS.find(l => pct >= l.min) || LEVELS[LEVELS.length - 1];
       document.getElementById('totalDisplay').innerText = total;
       document.getElementById('totalScore').value = total;
@@ -1757,11 +1787,11 @@
 
       // อัปเดตหน้าแบบที่ 5 (สรุป)
       const set = (id, txt) => { const el = document.getElementById(id); if (el) el.innerText = txt; };
-      set('sumF1', `${s1} / 12`);
-      set('sumF2', `${s2} / 12`);
-      set('sumF3', '—');
-      set('sumF4', '—');
-      set('sumTotal', `${total} / ${max || TOTAL_FULL}`);
+      set('sumF1', `${s1} / 45`);
+      set('sumF2', `${s2} / 54`);
+      set('sumF3', `${s3} / 51`);
+      set('sumF4', `${s4} / 15`);
+      set('sumTotal', `${total} / 150`);
       const sl = document.getElementById('sumLevel');
       if (sl) { sl.innerText = `${lvl.name} (${pct}%)`; sl.className = 'v lv ' + lvl.cls; sl.style.fontSize = '1rem'; }
     }
@@ -1823,15 +1853,13 @@
 
     // ---- AI: ร่างสรุปและแผนพัฒนา (แบบที่ 5) ----
     function aiDraftPlan() {
-      const s1 = getFormScores(1), s2 = getFormScores(2);
-      const total = s1.sum + s2.sum;
-      const allScores = [...s1.scores, ...s2.scores];
-      const max = Math.max(0, allScores.filter(v => v !== 'N/A').length * POINT_PER_ITEM);
-      const pct = max ? Math.round((total / max) * 100) : 0;
+      const s1 = getFormScores(1), s2 = getFormScores(2), s3 = getFormScores(3), s4 = getFormScores(4);
+      const total = s1.sum + s2.sum + s3.sum;
+      const pct = Math.round((total / TOTAL_FULL) * 100);
       const lvl = LEVELS.find(l => pct >= l.min) || LEVELS[LEVELS.length - 1];
 
       const strong = [], weak = [];
-      [s1, s2].forEach((s, fi) => {
+      [s1, s2, s3, s4].forEach((s, fi) => {
         const f = FORMS[fi];
         (f.sections || []).forEach((sec, si) => {
           const avg = sec.pts > 0 ? s.bySection[si].reduce((a, b) => a + b, 0) : 0;
@@ -1847,7 +1875,7 @@
 
       const gaps = weak.length ? weak.slice(0, 3).map(t => '• ' + t).join('\n') : 'ไม่มีตอนที่ต่ำกว่า 50% — ควรรักษาคุณภาพ';
       tkSet('f5_gaps', 'ช่องว่างที่พบ:\n' + gaps);
-      tkSet('f5_help', '—');
+      tkSet('f5_resources', '—');
 
       // ร่าง Action Plan 1 แถว
       if (!document.querySelector('#apBody tr')) {
@@ -2251,7 +2279,9 @@
     function resetEvalForm() {
       document.querySelectorAll('.q-scale button').forEach(b => b.classList.remove('sel'));
       document.querySelectorAll('.q-note textarea').forEach(t => { const e = tkCk(t.id); if (e) e.setData(''); t.value = ''; });
-      ['f1_date','f1_contact','f1_levels','f1_students','f1_teachers',
+      ['g_date','g_contact','g_levels','g_students','g_teachers','g_teacher','g_subject','g_class','g_duration',
+       ...GENERAL_FIELDS.map(fd => fd.id),
+       'f1_date','f1_contact','f1_levels','f1_students','f1_teachers',
        'f2_teacher','f2_subject','f2_class','f2_duration','f2_note','f2_suggestion',
        'f3_subject','f3_class','f3_period','f4_sampled','f4_passed','f4_pct',
        'f5_strengths','f5_gaps','f5_help','f5_agreement','f5_centerAction','f5_supporter',
@@ -2265,6 +2295,7 @@
       document.getElementById('f5_fileNames').value = '';
       document.getElementById('f5_fileList').classList.add('d-none');
       FORMS.forEach(f => (f.sections || []).forEach((s, si) => updateSectionPts(f.no, si)));
+      GENERAL_SCHEMA.sections.forEach((s, si) => updateSectionPts(6, si));
       document.getElementById('totalScore').value = 0;
       document.getElementById('pctScore').value = 0;
       document.getElementById('levelScore').value = '';
@@ -2320,6 +2351,20 @@
           files: v('f5_fileNames')
         },
         actionPlan: collectPlanRows()
+      };
+    }
+
+    function collectGeneralRecord() {
+      const v = id => tkGet(id);
+      return {
+        answers: getFormScores(6).scores,
+        notes: getFormNotes(6),
+        meta: {
+          date: v('g_date'), contact: v('g_contact'), levels: v('g_levels'),
+          students: v('g_students'), teachers: v('g_teachers'),
+          teacher: v('g_teacher'), subject: v('g_subject'), class: v('g_class'), duration: v('g_duration')
+        },
+        summary: Object.fromEntries(GENERAL_FIELDS.map(fd => [fd.id, v(fd.id)]))
       };
     }
 
@@ -2395,7 +2440,7 @@
           rooms: document.getElementById('t_rooms').value
         },
         evalData: {
-          formType: 'แบบนิเทศสำหรับผู้นิเทศทั่วไป (2 ด้าน 12 ข้อ)',
+          formType: 'แบบที่ 1-5 (ครบทุกด้าน)',
           score1: getFormScores(1).sum,
           score2: getFormScores(2).sum,
           score3: 0,
@@ -2405,6 +2450,7 @@
           level: document.getElementById('levelScore').value,
           answers: collected.answers,
           notes: collected.notes,
+          generalRecord: collectGeneralRecord(),
           form1: meta.form1,
           form2: meta.form2,
           form3: meta.form3,
