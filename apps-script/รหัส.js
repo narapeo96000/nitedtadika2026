@@ -8,8 +8,8 @@ const SHEET_USERS = 'USERS';
 const TYPE_TADEKA = 'ตาดีกา';
 const TYPE_PONDOK = 'ปอเนาะ';
 const ADDR_SHEETS = [
-  { name: SHEET_ADDR_TADEKA, type: TYPE_TADEKA, startRow: 3 },
-  { name: SHEET_ADDR_PONDOK, type: TYPE_PONDOK, startRow: 6 }
+  { name: SHEET_ADDR_TADEKA, type: TYPE_TADEKA, startRow: 6 },
+  { name: SHEET_ADDR_PONDOK, type: TYPE_PONDOK, startRow: 3 }
 ];
 const DATA_SHEETS = [
   { name: SHEET_DATA_TADEKA, type: TYPE_TADEKA },
@@ -306,8 +306,8 @@ function getStats() {
   const addr = ss.getSheetByName(SHEET_ADDR_TADEKA);
   if(addr) {
     const lastRow = addr.getLastRow();
-    if(lastRow >= 3) {
-      const vals = addr.getRange(3, 1, lastRow - 2, 22).getValues();
+    if(lastRow >= 6) {
+      const vals = addr.getRange(6, 1, lastRow - 5, 22).getValues();
       vals.forEach(r => {
         const id = String(r[0]).trim();
         if(id === '' || !evaluatedIds[id]) return;
@@ -335,8 +335,8 @@ function getStats() {
   let tkTMale = 0, tkTFemale = 0, tkTTotal = 0, tkSMale = 0, tkSFemale = 0, tkSTotal = 0;
   if(addr) {
     const lastRow = addr.getLastRow();
-    if(lastRow >= 3) {
-      const vals = addr.getRange(3, 1, lastRow - 2, 22).getValues();
+    if(lastRow >= 6) {
+      const vals = addr.getRange(6, 1, lastRow - 5, 22).getValues();
       vals.forEach(r => {
         if(String(r[0]).trim() === '') return;
         tkTotal++;
@@ -632,7 +632,7 @@ function offlineChatReply(msg) {
 // ---------------------------------------------------------
 // ฟังก์ชันสำหรับคำนวณและสรุปสถิติจาก Sheet ให้เป็นข้อความ Text
 //
-// โครงสร้างชีต ADDR_TADEKA (เริ่มข้อมูลจริงที่แถว 3) และ ADDR_PONDOK (เริ่มแถว 6):
+// โครงสร้างชีต ADDR_TADEKA (เริ่มข้อมูลจริงที่แถว 6) และ ADDR_PONDOK (เริ่มแถว 3):
 //   A=ID, B=สถานะ, C=ชื่อมัสยิด, D=ชื่อศูนย์, E=ประธานศูนย์,
 //   F=วุฒิ(สามัญ), G=วุฒิ(ศาสนา), H=วันก่อตั้ง, I=เลขจดทะเบียน,
 //   J=เลขที่/หมู่/ถนน, K=ตำบล, L=อำเภอ, M=โทรศัพท์, N=ขนาดศูนย์,
@@ -649,8 +649,8 @@ function fetchStatisticsForAI() {
 
   if (sheetTadika) {
     const lastRow = sheetTadika.getLastRow();
-    if (lastRow >= 3) {
-      const dataT = sheetTadika.getRange(3, 1, lastRow - 2, 20).getValues();
+    if (lastRow >= 6) {
+      const dataT = sheetTadika.getRange(6, 1, lastRow - 5, 20).getValues();
       for (let i = 0; i < dataT.length; i++) {
         if (String(dataT[i][0]).trim() != "") { // นับเฉพาะแถวที่มี ID
           tadikaStats.count++;
