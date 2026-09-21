@@ -551,8 +551,8 @@ function saveEvaluation(payload) {
     dataSheet.getRange(row, 10).setValue(e.pct);
     dataSheet.getRange(row, 11).setValue(e.level);
     dataSheet.getRange(row, 12).setValue(detailsJSON);
-    dataSheet.getRange(row, 14).setValue(now);
-    dataSheet.getRange(row, 15).setValue(supervisor);
+    // ยืนยันคอลัมน์ M:N:O ให้ตรงกับหัวตารางทุกครั้งที่แก้ไขรายการเดิม
+    dataSheet.getRange(row, 13, 1, 3).setValues([[supervisor, now, supervisor]]);
     return {
       success: true,
       message: 'แก้ไขผลการนิเทศเรียบร้อยแล้ว!<br>แก้ไขครั้งล่าสุด: ' + formatDate(now) + ' โดย ' + supervisor,
