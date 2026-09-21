@@ -882,6 +882,13 @@
     // แบบปัจจุบันตามเอกสารแนบ: 2 ด้าน 12 ข้อ สำหรับผู้นิเทศทั่วไป
     const FORMS = [
       { no: 1, name: 'การนำหลักสูตรตาดีกาไปใช้', short: 'นำหลักสูตรไปใช้', pts: 12, pages: 'ส่วนที่ 1',
+        meta: { title: 'ข้อมูลทั่วไปตามแบบหน้า 6', fields: [
+          { id: 'f1_date', label: 'วันที่นิเทศ', ph: 'วัน/เดือน/ปี', type: 'date' },
+          { id: 'f1_contact', label: 'ผู้รับผิดชอบศูนย์/ผู้ให้ข้อมูล', ph: 'ชื่อผู้ให้ข้อมูล' },
+          { id: 'f1_levels', label: 'ชั้นปีที่เปิดสอน', ph: 'เช่น 1–6' },
+          { id: 'f1_students', label: 'จำนวนผู้เรียน (คน)', ph: 'จำนวนผู้เรียน', type: 'number' },
+          { id: 'f1_teachers', label: 'จำนวนครูผู้สอน (คน)', ph: 'จำนวนครู', type: 'number' }
+        ] },
         sections: [S('1', 'การนำหลักสูตรตาดีกาไปใช้', 12, [
           IT('ศูนย์มีหลักสูตรหรือแนวทางการจัดการเรียนรู้ที่ครูสามารถนำไปใช้ได้', 'ดูหลักสูตร/แนวทางและสนทนากับผู้รับผิดชอบ'),
           IT('มีการจัดชั้นเรียน ตารางเรียน และเวลาเรียนอย่างชัดเจน', 'ดูตารางเรียนและสอบถามการจัดเวลา'),
@@ -1601,6 +1608,7 @@
         <div class="form-panel${f.no === activeTab ? '' : ' d-none'}" data-form="${f.no}">
           <div class="form-meta-card"><div class="mtitle">📝 แบบที่ ${f.no} ${escHtml(f.name)} (${f.pages}) — คะแนนเต็ม ${f.pts}</div></div>
           ${renderMetaCard(f)}
+          ${f.no === 1 ? '<div class="alert alert-info"><b>วิธีใช้แบบนิเทศ:</b> ถามผู้รับผิดชอบหรือครู · ดูข้อมูลที่จำเป็น · สังเกตชั้นเรียนประมาณ 20–30 นาที แล้วสะท้อนผลและตกลงสิ่งที่จะติดตาม โดยใช้หลักฐานเท่าที่จำเป็น</div>' : ''}
           ${(f.sections || []).map((s, si) => renderSection(f, s, si)).join('')}
           ${f.no === 2 ? `
             <div class="form-meta-card"><div class="mtitle">💬 ข้อเสนอแนะหลังสังเกต</div>
@@ -2202,6 +2210,8 @@
         if (el) tkSet(k, obj[k] || '');
       });
       setMeta({ f2_teacher: m2.teacher, f2_subject: m2.subject, f2_class: m2.class, f2_duration: m2.duration, f2_note: m2.context, f2_suggestion: m2.suggestion });
+      const m1 = details.form1 || {};
+      setMeta({ f1_date: m1.date, f1_contact: m1.contact, f1_levels: m1.levels, f1_students: m1.students, f1_teachers: m1.teachers });
       setMeta({ f3_subject: m3.subject, f3_class: m3.class, f3_period: m3.period });
       setMeta({ f4_sampled: m4.sampled, f4_passed: m4.passed });
       if (m4.sampled || m4.passed) calcForm4Pct();
@@ -2241,7 +2251,8 @@
     function resetEvalForm() {
       document.querySelectorAll('.q-scale button').forEach(b => b.classList.remove('sel'));
       document.querySelectorAll('.q-note textarea').forEach(t => { const e = tkCk(t.id); if (e) e.setData(''); t.value = ''; });
-      ['f2_teacher','f2_subject','f2_class','f2_duration','f2_note','f2_suggestion',
+      ['f1_date','f1_contact','f1_levels','f1_students','f1_teachers',
+       'f2_teacher','f2_subject','f2_class','f2_duration','f2_note','f2_suggestion',
        'f3_subject','f3_class','f3_period','f4_sampled','f4_passed','f4_pct',
        'f5_strengths','f5_gaps','f5_help','f5_agreement','f5_centerAction','f5_supporter',
        'f5_followDate','f5_followLook','f5_followStatus','f5_change','f5_evidence','f5_nextAction','f5_summary'].forEach(id => {
@@ -2289,6 +2300,10 @@
     function collectMeta() {
       const v = id => tkGet(id);
       return {
+        form1: {
+          date: v('f1_date'), contact: v('f1_contact'), levels: v('f1_levels'),
+          students: v('f1_students'), teachers: v('f1_teachers')
+        },
         form2: {
           teacher: v('f2_teacher'), subject: v('f2_subject'), class: v('f2_class'),
           duration: v('f2_duration'), context: v('f2_note'), suggestion: v('f2_suggestion')
@@ -2390,6 +2405,7 @@
           level: document.getElementById('levelScore').value,
           answers: collected.answers,
           notes: collected.notes,
+          form1: meta.form1,
           form2: meta.form2,
           form3: meta.form3,
           form4: meta.form4,
