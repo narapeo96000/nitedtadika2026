@@ -1121,13 +1121,44 @@
         '<div class="spinner" style="margin:0 auto 8px;"></div>' +
         '<div class="text-muted small">กำลังโหลดข้อมูลตาดีกา...</div></td></tr>';
     }
-    async function loadTadikaList() {
+    let tadikaListLoadPromise = null;
+    async function loadTadikaList(force = false) {
+      if (tadikaListLoadPromise && !force) return tadikaListLoadPromise;
+      tadikaListLoadPromise = (async () => {
       showAddrLoading();
+      const applyList = data => {
+        // ตารางนี้แสดงเฉพาะ ADDR_TADEKA; ป้องกัน cache เก่าที่อาจมีข้อมูลปอเนาะปะปน
+        tadikaList = (Array.isArray(data) ? data : []).filter(t => String(t.type || '') === 'ตาดีกา');
+        renderAddrTable();
+      };
       try {
-        const res = await api('getTadikaList');
-        tadikaList = (res && res.success) ? (res.data || []) : [];
-      } catch (err) { tadikaList = []; }
-      renderAddrTable();
+        // แสดงข้อมูลล่าสุดที่เคยโหลดได้ทันที ระหว่างรอ API รอบใหม่
+        const cacheKey = 'nitedtadika:api:getTadikaList:';
+        const cached = localStorage.getItem(cacheKey);
+        if (cached && !tadikaList.length) {
+          try { applyList(JSON.parse(cached).data); } catch (_) { /* ข้าม cache ที่อ่านไม่ได้ */ }
+        }
+        let lastError = null;
+        for (let attempt = 0; attempt < 3; attempt++) {
+          try {
+            const res = await api('getTadikaList');
+            if (!res || !res.success || !Array.isArray(res.data)) throw new Error('ข้อมูลรายชื่อไม่ถูกต้อง');
+            applyList(res.data);
+            return;
+          } catch (err) {
+            lastError = err;
+            if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 800 * (attempt + 1)));
+          }
+        }
+        if (!tadikaList.length) {
+          document.getElementById('addrCount').innerText = 'โหลดข้อมูลไม่สำเร็จ';
+          document.getElementById('addrBody').innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง <button type="button" class="btn btn-outline2 btn-sm mt-2" onclick="loadTadikaList(true)">🔄 ลองใหม่</button></td></tr>';
+        }
+      } finally {
+        tadikaListLoadPromise = null;
+      }
+      })();
+      return tadikaListLoadPromise;
     }
 
     // ---- ตารางข้อมูลตาดีกา (ADDRESS) แสดงตามที่เลือกจาก AutoComplete (หัว 2 แถว + เรียง A-Z/Z-A) ----
