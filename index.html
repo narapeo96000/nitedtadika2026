@@ -1640,6 +1640,15 @@
         <div class="form-meta-card"><div class="mtitle">📋 แบบบันทึกสำหรับผู้ไม่ใช่ศึกษานิเทศก์ (หน้า 6–10)</div></div>
         ${renderMetaCard(f)}
         <div class="alert alert-info"><b>วิธีใช้:</b> ถามผู้รับผิดชอบหรือครู · ดูข้อมูลที่จำเป็น · สังเกตชั้นเรียนประมาณ 20–30 นาที · สะท้อนผล · กำหนดสิ่งที่จะติดตาม โดยใช้หลักฐานเท่าที่จำเป็น</div>
+        <div class="card" style="padding:12px; box-shadow:none; border:1px solid var(--border);">
+          <div class="card-title"><h4>คำอธิบายระดับคะแนนประเมิน</h4></div>
+          <div style="overflow-x:auto;"><table class="ap-table"><thead><tr><th>ระดับ</th><th>ความหมาย</th></tr></thead><tbody>
+            <tr><td><b>2 ทำได้ชัดเจน</b></td><td>พบการดำเนินงานจริงและมีหลักฐานหรือเห็นจากการปฏิบัติ</td></tr>
+            <tr><td><b>1 กำลังพัฒนา</b></td><td>มีการดำเนินงานแล้วบางส่วน แต่ยังไม่ต่อเนื่องหรือยังไม่ชัดเจน</td></tr>
+            <tr><td><b>0 ต้องได้รับการช่วยเหลือ</b></td><td>ยังไม่พบการดำเนินงาน หรือพบปัญหาที่ควรได้รับการช่วยเหลือ</td></tr>
+            <tr><td><b>N/A</b></td><td>ไม่สามารถพิจารณาได้ในครั้งนี้</td></tr>
+          </tbody></table></div>
+        </div>
         ${f.sections.map((s, si) => renderSection(f, s, si)).join('')}
         <div class="form-meta-card"><div class="mtitle">📝 สรุปผลและข้อตกลงเพื่อการพัฒนา</div>
           ${GENERAL_FIELDS.map(fd => `<label>${escHtml(fd.label)}</label><textarea id="${fd.id}" class="form-control" placeholder="${escHtml(fd.ph || '')}"></textarea>`).join('')}
