@@ -273,15 +273,54 @@
     .report-table th,.report-table td { border:1px solid #cbd5e1; padding:7px; vertical-align:top; }
     .report-table th { background:#ecfdf5; color:#064e3b; }
     .report-ai { white-space:normal; line-height:1.75; }
+    .report-form { --report-color:#059669; margin:24px 0; padding:22px; border:1px solid #cbd5e1; border-top:5px solid var(--report-color); background:#fff; color:#172033; line-height:1.65; }
+    .report-form-header { text-align:center; border-bottom:2px solid var(--report-color); margin-bottom:16px; padding-bottom:12px; }
+    .report-form-header h2 { font-size:1.3rem; color:var(--report-color); margin:6px 0; }
+    .report-form-header h3 { font-size:1.05rem; margin:6px 0; }
+    .report-section-title { color:var(--report-color); border-left:4px solid var(--report-color); padding:6px 10px; margin:18px 0 10px; background:#f8fafc; }
+    .report-meta-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px 20px; text-align:left; }
+    .report-field { margin:8px 0; overflow-wrap:anywhere; }
+    .report-value { white-space:pre-wrap; overflow-wrap:anywhere; border-bottom:1px dotted #cbd5e1; min-height:1.7em; }
+    .report-missing,.report-evidence,.report-form-footer { color:#64748b; font-size:.8rem; }
+    .report-evidence { margin-top:6px; }
+    .report-table { table-layout:fixed; }
+    .report-table th,.report-table td { overflow-wrap:anywhere; }
+    .report-form .report-table th { background:#f1f5f9; color:#172033; }
+    .report-mark,.report-number { text-align:center; }
+    .report-mark { font-weight:700; color:var(--report-color); }
+    .report-checks { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px 12px; }
+    .report-checkbox { display:inline-block; width:1.1em; height:1.1em; border:1px solid #334155; text-align:center; line-height:1; font-weight:700; }
+    .report-signatures { margin-top:24px; text-align:right; line-height:2.3; }
+    .report-form-footer { border-top:1px solid #cbd5e1; margin-top:18px; padding-top:8px; }
+    .report-ai:empty { display:none; }
+    @media screen and (max-width:600px) {
+      .report-preview { padding:8px; overflow-x:auto; }
+      .report-form { padding:10px; min-width:580px; }
+    }
     @media print {
-      @page { size:A4; margin:14mm; }
-      body * { visibility:hidden !important; }
-      #reportPreviewCard,#reportPreviewCard * { visibility:visible !important; }
-      #reportPreviewCard { position:absolute !important; left:0 !important; top:0 !important; width:100% !important; max-width:none !important; margin:0 !important; padding:0 !important; border:0 !important; box-shadow:none !important; }
+      @page { size:A4; margin:14mm; @bottom-center { content:counter(page); font:8pt sans-serif; color:#64748b; } }
+      html,body { background:#fff !important; margin:0 !important; padding:0 !important; }
+      body > :not(.container),body > .container > :not(#appSection),#appSection > :not(#reportPreviewCard) { display:none !important; }
+      body > .container,#appSection { max-width:none !important; width:100% !important; margin:0 !important; padding:0 !important; }
+      #reportPreviewCard { position:static !important; width:100% !important; max-width:none !important; margin:0 !important; padding:0 !important; border:0 !important; box-shadow:none !important; }
       #reportPreviewCard .card-title,.no-print { display:none !important; }
       .report-preview { border:0 !important; padding:0 !important; }
       .report-table { font-size:10pt !important; }
       .report-table tr { break-inside:avoid; }
+      .report-form { margin:0; padding:0; border:0; break-before:page; font-size:10pt; }
+      .report-form:first-child { break-before:auto; }
+      .report-form-header { break-inside:avoid; }
+      .report-section-title { break-after:avoid; }
+      .report-table thead { display:table-header-group; }
+      .report-table td,.report-table th { padding:5px; }
+      .report-form .report-table { font-size:9pt !important; }
+      .report-assessment { line-height:1.4; }
+      .report-evidence { font-size:8pt; }
+      .report-field > b { display:block; break-after:avoid; }
+      .report-form-footer { margin-top:8px; padding-top:4px; break-before:avoid; }
+      .report-checks>div,.report-signatures { break-inside:avoid; }
+      .report-form,.report-section-title,.report-mark { print-color-adjust:exact; -webkit-print-color-adjust:exact; }
+      .report-ai:not(:empty) { break-before:page; }
     }
     .lvl-chart svg { width: 100%; height: auto; display: block; max-width: 100%; }
     .lvl-chart .grid { stroke: #e6ecf2; stroke-width: 1; }
@@ -632,7 +671,7 @@
             <div id="reportCenterCount" class="small text-muted" role="status" aria-live="polite"></div>
             <div class="small text-muted">เลือกได้ครั้งละหนึ่งตาดีกา ไม่เปลี่ยนศูนย์ในแบบบันทึกการนิเทศ</div>
           </div>
-          <div class="col-6"><label for="reportKind">รูปแบบรายงาน</label><select id="reportKind" class="form-select"><option value="all">ทุกแบบนิเทศของตาดีกาที่เลือก</option><option value="form1">แบบที่ 1 การนำหลักสูตรไปใช้</option><option value="form2">แบบที่ 2 สังเกตการจัดการเรียนรู้</option><option value="form3">แบบที่ 3 วัดและประเมินผล</option><option value="form4">แบบที่ 4 สังเกตผู้เรียน</option><option value="general">ผู้นิเทศทั่วไป หน้า 6–10</option><option value="summary">แบบรายงานสรุปด้วย AI</option></select></div>
+          <div class="col-6"><label for="reportKind">รูปแบบรายงาน</label><select id="reportKind" class="form-select"><option value="all">ทุกแบบนิเทศของตาดีกาที่เลือก</option><option value="form1">แบบที่ 1 การนำหลักสูตรไปใช้</option><option value="form2">แบบที่ 2 สังเกตการจัดการเรียนรู้</option><option value="form3">แบบที่ 3 วัดและประเมินผล</option><option value="form4">แบบที่ 4 สุ่มผลลัพธ์ผู้เรียน</option><option value="form5">แบบที่ 5 สรุปและแผนพัฒนา</option><option value="general">ผู้นิเทศทั่วไป หน้า 6–10</option><option value="summary">แบบรายงานสรุปด้วย AI</option></select></div>
           <div class="col-6"><label for="reportFrom">ตั้งแต่วันที่</label><input type="date" id="reportFrom" class="form-control"></div>
           <div class="col-6"><label for="reportTo">ถึงวันที่</label><input type="date" id="reportTo" class="form-control"></div>
         </div>
@@ -835,6 +874,7 @@
     </div>
   </div>
 
+  <script src="report-templates.js"></script>
   <script>
     const API_URL = 'https://script.google.com/macros/s/AKfycbxnmbY96u9qCj0dBzPBJK9glPlcibkDkD1r4p1i6tW9vkoAotX0LVpCHE-1-guglsCohw/exec';
     const TOTAL_FULL = 150;
@@ -1410,23 +1450,20 @@
       document.getElementById('reportPreviewCard').classList.add('section-hidden');
     }
     function reportKindName(kind) {
-      return ({ all: 'ผลการนิเทศทุกแบบของตาดีกาที่เลือก', form1: 'แบบที่ 1 การนำหลักสูตรไปใช้', form2: 'แบบที่ 2 สังเกตการจัดการเรียนรู้', form3: 'แบบที่ 3 วัดและประเมินผล', form4: 'แบบที่ 4 สังเกตผู้เรียน', general: 'ผลผู้นิเทศทั่วไป หน้า 6–10', summary: 'รายงานสรุปผลการนิเทศด้วย AI' })[kind] || 'รายงานผลการนิเทศ';
+      return ({ all: 'ผลการนิเทศทุกแบบของตาดีกาที่เลือก', form1: 'แบบที่ 1 การนำหลักสูตรไปใช้', form2: 'แบบที่ 2 สังเกตการจัดการเรียนรู้', form3: 'แบบที่ 3 วัดและประเมินผล', form4: 'แบบที่ 4 สุ่มผลลัพธ์ผู้เรียน', form5: 'แบบที่ 5 สรุปและแผนพัฒนา', general: 'ผลผู้นิเทศทั่วไป หน้า 6–10', summary: 'รายงานสรุปผลการนิเทศด้วย AI' })[kind] || 'รายงานผลการนิเทศ';
     }
     function hasGeneralReportContent(record) {
-      const g = record.details && record.details.generalRecord;
-      if (!g) return false;
-      const meta = g.meta || {}, summary = g.summary || {};
-      return Object.values(meta).some(v => String(v || '').trim()) || Object.values(summary).some(v => Array.isArray(v) ? v.length > 0 : String(v || '').trim());
+      return ReportTemplates.hasGeneral(record);
     }
     function reportRecordMatchesKind(record, kind) {
       if (kind === 'general') return hasGeneralReportContent(record);
-      if (/^form[1-4]$/.test(kind)) return !hasGeneralReportContent(record);
+      if (/^form[1-5]$/.test(kind)) return ReportTemplates.hasLegacy(record);
       return true;
     }
     function reportScoreMetrics(record, kind) {
       if (/^form[1-4]$/.test(kind)) {
         const index = Number(kind.slice(-1));
-        const maximum = [0,45,54,51,30][index];
+        const maximum = FORMS.find(f => f.no === index).pts;
         const score = Number(record['score' + index]) || 0;
         return { score, maximum, percent: maximum ? Math.round(score / maximum * 100) : 0 };
       }
@@ -1452,7 +1489,6 @@
       const context = reportContext();
       if (!context) return null;
       const request = reportRequest;
-      const type = context.centerName + ' (รหัส ' + context.centerId + ')';
       const kind = context.kind;
       const status = document.getElementById('reportStatus');
       if (context.from && context.to && context.from > context.to) {
@@ -1467,13 +1503,10 @@
           reportSourceRecords = res.data.filter(r => String(r.id).trim() === context.centerId && r.type === context.type);
           reportPreviewRecords = reportSourceRecords.filter(r => reportRecordMatchesKind(r, kind) && reportDateInRange(r, context));
           const records = reportPreviewRecords;
-          const mean = records.length ? Math.round(records.reduce((sum, r) => sum + reportScoreMetrics(r, kind).percent, 0) / records.length) : 0;
-          const from = context.from || 'ไม่จำกัด';
-          const to = context.to || 'ไม่จำกัด';
-          const title = reportKindName(kind);
-          const body = records.map((r, i) => { const metric = reportScoreMetrics(r, kind); return `<tr><td>${i + 1}</td><td>${escHtml(r.timestamp)}</td><td>${escHtml(r.name)}<br><span class="small text-muted">${escHtml(r.id)} · ${escHtml(r.type)}</span></td><td>${escHtml(r.formType || title)}</td><td>${metric.score}/${metric.maximum}</td><td>${metric.percent}%</td><td>${escHtml(r.level || '—')}</td><td>${escHtml(r.supervisor || '—')}</td><td>${reportNotes(r)}</td></tr>`; }).join('');
           document.getElementById('reportPreviewCount').textContent = records.length.toLocaleString() + ' รายการ';
-          document.getElementById('reportPreview').innerHTML = `<div style="text-align:center;"><h2>รายงานผลการนิเทศ</h2><h3>${escHtml(title)}</h3><p>ศูนย์: ${escHtml(type)} · ช่วงวันที่ ${escHtml(from)} ถึง ${escHtml(to)}</p></div><div class="tk-row mb-3"><div class="tk-cell"><span class="tk-val">${records.length.toLocaleString()}</span><span class="tk-lbl">รายการนิเทศ</span></div><div class="tk-cell"><span class="tk-val">${mean}%</span><span class="tk-lbl">ร้อยละเฉลี่ย</span></div><div class="tk-cell"><span class="tk-val">${new Set(records.map(r => r.id)).size.toLocaleString()}</span><span class="tk-lbl">ศูนย์ที่มีผลนิเทศ</span></div></div><div id="reportAiOutput" class="report-ai">${reportAiText}</div><table class="report-table"><thead><tr><th>#</th><th>วันที่</th><th>ศูนย์</th><th>แบบนิเทศ</th><th>คะแนน</th><th>ร้อยละ</th><th>ระดับ</th><th>ผู้นิเทศ</th><th>จุดเด่น / ประเด็นพัฒนา</th></tr></thead><tbody>${body || '<tr><td colspan="9" class="text-center">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>'}</tbody></table><p class="small text-muted" style="margin-top:14px;">จัดทำเมื่อ ${new Date().toLocaleString('th-TH')} · รายงานนี้ใช้เพื่อวางแผนสนับสนุนและพัฒนา ไม่ใช้เพื่อจัดอันดับ</p>`;
+          const forms = ReportTemplates.render(records, context, { forms: FORMS, generalSchema: GENERAL_SCHEMA,
+            generalFields: GENERAL_FIELDS, summaryFields: FORM5_FIELDS, helpOptions: GENERAL_HELP_OPTIONS, followOptions: GENERAL_FOLLOW_OPTIONS });
+          document.getElementById('reportPreview').innerHTML = `<div class="no-print"><b>${escHtml(context.centerName)} · ${escHtml(reportKindName(kind))}</b><p class="small text-muted">แสดงตามแบบนิเทศ แยกแต่ละบันทึก · ${records.length} รายการ · ช่วงวันที่ ${escHtml(context.from || 'ไม่จำกัด')} ถึง ${escHtml(context.to || 'ไม่จำกัด')}</p></div><div class="report-forms">${forms}</div><div id="reportAiOutput" class="report-ai">${reportAiText}</div>`;
           document.getElementById('reportPreviewCard').classList.remove('section-hidden');
           status.textContent = 'แสดงตัวอย่างแล้ว · ' + records.length.toLocaleString() + ' รายการ';
           reportPreviewKey = JSON.stringify(context);

@@ -1,5 +1,5 @@
-const CACHE = 'nitedtadika-shell-v1';
-const APP_SHELL = ['./', './index.html', './manifest.json'];
+const CACHE = 'nitedtadika-shell-v2';
+const APP_SHELL = ['./', './index.html', './manifest.json', './report-templates.js'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(APP_SHELL)));
   self.skipWaiting();

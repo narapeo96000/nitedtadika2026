@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const { readFileSync } = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
+const { installTemplates } = require('./report-fixtures.cjs');
 const root = path.join(__dirname, '..');
 const html = readFileSync(path.join(root, 'index.html'), 'utf8');
 const backend = readFileSync(path.join(root, 'apps-script/รหัส.js'), 'utf8');
@@ -85,6 +86,7 @@ function client() {
   const start = html.indexOf('    let reportSourceRecords =');
   const end = html.indexOf('    // ---- ผู้ดูแลระบบ:', start);
   assert.ok(start > 0 && end > start);
+  installTemplates(ctx);
   vm.runInContext(html.slice(start, end), ctx);
   ctx.openReportMenu();
   return { ctx, element, pending };
