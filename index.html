@@ -1279,8 +1279,8 @@
       { key: 'id',       icon: '🆔', label: 'รหัสตาดีกา/มัสยิด/แผนที่' },
       { key: 'address',  icon: '🏠', label: 'ที่อยู่ (หมู่/ตำบล/อำเภอ)' },
       { key: 'status',   icon: '📌', label: 'สถานะ' },
-      { key: 'teachers', icon: '👩‍🏫', label: 'ผู้สอน (ชาย / หญิง / รวม)' },
-      { key: 'students', icon: '👥', label: 'ผู้เรียน (ชาย / หญิง / รวม)' }
+      { key: 'teachers', icon: '👩‍🏫', title: 'ครู', label: 'ชาย / หญิง / รวม' },
+      { key: 'students', icon: '🧑‍🎓', title: 'นักเรียน', label: 'ชาย / หญิง / รวม' }
     ];
     let addrSort = { key: 'id', dir: 'asc' };
 
@@ -1289,7 +1289,7 @@
       const head = document.getElementById('addrHead');
       if (!head) return;
       head.innerHTML =
-        '<tr>' + ADDR_COLS.map(c => `<th onclick="sortAddr('${c.key}')">${c.icon}</th>`).join('') + '</tr>' +
+        '<tr>' + ADDR_COLS.map(c => `<th onclick="sortAddr('${c.key}')">${c.icon}${c.title ? ' ' + c.title : ''}</th>`).join('') + '</tr>' +
         '<tr>' + ADDR_COLS.map(c =>
           `<th onclick="sortAddr('${c.key}')">${c.label}${addrSort.key === c.key ? '<span class="sort-arrow"> ' + arrow + '</span>' : ''}</th>`
         ).join('') + '</tr>';
@@ -1358,10 +1358,10 @@
           </td>
           <td class="small" data-label="ที่อยู่">${escHtml(tadikaAddr(t)) || '—'}</td>
           <td data-label="สถานะ">${statusBadge(t.status)}</td>
-          <td class="small" data-label="ผู้สอน (ชาย / หญิง / รวม)">
+          <td class="small" data-label="👩‍🏫 ครู ชาย / หญิง / รวม">
             <div class="cnt-line">${formatAddrBreakdown(t.teachers || {})}</div>
           </td>
-          <td class="small" data-label="ผู้เรียน (ชาย / หญิง / รวม)">
+          <td class="small" data-label="🧑‍🎓 นักเรียน ชาย / หญิง / รวม">
             <div class="cnt-line">${formatAddrBreakdown(t.students || {})}</div>
             <div class="text-muted">ต่างชาติ: ${formatAddrCount(t.foreignStudents)}</div>
           </td>
@@ -1893,8 +1893,8 @@
         ...(t.type === 'ปอเนาะ' ? [
           ['👥 บุคลากร / ผู้เรียน / ต่างชาติ', formatAddrCount((t.teachers || {}).total) + ' / ' + formatAddrCount((t.students || {}).total) + ' / ' + formatAddrCount(t.foreignStudents)]
         ] : [
-          ['👩‍🏫 ผู้สอน (ชาย / หญิง / รวม)', formatAddrBreakdown(t.teachers || {})],
-          ['👥 ผู้เรียน (ชาย / หญิง / รวม)', formatAddrBreakdown(t.students || {})],
+          ['👩‍🏫 ครู ชาย / หญิง / รวม', formatAddrBreakdown(t.teachers || {})],
+          ['🧑‍🎓 นักเรียน ชาย / หญิง / รวม', formatAddrBreakdown(t.students || {})],
           ['ผู้เรียนต่างชาติ', formatAddrCount(t.foreignStudents)]
         ]),
         ['📍 แผนที่', (t.lat && t.lng) ? t.lat + ', ' + t.lng : 'ยังไม่มีแผนที่']

@@ -45,7 +45,10 @@ test('table shows two gender breakdown columns, keeps foreigners and sorts by re
   ];
   ctx.renderAddrHeader(); ctx.renderAddrTable();
   assert.equal((get('addrHead').innerHTML.match(/<th /g) || []).length, 10);
-  assert.match(get('addrBody').innerHTML, /ผู้สอน \(ชาย \/ หญิง \/ รวม\)/);
+  assert.match(get('addrHead').innerHTML, /👩‍🏫 ครู/);
+  assert.match(get('addrHead').innerHTML, /🧑‍🎓 นักเรียน/);
+  assert.match(get('addrBody').innerHTML, /👩‍🏫 ครู ชาย \/ หญิง \/ รวม/);
+  assert.match(get('addrBody').innerHTML, /🧑‍🎓 นักเรียน ชาย \/ หญิง \/ รวม/);
   assert.match(get('addrBody').innerHTML, /1 \/ 1 \/ <b>99<\/b>/);
   assert.match(get('addrBody').innerHTML, /ต่างชาติ: 0/);
   ctx.sortAddr('students');
