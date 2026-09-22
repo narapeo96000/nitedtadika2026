@@ -71,6 +71,12 @@ function client() {
   };
   const ctx = vm.createContext({
     selectedTadika: { id: '001', type: 'ตาดีกา', name: 'Center A' }, currentUser: { sessionToken: 'valid' },
+    tadikaList: [
+      { id: '001', type: 'ตาดีกา', name: 'Center A' },
+      { id: '002', type: 'ตาดีกา', name: 'Center B' },
+      { id: '003', type: 'ตาดีกา', name: 'Empty center' },
+      { id: '004', type: 'ปอเนาะ', name: 'Pondok' }
+    ],
     document: { getElementById: element },
     api: (action, payload) => new Promise(resolve => pending.push({ action, payload, resolve })),
     escHtml: x => String(x || '').replaceAll('<', '&lt;'), renderChatReply: x => x,
@@ -80,6 +86,7 @@ function client() {
   const end = html.indexOf('    // ---- ผู้ดูแลระบบ:', start);
   assert.ok(start > 0 && end > start);
   vm.runInContext(html.slice(start, end), ctx);
+  ctx.openReportMenu();
   return { ctx, element, pending };
 }
 const record = (id = '001', type = 'ตาดีกา') => ({ id, type, name: 'Center ' + id, timestamp: '2026-09-22', details: {}, pct: 50 });
@@ -104,9 +111,10 @@ test('preview and PDF use the selected center; stale filters block printing', as
 test('no center means no API request; empty selected-center results remain empty', async () => {
   const { ctx, element, pending } = client();
   ctx.selectedTadika = null;
+  element('reportCenter').value = '';
   assert.equal(await ctx.buildReportPreview(), null);
   assert.equal(pending.length, 0);
-  ctx.selectedTadika = { id: '003', type: 'ตาดีกา', name: 'Empty center' };
+  element('reportCenter').value = '003';
   const task = ctx.buildReportPreview();
   pending[0].resolve({ success: true, data: [] });
   assert.equal((await task).records.length, 0);
@@ -116,7 +124,7 @@ test('no center means no API request; empty selected-center results remain empty
 test('late preview responses cannot restore a previous center', async () => {
   const { ctx, element, pending } = client();
   const task = ctx.buildReportPreview();
-  ctx.selectedTadika = { id: '002', type: 'ตาดีกา', name: 'Center B' };
+  element('reportCenter').value = '002';
   ctx.invalidateReport();
   finish(pending[0]);
   assert.equal(await task, null);
@@ -133,7 +141,7 @@ test('AI sends selected ID only and ignores responses after center/filter change
     assert.equal(pending[1].action, 'generateReportAI');
     assert.equal(pending[1].payload.report.filters.centerId, '001');
     assert.deepEqual(Array.from(pending[1].payload.records, r => r.id), ['001']);
-    if (change === 'center') ctx.selectedTadika = { id: '002', type: 'ตาดีกา', name: 'Center B' };
+    if (change === 'center') element('reportCenter').value = '002';
     if (change === 'filter') element('reportKind').value = 'general';
     if (change === 'close') ctx.closeReportMenu(); else ctx.invalidateReport();
     pending[1].resolve({ success: true, text: 'Old center summary' });
@@ -141,6 +149,35 @@ test('AI sends selected ID only and ignores responses after center/filter change
     assert.equal(element('reportPreview').innerHTML, '');
     assert.doesNotMatch(element('reportAiOutput').innerHTML, /Old center summary/);
   }
+});
+
+test('report center picker is independent from the evaluation center and retained on reopen', async () => {
+  const { ctx, element, pending } = client();
+  assert.equal(element('reportCenter').value, '001');
+  assert.doesNotMatch(element('reportCenter').innerHTML, /Pondok/);
+  element('reportCenter').value = '002';
+  ctx.invalidateReport();
+  const task = ctx.buildReportPreview();
+  assert.equal(pending[0].payload.centerId, '002');
+  finish(pending[0]);
+  const preview = await task;
+  assert.equal(preview.records.length, 1);
+  assert.equal(preview.records[0].id, '002');
+  assert.match(element('reportPreview').innerHTML, /Center B/);
+  assert.doesNotMatch(element('reportPreview').innerHTML, /ภาพรวมผลการนิเทศ|Center 001/);
+  assert.equal(ctx.selectedTadika.id, '001');
+  ctx.closeReportMenu();
+  ctx.openReportMenu();
+  assert.equal(element('reportCenter').value, '002');
+});
+
+test('unknown or Pondok selections cannot issue report requests', async () => {
+  const { ctx, element, pending } = client();
+  for (const id of ['missing', '004']) {
+    element('reportCenter').value = id;
+    assert.equal(await ctx.buildReportPreview(), null);
+  }
+  assert.equal(pending.length, 0);
 });
 
 test('all inline scripts and backend parse', () => {

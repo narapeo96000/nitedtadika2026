@@ -624,8 +624,8 @@
       <div id="reportSection" class="card section-hidden no-print">
         <div class="card-title"><h4>📊 รายงานผลการนิเทศ</h4><span class="badge">Preview / PDF</span></div>
         <div class="row">
-          <div class="col-6"><label for="reportCenter">ตาดีกาที่เลือก</label><input id="reportCenter" class="form-control" readonly placeholder="กรุณาเลือกตาดีกาก่อนออกรายงาน"></div>
-          <div class="col-6"><label for="reportKind">รูปแบบรายงาน</label><select id="reportKind" class="form-select"><option value="all">ภาพรวมทุกแบบนิเทศ</option><option value="form1">แบบที่ 1 การนำหลักสูตรไปใช้</option><option value="form2">แบบที่ 2 สังเกตการจัดการเรียนรู้</option><option value="form3">แบบที่ 3 วัดและประเมินผล</option><option value="form4">แบบที่ 4 สังเกตผู้เรียน</option><option value="general">ผู้นิเทศทั่วไป หน้า 6–10</option><option value="summary">แบบรายงานสรุปด้วย AI</option></select></div>
+          <div class="col-6"><label for="reportCenter">เลือกตาดีกาที่ต้องการรายงาน</label><select id="reportCenter" class="form-select" onchange="invalidateReport()"><option value="">— เลือกตาดีกา —</option></select><div class="small text-muted">เลือกได้ครั้งละหนึ่งตาดีกา ไม่เปลี่ยนศูนย์ในแบบบันทึกการนิเทศ</div></div>
+          <div class="col-6"><label for="reportKind">รูปแบบรายงาน</label><select id="reportKind" class="form-select"><option value="all">ทุกแบบนิเทศของตาดีกาที่เลือก</option><option value="form1">แบบที่ 1 การนำหลักสูตรไปใช้</option><option value="form2">แบบที่ 2 สังเกตการจัดการเรียนรู้</option><option value="form3">แบบที่ 3 วัดและประเมินผล</option><option value="form4">แบบที่ 4 สังเกตผู้เรียน</option><option value="general">ผู้นิเทศทั่วไป หน้า 6–10</option><option value="summary">แบบรายงานสรุปด้วย AI</option></select></div>
           <div class="col-6"><label for="reportFrom">ตั้งแต่วันที่</label><input type="date" id="reportFrom" class="form-control"></div>
           <div class="col-6"><label for="reportTo">ถึงวันที่</label><input type="date" id="reportTo" class="form-control"></div>
         </div>
@@ -1173,6 +1173,10 @@
         // ตารางนี้แสดงเฉพาะ ADDR_TADEKA; ป้องกัน cache เก่าที่อาจมีข้อมูลปอเนาะปะปน
         tadikaList = (Array.isArray(data) ? data : []).filter(t => String(t.type || '') === 'ตาดีกา');
         renderAddrTable();
+        if (!document.getElementById('reportSection').classList.contains('section-hidden')) {
+          populateReportCenters();
+          invalidateReport();
+        }
       };
       try {
         // แสดงข้อมูลล่าสุดที่เคยโหลดได้ทันที ระหว่างรอ API รอบใหม่
@@ -1338,9 +1342,21 @@
     let reportAiText = '';
     let reportRequest = 0;
     let reportPreviewKey = '';
+    function populateReportCenters() {
+      const select = document.getElementById('reportCenter');
+      const previous = select.value;
+      const centers = tadikaList.filter(t => t.type === 'ตาดีกา' && String(t.id || '').trim());
+      const unique = [...new Map(centers.map(t => [String(t.id).trim(), t])).values()];
+      select.innerHTML = '<option value="">— เลือกตาดีกา —</option>' + unique.map(t =>
+        `<option value="${escHtml(String(t.id).trim())}">${escHtml(t.name)} · รหัส ${escHtml(t.id)}${t.dist ? ' · ' + escHtml(t.dist) : ''}</option>`).join('');
+      const preferred = previous || (selectedTadika && selectedTadika.type === 'ตาดีกา' ? String(selectedTadika.id).trim() : '');
+      select.value = unique.some(t => String(t.id).trim() === preferred) ? preferred : '';
+    }
     function reportContext() {
-      if (!selectedTadika || !String(selectedTadika.id || '').trim() || selectedTadika.type !== 'ตาดีกา') return null;
-      return { centerId: String(selectedTadika.id).trim(), centerName: selectedTadika.name,
+      const centerId = document.getElementById('reportCenter').value;
+      const center = tadikaList.find(t => t.type === 'ตาดีกา' && String(t.id || '').trim() === centerId);
+      if (!centerId || !center) return null;
+      return { centerId, centerName: center.name,
         type: 'ตาดีกา', kind: document.getElementById('reportKind').value,
         from: document.getElementById('reportFrom').value, to: document.getElementById('reportTo').value };
     }
@@ -1354,7 +1370,6 @@
       document.getElementById('reportPreviewCount').textContent = '0 รายการ';
       document.getElementById('reportPreviewCard').classList.add('section-hidden');
       const context = reportContext();
-      document.getElementById('reportCenter').value = context ? context.centerName + ' (' + context.centerId + ')' : '';
       document.getElementById('reportStatus').textContent = context ? 'รายงานเฉพาะตาดีกาที่เลือก · กดแสดงตัวอย่างเพื่อโหลดข้อมูล' : 'กรุณาเลือกตาดีกาก่อนออกรายงาน';
     }
     function reportRequestIsCurrent(request, context) {
@@ -1362,9 +1377,8 @@
     }
     ['reportKind', 'reportFrom', 'reportTo'].forEach(id => document.getElementById(id).addEventListener('change', invalidateReport));
     function openReportMenu() {
-      const context = reportContext();
-      document.getElementById('reportCenter').value = context ? context.centerName + ' (' + context.centerId + ')' : '';
-      if (!context) invalidateReport();
+      populateReportCenters();
+      invalidateReport();
       const section = document.getElementById('reportSection');
       section.classList.remove('section-hidden');
       section.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1375,7 +1389,7 @@
       document.getElementById('reportPreviewCard').classList.add('section-hidden');
     }
     function reportKindName(kind) {
-      return ({ all: 'ภาพรวมผลการนิเทศทุกแบบ', form1: 'แบบที่ 1 การนำหลักสูตรไปใช้', form2: 'แบบที่ 2 สังเกตการจัดการเรียนรู้', form3: 'แบบที่ 3 วัดและประเมินผล', form4: 'แบบที่ 4 สังเกตผู้เรียน', general: 'ผลผู้นิเทศทั่วไป หน้า 6–10', summary: 'รายงานสรุปผลการนิเทศด้วย AI' })[kind] || 'รายงานผลการนิเทศ';
+      return ({ all: 'ผลการนิเทศทุกแบบของตาดีกาที่เลือก', form1: 'แบบที่ 1 การนำหลักสูตรไปใช้', form2: 'แบบที่ 2 สังเกตการจัดการเรียนรู้', form3: 'แบบที่ 3 วัดและประเมินผล', form4: 'แบบที่ 4 สังเกตผู้เรียน', general: 'ผลผู้นิเทศทั่วไป หน้า 6–10', summary: 'รายงานสรุปผลการนิเทศด้วย AI' })[kind] || 'รายงานผลการนิเทศ';
     }
     function hasGeneralReportContent(record) {
       const g = record.details && record.details.generalRecord;
@@ -1649,6 +1663,8 @@
     function doLogout() {
       currentUser = {};
       selectedTadika = null;
+      document.getElementById('reportCenter').value = '';
+      closeReportMenu();
       document.getElementById('appHeader').classList.add('section-hidden');
       document.getElementById('appSection').classList.add('section-hidden');
       document.getElementById('evaluationSection').classList.add('section-hidden');
