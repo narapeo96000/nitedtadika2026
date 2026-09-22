@@ -72,8 +72,8 @@ function client() {
   const ctx = vm.createContext({
     selectedTadika: { id: '001', type: 'ตาดีกา', name: 'Center A' }, currentUser: { sessionToken: 'valid' },
     tadikaList: [
-      { id: '001', type: 'ตาดีกา', name: 'Center A' },
-      { id: '002', type: 'ตาดีกา', name: 'Center B' },
+      { id: '001', type: 'ตาดีกา', name: 'Center A', dist: 'เมือง', subdist: 'บางนาค' },
+      { id: '002', type: 'ตาดีกา', name: 'Center B', dist: 'ตากใบ', subdist: 'เจ๊ะเห' },
       { id: '003', type: 'ตาดีกา', name: 'Empty center' },
       { id: '004', type: 'ปอเนาะ', name: 'Pondok' }
     ],
@@ -178,6 +178,46 @@ test('unknown or Pondok selections cannot issue report requests', async () => {
     assert.equal(await ctx.buildReportPreview(), null);
   }
   assert.equal(pending.length, 0);
+});
+
+test('search filters by name, ID, district, subdistrict and combined terms', () => {
+  const { ctx, element } = client();
+  for (const query of ['center b', '002', 'ตากใบ', 'เจ๊ะเห', '  CENTER   ตากใบ  ']) {
+    element('reportCenterSearch').value = query;
+    ctx.filterReportCenters();
+    assert.match(element('reportCenter').innerHTML, /Center B/);
+    assert.doesNotMatch(element('reportCenter').innerHTML, /Center A|Empty center|Pondok/);
+    assert.equal(element('reportCenter').value, '');
+    assert.equal(element('reportCenterCount').textContent, 'พบ 1 ตาดีกา จากทั้งหมด 3 แห่ง');
+    assert.equal(ctx.selectedTadika.id, '001');
+  }
+});
+
+test('no search matches clears selection and blocks reports; clearing search restores choices without auto-select', async () => {
+  const { ctx, element, pending } = client();
+  element('reportCenterSearch').value = 'not found';
+  ctx.filterReportCenters();
+  assert.equal(element('reportCenter').disabled, true);
+  assert.equal(element('reportCenter').value, '');
+  assert.equal(await ctx.buildReportPreview(), null);
+  assert.equal(pending.length, 0);
+  element('reportCenterSearch').value = '';
+  ctx.filterReportCenters();
+  assert.equal(element('reportCenter').disabled, false);
+  assert.match(element('reportCenter').innerHTML, /Center A/);
+  assert.match(element('reportCenter').innerHTML, /Center B/);
+  assert.equal(element('reportCenter').value, '');
+});
+
+test('search preserves a matching selection and invalidates pending previews', async () => {
+  const { ctx, element, pending } = client();
+  const task = ctx.buildReportPreview();
+  element('reportCenterSearch').value = 'เมือง';
+  ctx.filterReportCenters();
+  assert.equal(element('reportCenter').value, '001');
+  finish(pending[0]);
+  assert.equal(await task, null);
+  assert.equal(element('reportPreview').innerHTML, '');
 });
 
 test('all inline scripts and backend parse', () => {

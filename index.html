@@ -624,7 +624,14 @@
       <div id="reportSection" class="card section-hidden no-print">
         <div class="card-title"><h4>📊 รายงานผลการนิเทศ</h4><span class="badge">Preview / PDF</span></div>
         <div class="row">
-          <div class="col-6"><label for="reportCenter">เลือกตาดีกาที่ต้องการรายงาน</label><select id="reportCenter" class="form-select" onchange="invalidateReport()"><option value="">— เลือกตาดีกา —</option></select><div class="small text-muted">เลือกได้ครั้งละหนึ่งตาดีกา ไม่เปลี่ยนศูนย์ในแบบบันทึกการนิเทศ</div></div>
+          <div class="col-6">
+            <label for="reportCenterSearch">ค้นหาตาดีกาที่ต้องการรายงาน</label>
+            <input type="search" id="reportCenterSearch" class="form-control" placeholder="พิมพ์ชื่อ รหัส อำเภอ หรือตำบล" autocomplete="off" oninput="filterReportCenters()" aria-controls="reportCenter" aria-describedby="reportCenterCount">
+            <label for="reportCenter" class="mt-2">เลือกตาดีกาที่ต้องการรายงาน</label>
+            <select id="reportCenter" class="form-select" onchange="invalidateReport()"><option value="">— เลือกตาดีกา —</option></select>
+            <div id="reportCenterCount" class="small text-muted" role="status" aria-live="polite"></div>
+            <div class="small text-muted">เลือกได้ครั้งละหนึ่งตาดีกา ไม่เปลี่ยนศูนย์ในแบบบันทึกการนิเทศ</div>
+          </div>
           <div class="col-6"><label for="reportKind">รูปแบบรายงาน</label><select id="reportKind" class="form-select"><option value="all">ทุกแบบนิเทศของตาดีกาที่เลือก</option><option value="form1">แบบที่ 1 การนำหลักสูตรไปใช้</option><option value="form2">แบบที่ 2 สังเกตการจัดการเรียนรู้</option><option value="form3">แบบที่ 3 วัดและประเมินผล</option><option value="form4">แบบที่ 4 สังเกตผู้เรียน</option><option value="general">ผู้นิเทศทั่วไป หน้า 6–10</option><option value="summary">แบบรายงานสรุปด้วย AI</option></select></div>
           <div class="col-6"><label for="reportFrom">ตั้งแต่วันที่</label><input type="date" id="reportFrom" class="form-control"></div>
           <div class="col-6"><label for="reportTo">ถึงวันที่</label><input type="date" id="reportTo" class="form-control"></div>
@@ -1342,15 +1349,29 @@
     let reportAiText = '';
     let reportRequest = 0;
     let reportPreviewKey = '';
-    function populateReportCenters() {
+    function populateReportCenters(useDefault = false) {
       const select = document.getElementById('reportCenter');
       const previous = select.value;
+      const query = document.getElementById('reportCenterSearch').value.trim().toLocaleLowerCase('th-TH');
+      const terms = query.split(/\s+/).filter(Boolean);
       const centers = tadikaList.filter(t => t.type === 'ตาดีกา' && String(t.id || '').trim());
       const unique = [...new Map(centers.map(t => [String(t.id).trim(), t])).values()];
-      select.innerHTML = '<option value="">— เลือกตาดีกา —</option>' + unique.map(t =>
-        `<option value="${escHtml(String(t.id).trim())}">${escHtml(t.name)} · รหัส ${escHtml(t.id)}${t.dist ? ' · ' + escHtml(t.dist) : ''}</option>`).join('');
-      const preferred = previous || (selectedTadika && selectedTadika.type === 'ตาดีกา' ? String(selectedTadika.id).trim() : '');
-      select.value = unique.some(t => String(t.id).trim() === preferred) ? preferred : '';
+      const matches = unique.filter(t => {
+        const text = [t.id, t.name, t.dist, t.subdist].filter(v => v != null).join(' ').toLocaleLowerCase('th-TH');
+        return terms.every(term => text.includes(term));
+      });
+      select.innerHTML = `<option value="">${matches.length ? '— เลือกตาดีกา —' : '— ไม่พบตาดีกาที่ค้นหา —'}</option>` + matches.map(t =>
+        `<option value="${escHtml(String(t.id).trim())}">${escHtml(t.name)} · รหัส ${escHtml(t.id)}${t.dist ? ' · ' + escHtml(t.dist) : ''}${t.subdist ? ' · ' + escHtml(t.subdist) : ''}</option>`).join('');
+      const preferred = previous || (useDefault && !query && selectedTadika && selectedTadika.type === 'ตาดีกา' ? String(selectedTadika.id).trim() : '');
+      select.value = matches.some(t => String(t.id).trim() === preferred) ? preferred : '';
+      select.disabled = matches.length === 0;
+      document.getElementById('reportCenterCount').textContent = matches.length
+        ? 'พบ ' + matches.length.toLocaleString() + ' ตาดีกา จากทั้งหมด ' + unique.length.toLocaleString() + ' แห่ง'
+        : 'ไม่พบตาดีกาที่ค้นหา กรุณาเปลี่ยนคำค้นหาหรือล้างช่องค้นหา';
+    }
+    function filterReportCenters() {
+      populateReportCenters();
+      invalidateReport();
     }
     function reportContext() {
       const centerId = document.getElementById('reportCenter').value;
@@ -1377,7 +1398,7 @@
     }
     ['reportKind', 'reportFrom', 'reportTo'].forEach(id => document.getElementById(id).addEventListener('change', invalidateReport));
     function openReportMenu() {
-      populateReportCenters();
+      populateReportCenters(true);
       invalidateReport();
       const section = document.getElementById('reportSection');
       section.classList.remove('section-hidden');
@@ -1664,6 +1685,7 @@
       currentUser = {};
       selectedTadika = null;
       document.getElementById('reportCenter').value = '';
+      document.getElementById('reportCenterSearch').value = '';
       closeReportMenu();
       document.getElementById('appHeader').classList.add('section-hidden');
       document.getElementById('appSection').classList.add('section-hidden');
