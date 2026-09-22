@@ -41,7 +41,21 @@ const { fixture, html, root } = require('./report-fixtures.cjs');
       openReportMenu();
     });
     await page.locator('#reportCenterSearch').fill('TEST-001');
-    await page.locator('#reportCenter').selectOption(record.id);
+    assert.equal(await page.locator('#reportCenter').inputValue(), '');
+    await page.getByRole('option', { name: /TEST-001/ }).click();
+    assert.equal(await page.locator('#reportCenter').inputValue(), record.id);
+    assert.equal(await page.locator('#reportCenterSearch').inputValue(), record.name + ' · รหัส ' + record.id);
+    assert.equal(await page.locator('#reportCenterSearch').getAttribute('aria-expanded'), 'false');
+    assert.equal(await page.locator('select#reportCenter').count(), 0);
+    // Keyboard path and dismissal must behave like a single combobox too.
+    await page.locator('#reportCenterSearch').fill('TEST');
+    await page.locator('#reportCenterSearch').press('ArrowDown');
+    await page.locator('#reportCenterSearch').press('Enter');
+    assert.equal(await page.locator('#reportCenter').inputValue(), record.id);
+    await page.locator('#reportCenterSearch').blur();
+    await page.locator('#reportCenterSearch').focus();
+    await page.locator('#reportCenterSearch').press('Escape');
+    assert.equal(await page.locator('#reportCenterSearch').getAttribute('aria-expanded'), 'false');
     for (const [kind, no] of [['form1', '1'], ['form2', '2'], ['form3', '3'], ['form4', '4'], ['form5', '5'], ['general', '6']]) {
       await page.locator('#reportKind').selectOption(kind);
       await page.getByRole('button', { name: '🔎 แสดงตัวอย่าง', exact: true }).click();

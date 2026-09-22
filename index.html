@@ -293,6 +293,10 @@
     .report-signatures { margin-top:24px; text-align:right; line-height:2.3; }
     .report-form-footer { border-top:1px solid #cbd5e1; margin-top:18px; padding-top:8px; }
     .report-ai:empty { display:none; }
+    .report-center-picker { position:relative; }
+    .report-center-options { position:absolute; top:100%; left:0; right:0; z-index:50; max-height:280px; overflow-y:auto; background:#fff; border:1px solid #cbd5e1; border-radius:10px; box-shadow:0 8px 24px #0f172a26; }
+    .report-center-option { display:block; width:100%; min-height:48px; padding:10px 12px; border:0; border-bottom:1px solid #e2e8f0; background:#fff; text-align:left; color:#172033; font:inherit; cursor:pointer; overflow-wrap:anywhere; }
+    .report-center-option:hover,.report-center-option[aria-selected="true"] { background:#ecfdf5; }
     @media screen and (max-width:600px) {
       .report-preview { padding:8px; overflow-x:auto; }
       .report-form { padding:10px; min-width:580px; }
@@ -664,10 +668,12 @@
         <div class="card-title"><h4>📊 รายงานผลการนิเทศ</h4><span class="badge">Preview / PDF</span></div>
         <div class="row">
           <div class="col-6">
-            <label for="reportCenterSearch">ค้นหาตาดีกาที่ต้องการรายงาน</label>
-            <input type="search" id="reportCenterSearch" class="form-control" placeholder="พิมพ์ชื่อ รหัส อำเภอ หรือตำบล" autocomplete="off" oninput="filterReportCenters()" aria-controls="reportCenter" aria-describedby="reportCenterCount">
-            <label for="reportCenter" class="mt-2">เลือกตาดีกาที่ต้องการรายงาน</label>
-            <select id="reportCenter" class="form-select" onchange="invalidateReport()"><option value="">— เลือกตาดีกา —</option></select>
+            <label for="reportCenterSearch">ค้นหาและเลือกตาดีกาที่ต้องการรายงาน</label>
+            <div id="reportCenterPicker" class="report-center-picker">
+              <input type="search" id="reportCenterSearch" class="form-control" placeholder="พิมพ์ชื่อ รหัส อำเภอ หรือตำบล แล้วเลือกรายชื่อ" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="reportCenterOptions" aria-describedby="reportCenterCount" oninput="filterReportCenters()" onfocus="openReportCenterSuggestions()" onkeydown="reportCenterKey(event)" onblur="if (!document.getElementById('reportCenterPicker').contains(event.relatedTarget)) closeReportCenterSuggestions()">
+              <input type="hidden" id="reportCenter">
+              <div id="reportCenterOptions" class="report-center-options d-none" role="listbox" aria-label="รายชื่อตาดีกา"></div>
+            </div>
             <div id="reportCenterCount" class="small text-muted" role="status" aria-live="polite"></div>
             <div class="small text-muted">เลือกได้ครั้งละหนึ่งตาดีกา ไม่เปลี่ยนศูนย์ในแบบบันทึกการนิเทศ</div>
           </div>
@@ -1389,29 +1395,82 @@
     let reportAiText = '';
     let reportRequest = 0;
     let reportPreviewKey = '';
+    let reportCenterMatches = [];
+    let reportCenterActive = -1;
+    function reportCenterLabel(t) { return t.name + ' · รหัส ' + String(t.id).trim(); }
     function populateReportCenters(useDefault = false) {
       const select = document.getElementById('reportCenter');
-      const previous = select.value;
-      const query = document.getElementById('reportCenterSearch').value.trim().toLocaleLowerCase('th-TH');
-      const terms = query.split(/\s+/).filter(Boolean);
+      const input = document.getElementById('reportCenterSearch');
       const centers = tadikaList.filter(t => t.type === 'ตาดีกา' && String(t.id || '').trim());
       const unique = [...new Map(centers.map(t => [String(t.id).trim(), t])).values()];
+      const preferred = select.value || (useDefault && !input.value.trim() && selectedTadika && selectedTadika.type === 'ตาดีกา' ? String(selectedTadika.id).trim() : '');
+      const selected = unique.find(t => String(t.id).trim() === preferred);
+      select.value = selected ? preferred : '';
+      if (selected) input.value = reportCenterLabel(selected);
+      const query = selected ? '' : input.value.trim().toLocaleLowerCase('th-TH');
+      const terms = query.split(/\s+/).filter(Boolean);
       const matches = unique.filter(t => {
         const text = [t.id, t.name, t.dist, t.subdist].filter(v => v != null).join(' ').toLocaleLowerCase('th-TH');
         return terms.every(term => text.includes(term));
       });
-      select.innerHTML = `<option value="">${matches.length ? '— เลือกตาดีกา —' : '— ไม่พบตาดีกาที่ค้นหา —'}</option>` + matches.map(t =>
-        `<option value="${escHtml(String(t.id).trim())}">${escHtml(t.name)} · รหัส ${escHtml(t.id)}${t.dist ? ' · ' + escHtml(t.dist) : ''}${t.subdist ? ' · ' + escHtml(t.subdist) : ''}</option>`).join('');
-      const preferred = previous || (useDefault && !query && selectedTadika && selectedTadika.type === 'ตาดีกา' ? String(selectedTadika.id).trim() : '');
-      select.value = matches.some(t => String(t.id).trim() === preferred) ? preferred : '';
-      select.disabled = matches.length === 0;
-      document.getElementById('reportCenterCount').textContent = matches.length
+      reportCenterMatches = matches;
+      reportCenterActive = -1;
+      input.removeAttribute('aria-activedescendant');
+      document.getElementById('reportCenterOptions').innerHTML = matches.length ? matches.map((t, i) =>
+        `<button type="button" tabindex="-1" role="option" id="reportCenterOption_${i}" class="report-center-option" aria-selected="false" onmousedown="event.preventDefault()" onclick="chooseReportCenter(${i})"><b>${escHtml(reportCenterLabel(t))}</b><br><span class="small text-muted">${escHtml([t.dist, t.subdist].filter(Boolean).join(' · '))}</span></button>`).join('') : '<div class="small text-muted" style="padding:12px">ไม่พบตาดีกาที่ค้นหา</div>';
+      document.getElementById('reportCenterCount').textContent = selected ? 'เลือกแล้ว: ' + reportCenterLabel(selected) : matches.length
         ? 'พบ ' + matches.length.toLocaleString() + ' ตาดีกา จากทั้งหมด ' + unique.length.toLocaleString() + ' แห่ง'
         : 'ไม่พบตาดีกาที่ค้นหา กรุณาเปลี่ยนคำค้นหาหรือล้างช่องค้นหา';
     }
     function filterReportCenters() {
+      document.getElementById('reportCenter').value = '';
       populateReportCenters();
       invalidateReport();
+      showReportCenterSuggestions();
+    }
+    function showReportCenterSuggestions() {
+      document.getElementById('reportCenterOptions').classList.remove('d-none');
+      document.getElementById('reportCenterSearch').setAttribute('aria-expanded', 'true');
+    }
+    function openReportCenterSuggestions() { populateReportCenters(); showReportCenterSuggestions(); }
+    function closeReportCenterSuggestions() {
+      document.getElementById('reportCenterOptions').classList.add('d-none');
+      const input = document.getElementById('reportCenterSearch');
+      input.setAttribute('aria-expanded', 'false');
+      input.removeAttribute('aria-activedescendant');
+      reportCenterActive = -1;
+    }
+    function chooseReportCenter(index) {
+      const center = reportCenterMatches[index];
+      if (!center) return;
+      document.getElementById('reportCenter').value = String(center.id).trim();
+      document.getElementById('reportCenterSearch').value = reportCenterLabel(center);
+      closeReportCenterSuggestions();
+      invalidateReport();
+      document.getElementById('reportCenterCount').textContent = 'เลือกแล้ว: ' + reportCenterLabel(center);
+    }
+    function reportCenterKey(event) {
+      if (event.isComposing) return;
+      if (event.key === 'Escape' || event.key === 'Tab') {
+        if (event.key === 'Escape') event.preventDefault();
+        closeReportCenterSuggestions(); return;
+      }
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        if (reportCenterActive < 0 && document.getElementById('reportCenter').value) { closeReportCenterSuggestions(); return; }
+        if (!document.getElementById('reportCenterOptions').classList.contains('d-none') && reportCenterMatches.length) chooseReportCenter(reportCenterActive < 0 ? 0 : reportCenterActive);
+        return;
+      }
+      if (!['ArrowDown', 'ArrowUp'].includes(event.key)) return;
+      event.preventDefault();
+      if (document.getElementById('reportCenterOptions').classList.contains('d-none')) openReportCenterSuggestions();
+      if (!reportCenterMatches.length) return;
+      if (reportCenterActive >= 0) document.getElementById('reportCenterOption_' + reportCenterActive).setAttribute('aria-selected', 'false');
+      reportCenterActive = (reportCenterActive + (event.key === 'ArrowDown' ? 1 : (reportCenterActive < 0 ? 0 : -1)) + reportCenterMatches.length) % reportCenterMatches.length;
+      const option = document.getElementById('reportCenterOption_' + reportCenterActive);
+      option.setAttribute('aria-selected', 'true');
+      document.getElementById('reportCenterSearch').setAttribute('aria-activedescendant', option.id || 'reportCenterOption_' + reportCenterActive);
+      option.scrollIntoView({ block: 'nearest' });
     }
     function reportContext() {
       const centerId = document.getElementById('reportCenter').value;
@@ -1439,12 +1498,14 @@
     ['reportKind', 'reportFrom', 'reportTo'].forEach(id => document.getElementById(id).addEventListener('change', invalidateReport));
     function openReportMenu() {
       populateReportCenters(true);
+      closeReportCenterSuggestions();
       invalidateReport();
       const section = document.getElementById('reportSection');
       section.classList.remove('section-hidden');
       section.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     function closeReportMenu() {
+      closeReportCenterSuggestions();
       invalidateReport();
       document.getElementById('reportSection').classList.add('section-hidden');
       document.getElementById('reportPreviewCard').classList.add('section-hidden');
