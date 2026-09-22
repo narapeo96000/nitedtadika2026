@@ -80,6 +80,8 @@ function routeAction(action, payload) {
   if (action === 'setUserStatus') return setUserStatus(payload || {});
   if (action === 'getTadikaData') return getTadikaData(payload);
   if (action === 'getEvaluations') return getEvaluations(payload);
+  if (action === 'getReportEvaluations') return getReportEvaluations(payload || {});
+  if (action === 'generateReportAI') return generateReportAI(payload || {});
   if (action === 'saveEvaluation') return saveEvaluation(payload || {});
   if (action === 'savePin') return savePin(payload || {});
   if (action === 'chat') return processChatbot(payload);
@@ -142,7 +144,8 @@ function loginUser(data) {
       }
       return {
         success: true,
-        userData: { username: sheetUser, fname: rows[i][2], tel: rows[i][3], role: role, status: status }
+        userData: { username: sheetUser, fname: rows[i][2], tel: rows[i][3], role: role, status: status,
+          sessionToken: createReportSession(sheetUser, role) }
       };
     }
   }
@@ -486,6 +489,59 @@ function getEvaluations(tadikaId) {
   }
   list.sort((a, b) => a.timestamp < b.timestamp ? 1 : -1);
   return {success: true, data: list};
+}
+
+function createReportSession(username, role) {
+  const token = Utilities.getUuid() + Utilities.getUuid().replace(/-/g, '');
+  CacheService.getScriptCache().put('reportSession:' + token, JSON.stringify({ username: username, role: role }), 21600);
+  return token;
+}
+
+function getReportSession(payload) {
+  const token = String((payload && payload.sessionToken) || '').trim();
+  if (!token) return null;
+  const raw = CacheService.getScriptCache().get('reportSession:' + token);
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch (e) { return null; }
+}
+
+// --- รายงานผลการนิเทศ: อ่านรายการบันทึกจาก DATA_TADEKA และ DATA_PONDOK ---
+function getReportEvaluations(filters) {
+  if (!getReportSession(filters)) return {success: false, message: 'หมดเวลาเข้าสู่ระบบ กรุณาเข้าสู่ระบบใหม่'};
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const list = [];
+  for (const cfg of DATA_SHEETS) {
+    if (filters.type && filters.type !== 'ทั้งหมด' && filters.type !== cfg.type) continue;
+    const sheet = ss.getSheetByName(cfg.name);
+    if (!sheet || sheet.getLastRow() < 2) continue;
+    const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, DATA_HEADERS.length).getValues();
+    rows.forEach((r, i) => {
+      let details = {};
+      try { details = JSON.parse(r[11] || '{}') || {}; } catch (e) { details = {}; }
+      list.push({ row: i + 2, type: cfg.type, timestamp: formatDate(r[0]), id: String(r[1] || ''),
+        name: String(r[2] || ''), formType: String(r[3] || ''), score1: r[4], score2: r[5],
+        score3: r[6], score4: r[7], totalScore: r[8], pct: r[9], level: String(r[10] || ''),
+        details: details, supervisor: String(r[12] || '') });
+    });
+  }
+  list.sort((a, b) => a.timestamp < b.timestamp ? 1 : (a.timestamp > b.timestamp ? -1 : 0));
+  return {success: true, data: list};
+}
+
+// --- สังเคราะห์รายงานด้วย Gemini โดยใช้เฉพาะข้อมูลที่ผ่านตัวกรองจากหน้ารายงาน ---
+function generateReportAI(payload) {
+  if (!getReportSession(payload)) return {success: false, message: 'หมดเวลาเข้าสู่ระบบ กรุณาเข้าสู่ระบบใหม่'};
+  const settings = getSystemSettings();
+  if (!settings.geminiKey) return {success: false, message: 'ยังไม่ได้ตั้งค่า Gemini API Key'};
+  const report = payload.report || {};
+  const records = Array.isArray(payload.records) ? payload.records.slice(0, 100) : [];
+  if (!records.length) return {success: false, message: 'ไม่มีข้อมูลผลนิเทศในช่วงที่เลือก'};
+  const context = JSON.stringify({ title: report.title || 'รายงานผลการนิเทศ', filters: report.filters || {},
+    totals: report.totals || {}, records: records });
+  const prompt = 'ช่วยเรียบเรียงรายงานผลการนิเทศภาษาไทยอย่างเป็นทางการ โดยยึดข้อมูลในบริบทเท่านั้น ห้ามแต่งตัวเลขหรือสรุปเกินหลักฐาน ระบุภาพรวม จุดแข็ง ประเด็นที่ควรสนับสนุน และข้อเสนอแนะเชิงพัฒนา ใช้ถ้อยคำไม่จัดอันดับหรือตีตราศูนย์ หากจำนวนข้อมูลเกิน 100 รายการ บริบทนี้เป็นเพียงตัวอย่างที่ระบบส่งให้ประกอบสถิติรวม จึงห้ามอนุมานความถี่เกินสถิติรวม ข้อมูลรายงาน: ' + (report.kind || 'รายงานสรุป');
+  const result = callGeminiAPI(prompt, context, settings);
+  if (/^(AI แจ้งข้อผิดพลาด|AI ขัดข้องชั่วคราว|ขออภัย)/.test(result)) return {success: false, message: result};
+  return {success: true, text: result};
 }
 
 // --- บันทึก/แก้ไขผลนิเทศ + อัปเดตข้อมูลศูนย์ (เลือกชีตตามประเภทตาดีกา/ปอเนาะ) ---

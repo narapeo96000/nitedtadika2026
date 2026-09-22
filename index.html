@@ -267,6 +267,22 @@
       border-radius: 999px; padding: 3px 12px;
     }
     .cnt-line { white-space: nowrap; }
+    .report-preview { border:1px solid var(--border); border-radius:14px; padding:20px; background:#fff; }
+    .report-preview h2,.report-preview h3 { color:var(--primary-deep); }
+    .report-table { width:100%; border-collapse:collapse; font-size:.85rem; }
+    .report-table th,.report-table td { border:1px solid #cbd5e1; padding:7px; vertical-align:top; }
+    .report-table th { background:#ecfdf5; color:#064e3b; }
+    .report-ai { white-space:normal; line-height:1.75; }
+    @media print {
+      @page { size:A4; margin:14mm; }
+      body * { visibility:hidden !important; }
+      #reportPreviewCard,#reportPreviewCard * { visibility:visible !important; }
+      #reportPreviewCard { position:absolute !important; left:0 !important; top:0 !important; width:100% !important; max-width:none !important; margin:0 !important; padding:0 !important; border:0 !important; box-shadow:none !important; }
+      #reportPreviewCard .card-title,.no-print { display:none !important; }
+      .report-preview { border:0 !important; padding:0 !important; }
+      .report-table { font-size:10pt !important; }
+      .report-table tr { break-inside:avoid; }
+    }
     .lvl-chart svg { width: 100%; height: auto; display: block; max-width: 100%; }
     .lvl-chart .grid { stroke: #e6ecf2; stroke-width: 1; }
     .lvl-chart .axis-label { fill: var(--muted); font-size: 9px; font-weight: 600; }
@@ -599,6 +615,33 @@
 
     <!-- ===== หน้าหลัก (หลังล็อกอิน) ===== -->
     <div id="appSection" class="section-hidden">
+
+      <div class="card no-print" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <div><b style="color:var(--primary-deep);">เมนูระบบนิเทศ</b><div class="small text-muted">เลือกเครื่องมือสำหรับทำงานหรือจัดทำรายงาน</div></div>
+        <button type="button" class="btn btn-outline" onclick="openReportMenu()">📊 รายงานผลการนิเทศ</button>
+      </div>
+
+      <div id="reportSection" class="card section-hidden no-print">
+        <div class="card-title"><h4>📊 รายงานผลการนิเทศ</h4><span class="badge">Preview / PDF</span></div>
+        <div class="row">
+          <div class="col-6"><label for="reportType">ประเภทศูนย์</label><select id="reportType" class="form-select"><option value="ทั้งหมด">ทั้งหมด</option><option value="ตาดีกา">ตาดีกา / ศอม.</option><option value="ปอเนาะ">ปอเนาะ</option></select></div>
+          <div class="col-6"><label for="reportKind">รูปแบบรายงาน</label><select id="reportKind" class="form-select"><option value="all">ภาพรวมทุกแบบนิเทศ</option><option value="form1">แบบที่ 1 การนำหลักสูตรไปใช้</option><option value="form2">แบบที่ 2 สังเกตการจัดการเรียนรู้</option><option value="form3">แบบที่ 3 วัดและประเมินผล</option><option value="form4">แบบที่ 4 สังเกตผู้เรียน</option><option value="general">ผู้นิเทศทั่วไป หน้า 6–10</option><option value="summary">แบบรายงานสรุปด้วย AI</option></select></div>
+          <div class="col-6"><label for="reportFrom">ตั้งแต่วันที่</label><input type="date" id="reportFrom" class="form-control"></div>
+          <div class="col-6"><label for="reportTo">ถึงวันที่</label><input type="date" id="reportTo" class="form-control"></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+          <button type="button" class="btn btn-primary" onclick="buildReportPreview()">🔎 แสดงตัวอย่าง</button>
+          <button type="button" class="btn btn-outline" onclick="generateReportSummary()">✨ สรุปด้วย AI</button>
+          <button type="button" class="btn btn-success" onclick="printReportPDF()">📄 ส่งออก PDF</button>
+          <button type="button" class="btn btn-outline2" onclick="closeReportMenu()">ปิดรายงาน</button>
+        </div>
+        <div id="reportStatus" class="small text-muted mt-2" aria-live="polite"></div>
+      </div>
+
+      <div id="reportPreviewCard" class="card section-hidden">
+        <div class="card-title"><h4>ตัวอย่างรายงาน</h4><span class="badge" id="reportPreviewCount">0 รายการ</span></div>
+        <div id="reportPreview" class="report-preview"><p class="text-muted">เลือกเงื่อนไขแล้วกด “แสดงตัวอย่าง”</p></div>
+      </div>
 
       <!-- จัดการผู้ใช้ (ผู้ดูแลระบบ) -->
       <div id="adminCard" class="card section-hidden">
@@ -1288,6 +1331,120 @@
         document.getElementById('tk_sMale').innerText = fmt(d.tkStudents.male);
         document.getElementById('tk_sFemale').innerText = fmt(d.tkStudents.female);
       } catch (e) { /* ข้ามเมื่อเครือข่ายขัดข้อง */ }
+    }
+
+    let reportSourceRecords = [];
+    let reportPreviewRecords = [];
+    let reportAiText = '';
+    function openReportMenu() {
+      const section = document.getElementById('reportSection');
+      section.classList.remove('section-hidden');
+      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    function closeReportMenu() {
+      document.getElementById('reportSection').classList.add('section-hidden');
+      document.getElementById('reportPreviewCard').classList.add('section-hidden');
+    }
+    function reportKindName(kind) {
+      return ({ all: 'ภาพรวมผลการนิเทศทุกแบบ', form1: 'แบบที่ 1 การนำหลักสูตรไปใช้', form2: 'แบบที่ 2 สังเกตการจัดการเรียนรู้', form3: 'แบบที่ 3 วัดและประเมินผล', form4: 'แบบที่ 4 สังเกตผู้เรียน', general: 'ผลผู้นิเทศทั่วไป หน้า 6–10', summary: 'รายงานสรุปผลการนิเทศด้วย AI' })[kind] || 'รายงานผลการนิเทศ';
+    }
+    function hasGeneralReportContent(record) {
+      const g = record.details && record.details.generalRecord;
+      if (!g) return false;
+      const meta = g.meta || {}, summary = g.summary || {};
+      return Object.values(meta).some(v => String(v || '').trim()) || Object.values(summary).some(v => Array.isArray(v) ? v.length > 0 : String(v || '').trim());
+    }
+    function reportRecordMatchesKind(record, kind) {
+      if (kind === 'general') return hasGeneralReportContent(record);
+      if (/^form[1-4]$/.test(kind)) return !hasGeneralReportContent(record);
+      return true;
+    }
+    function reportScoreMetrics(record, kind) {
+      if (/^form[1-4]$/.test(kind)) {
+        const index = Number(kind.slice(-1));
+        const maximum = [0,45,54,51,30][index];
+        const score = Number(record['score' + index]) || 0;
+        return { score, maximum, percent: maximum ? Math.round(score / maximum * 100) : 0 };
+      }
+      if (kind === 'general') {
+        const answers = ((record.details || {}).generalRecord || {}).answers || [];
+        const score = answers.reduce((sum, value) => sum + (value === 'N/A' || value === 'NA' ? 0 : Number(value) || 0), 0);
+        return { score, maximum: 24, percent: Math.round(score / 24 * 100) };
+      }
+      return { score: Number(record.totalScore) || 0, maximum: 150, percent: Number(record.pct) || 0 };
+    }
+    function reportDateInRange(record) {
+      const date = String(record.timestamp || '').slice(0, 10);
+      const from = document.getElementById('reportFrom').value;
+      const to = document.getElementById('reportTo').value;
+      return (!from || date >= from) && (!to || date <= to);
+    }
+    function reportNotes(record) {
+      const d = record.details || {}, f5 = d.form5 || {}, gs = (d.generalRecord || {}).summary || {};
+      return [gs.g_strengths || f5.strengths, gs.g_gaps || f5.gaps, gs.g_agreement || f5.agreement].filter(Boolean).map(escHtml).join('<br>') || '—';
+    }
+    function buildReportPreview() {
+      const type = document.getElementById('reportType').value;
+      const kind = document.getElementById('reportKind').value;
+      const status = document.getElementById('reportStatus');
+      status.textContent = 'กำลังโหลดผลนิเทศจาก Google Sheets...';
+      (async () => {
+        try {
+          const res = await api('getReportEvaluations', { type, sessionToken: currentUser.sessionToken });
+          if (!res || !res.success || !Array.isArray(res.data)) throw new Error('รูปแบบข้อมูลรายงานไม่ถูกต้อง');
+          reportSourceRecords = res.data;
+          reportPreviewRecords = reportSourceRecords.filter(r => reportRecordMatchesKind(r, kind) && reportDateInRange(r));
+          const records = reportPreviewRecords;
+          const mean = records.length ? Math.round(records.reduce((sum, r) => sum + reportScoreMetrics(r, kind).percent, 0) / records.length) : 0;
+          const from = document.getElementById('reportFrom').value || 'ไม่จำกัด';
+          const to = document.getElementById('reportTo').value || 'ไม่จำกัด';
+          const title = reportKindName(kind);
+          const body = records.map((r, i) => { const metric = reportScoreMetrics(r, kind); return `<tr><td>${i + 1}</td><td>${escHtml(r.timestamp)}</td><td>${escHtml(r.name)}<br><span class="small text-muted">${escHtml(r.id)} · ${escHtml(r.type)}</span></td><td>${escHtml(r.formType || title)}</td><td>${metric.score}/${metric.maximum}</td><td>${metric.percent}%</td><td>${escHtml(r.level || '—')}</td><td>${escHtml(r.supervisor || '—')}</td><td>${reportNotes(r)}</td></tr>`; }).join('');
+          document.getElementById('reportPreviewCount').textContent = records.length.toLocaleString() + ' รายการ';
+          document.getElementById('reportPreview').innerHTML = `<div style="text-align:center;"><h2>รายงานผลการนิเทศ</h2><h3>${escHtml(title)}</h3><p>ศูนย์: ${escHtml(type)} · ช่วงวันที่ ${escHtml(from)} ถึง ${escHtml(to)}</p></div><div class="tk-row mb-3"><div class="tk-cell"><span class="tk-val">${records.length.toLocaleString()}</span><span class="tk-lbl">รายการนิเทศ</span></div><div class="tk-cell"><span class="tk-val">${mean}%</span><span class="tk-lbl">ร้อยละเฉลี่ย</span></div><div class="tk-cell"><span class="tk-val">${new Set(records.map(r => r.id)).size.toLocaleString()}</span><span class="tk-lbl">ศูนย์ที่มีผลนิเทศ</span></div></div><div id="reportAiOutput" class="report-ai">${reportAiText}</div><table class="report-table"><thead><tr><th>#</th><th>วันที่</th><th>ศูนย์</th><th>แบบนิเทศ</th><th>คะแนน</th><th>ร้อยละ</th><th>ระดับ</th><th>ผู้นิเทศ</th><th>จุดเด่น / ประเด็นพัฒนา</th></tr></thead><tbody>${body || '<tr><td colspan="9" class="text-center">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>'}</tbody></table><p class="small text-muted" style="margin-top:14px;">จัดทำเมื่อ ${new Date().toLocaleString('th-TH')} · รายงานนี้ใช้เพื่อวางแผนสนับสนุนและพัฒนา ไม่ใช้เพื่อจัดอันดับ</p>`;
+          document.getElementById('reportPreviewCard').classList.remove('section-hidden');
+          status.textContent = 'แสดงตัวอย่างแล้ว · ' + records.length.toLocaleString() + ' รายการ';
+        } catch (err) {
+          status.textContent = 'โหลดรายงานไม่สำเร็จ: ' + err.message;
+        }
+      })();
+    }
+    async function generateReportSummary() {
+      const status = document.getElementById('reportStatus');
+      status.textContent = 'AI กำลังวิเคราะห์ข้อมูลรายงาน...';
+      try {
+        if (!reportPreviewRecords.length) {
+          const res = await api('getReportEvaluations', { type: document.getElementById('reportType').value, sessionToken: currentUser.sessionToken });
+          if (!res.success) throw new Error('โหลดข้อมูลไม่สำเร็จ');
+          reportSourceRecords = res.data || [];
+          reportPreviewRecords = reportSourceRecords.filter(r => reportRecordMatchesKind(r, document.getElementById('reportKind').value) && reportDateInRange(r));
+        }
+        const records = reportPreviewRecords;
+        if (!records.length) throw new Error('ไม่มีข้อมูลตามเงื่อนไขที่เลือก');
+        const kind = document.getElementById('reportKind').value;
+        const avg = Math.round(records.reduce((sum, r) => sum + reportScoreMetrics(r, kind).percent, 0) / records.length);
+        const aiRecords = records.slice(0, 100).map(r => ({ date: r.timestamp, type: r.type, name: r.name, formType: r.formType, ...reportScoreMetrics(r, kind), level: r.level, answers: r.details && r.details.answers, generalSummary: r.details && r.details.generalRecord && r.details.generalRecord.summary, form5: r.details && r.details.form5 }));
+        const res = await api('generateReportAI', { sessionToken: currentUser.sessionToken, report: { kind: reportKindName(document.getElementById('reportKind').value), title: 'รายงานผลการนิเทศ', filters: { type: document.getElementById('reportType').value, from: document.getElementById('reportFrom').value, to: document.getElementById('reportTo').value }, totals: { count: records.length, averagePercent: avg, centers: new Set(records.map(r => r.id)).size } }, records: aiRecords });
+        if (!res.success) throw new Error(res.message || 'AI สรุปไม่สำเร็จ');
+        reportAiText = '<h3>บทสรุปโดย AI</h3>' + renderChatReply(res.text || '');
+        if (document.getElementById('reportPreviewCard').classList.contains('section-hidden')) {
+          document.getElementById('reportPreviewCard').classList.remove('section-hidden');
+          buildReportPreview();
+        } else {
+          const output = document.getElementById('reportAiOutput');
+          if (output) output.innerHTML = reportAiText;
+        }
+        status.textContent = 'AI สรุปเรียบร้อย · กรุณาตรวจทานก่อนนำไปใช้';
+      } catch (err) {
+        status.textContent = 'สรุปด้วย AI ไม่สำเร็จ: ' + err.message;
+      }
+    }
+    function printReportPDF() {
+      if (document.getElementById('reportPreviewCard').classList.contains('section-hidden')) {
+        Swal.fire({ icon: 'info', title: 'ยังไม่มีตัวอย่างรายงาน', text: 'กดแสดงตัวอย่างก่อนส่งออก PDF' });
+        return;
+      }
+      window.print();
     }
 
     // ---- ผู้ดูแลระบบ: จัดการผู้ใช้ (อนุมัติ / ระงับ / เปิดใช้งาน) ----
