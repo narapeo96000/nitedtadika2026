@@ -11,7 +11,7 @@ const { fixture, html, root } = require('./report-fixtures.cjs');
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     const { record, general } = fixture();
-    const center = { id: record.id, name: record.name, type: record.type, teachers: {}, students: {} };
+    const center = { id: record.id, name: record.name, type: record.type, teachers: { male: 11, female: 12, total: 30 }, students: { male: 41, female: 42, total: 90 }, foreignStudents: 0 };
     await page.addInitScript(() => { window.tailwind = {}; window.Swal = { fire: async () => ({}), close() {}, showLoading() {} }; });
     await page.route('**/*', async route => {
       const url = new URL(route.request().url());
@@ -34,6 +34,14 @@ const { fixture, html, root } = require('./report-fixtures.cjs');
     });
     await page.goto('https://report.test/');
     await page.waitForFunction(() => tadikaList.length === 1);
+    assert.match(await page.locator('#addrBody td[data-label="ผู้สอน (ชาย / หญิง / รวม)"]').innerText(), /11 \/ 12 \/ 30/);
+    assert.match(await page.locator('#addrBody td[data-label="ผู้เรียน (ชาย / หญิง / รวม)"]').innerText(), /41 \/ 42 \/ 90/);
+    assert.match(await page.locator('#addrBody').innerText(), /ต่างชาติ: 0/);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 2), false);
+    await page.setViewportSize({ width: 1280, height: 900 });
+    assert.equal(await page.locator('#addrHead tr:last-child th').count(), 5);
+    assert.equal(await page.locator('#addrBody tr:first-child td').count(), 5);
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.evaluate(() => {
       currentUser = { sessionToken: 'synthetic-session' };
       document.getElementById('loginSection').classList.add('section-hidden');
