@@ -624,7 +624,7 @@
       <div id="reportSection" class="card section-hidden no-print">
         <div class="card-title"><h4>📊 รายงานผลการนิเทศ</h4><span class="badge">Preview / PDF</span></div>
         <div class="row">
-          <div class="col-6"><label for="reportType">ประเภทศูนย์</label><select id="reportType" class="form-select"><option value="ทั้งหมด">ทั้งหมด</option><option value="ตาดีกา">ตาดีกา / ศอม.</option><option value="ปอเนาะ">ปอเนาะ</option></select></div>
+          <div class="col-6"><label for="reportCenter">ตาดีกาที่เลือก</label><input id="reportCenter" class="form-control" readonly placeholder="กรุณาเลือกตาดีกาก่อนออกรายงาน"></div>
           <div class="col-6"><label for="reportKind">รูปแบบรายงาน</label><select id="reportKind" class="form-select"><option value="all">ภาพรวมทุกแบบนิเทศ</option><option value="form1">แบบที่ 1 การนำหลักสูตรไปใช้</option><option value="form2">แบบที่ 2 สังเกตการจัดการเรียนรู้</option><option value="form3">แบบที่ 3 วัดและประเมินผล</option><option value="form4">แบบที่ 4 สังเกตผู้เรียน</option><option value="general">ผู้นิเทศทั่วไป หน้า 6–10</option><option value="summary">แบบรายงานสรุปด้วย AI</option></select></div>
           <div class="col-6"><label for="reportFrom">ตั้งแต่วันที่</label><input type="date" id="reportFrom" class="form-control"></div>
           <div class="col-6"><label for="reportTo">ถึงวันที่</label><input type="date" id="reportTo" class="form-control"></div>
@@ -1336,12 +1336,41 @@
     let reportSourceRecords = [];
     let reportPreviewRecords = [];
     let reportAiText = '';
+    let reportRequest = 0;
+    let reportPreviewKey = '';
+    function reportContext() {
+      if (!selectedTadika || !String(selectedTadika.id || '').trim() || selectedTadika.type !== 'ตาดีกา') return null;
+      return { centerId: String(selectedTadika.id).trim(), centerName: selectedTadika.name,
+        type: 'ตาดีกา', kind: document.getElementById('reportKind').value,
+        from: document.getElementById('reportFrom').value, to: document.getElementById('reportTo').value };
+    }
+    function invalidateReport() {
+      reportRequest++;
+      reportSourceRecords = [];
+      reportPreviewRecords = [];
+      reportAiText = '';
+      reportPreviewKey = '';
+      document.getElementById('reportPreview').innerHTML = '';
+      document.getElementById('reportPreviewCount').textContent = '0 รายการ';
+      document.getElementById('reportPreviewCard').classList.add('section-hidden');
+      const context = reportContext();
+      document.getElementById('reportCenter').value = context ? context.centerName + ' (' + context.centerId + ')' : '';
+      document.getElementById('reportStatus').textContent = context ? 'รายงานเฉพาะตาดีกาที่เลือก · กดแสดงตัวอย่างเพื่อโหลดข้อมูล' : 'กรุณาเลือกตาดีกาก่อนออกรายงาน';
+    }
+    function reportRequestIsCurrent(request, context) {
+      return request === reportRequest && JSON.stringify(context) === JSON.stringify(reportContext());
+    }
+    ['reportKind', 'reportFrom', 'reportTo'].forEach(id => document.getElementById(id).addEventListener('change', invalidateReport));
     function openReportMenu() {
+      const context = reportContext();
+      document.getElementById('reportCenter').value = context ? context.centerName + ' (' + context.centerId + ')' : '';
+      if (!context) invalidateReport();
       const section = document.getElementById('reportSection');
       section.classList.remove('section-hidden');
       section.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     function closeReportMenu() {
+      invalidateReport();
       document.getElementById('reportSection').classList.add('section-hidden');
       document.getElementById('reportPreviewCard').classList.add('section-hidden');
     }
@@ -1373,74 +1402,77 @@
       }
       return { score: Number(record.totalScore) || 0, maximum: 150, percent: Number(record.pct) || 0 };
     }
-    function reportDateInRange(record) {
+    function reportDateInRange(record, context) {
       const date = String(record.timestamp || '').slice(0, 10);
-      const from = document.getElementById('reportFrom').value;
-      const to = document.getElementById('reportTo').value;
+      const from = context.from;
+      const to = context.to;
       return (!from || date >= from) && (!to || date <= to);
     }
     function reportNotes(record) {
       const d = record.details || {}, f5 = d.form5 || {}, gs = (d.generalRecord || {}).summary || {};
       return [gs.g_strengths || f5.strengths, gs.g_gaps || f5.gaps, gs.g_agreement || f5.agreement].filter(Boolean).map(escHtml).join('<br>') || '—';
     }
-    function buildReportPreview() {
-      const type = document.getElementById('reportType').value;
-      const kind = document.getElementById('reportKind').value;
+    async function buildReportPreview() {
+      invalidateReport();
+      const context = reportContext();
+      if (!context) return null;
+      const request = reportRequest;
+      const type = context.centerName + ' (รหัส ' + context.centerId + ')';
+      const kind = context.kind;
       const status = document.getElementById('reportStatus');
+      if (context.from && context.to && context.from > context.to) {
+        status.textContent = 'วันที่เริ่มต้นต้องไม่เกินวันที่สิ้นสุด';
+        return null;
+      }
       status.textContent = 'กำลังโหลดผลนิเทศจาก Google Sheets...';
-      (async () => {
         try {
-          const res = await api('getReportEvaluations', { type, sessionToken: currentUser.sessionToken });
-          if (!res || !res.success || !Array.isArray(res.data)) throw new Error('รูปแบบข้อมูลรายงานไม่ถูกต้อง');
-          reportSourceRecords = res.data;
-          reportPreviewRecords = reportSourceRecords.filter(r => reportRecordMatchesKind(r, kind) && reportDateInRange(r));
+          const res = await api('getReportEvaluations', { ...context, sessionToken: currentUser.sessionToken });
+          if (!reportRequestIsCurrent(request, context)) return null;
+          if (!res || !res.success || !Array.isArray(res.data)) throw new Error((res && res.message) || 'รูปแบบข้อมูลรายงานไม่ถูกต้อง');
+          reportSourceRecords = res.data.filter(r => String(r.id).trim() === context.centerId && r.type === context.type);
+          reportPreviewRecords = reportSourceRecords.filter(r => reportRecordMatchesKind(r, kind) && reportDateInRange(r, context));
           const records = reportPreviewRecords;
           const mean = records.length ? Math.round(records.reduce((sum, r) => sum + reportScoreMetrics(r, kind).percent, 0) / records.length) : 0;
-          const from = document.getElementById('reportFrom').value || 'ไม่จำกัด';
-          const to = document.getElementById('reportTo').value || 'ไม่จำกัด';
+          const from = context.from || 'ไม่จำกัด';
+          const to = context.to || 'ไม่จำกัด';
           const title = reportKindName(kind);
           const body = records.map((r, i) => { const metric = reportScoreMetrics(r, kind); return `<tr><td>${i + 1}</td><td>${escHtml(r.timestamp)}</td><td>${escHtml(r.name)}<br><span class="small text-muted">${escHtml(r.id)} · ${escHtml(r.type)}</span></td><td>${escHtml(r.formType || title)}</td><td>${metric.score}/${metric.maximum}</td><td>${metric.percent}%</td><td>${escHtml(r.level || '—')}</td><td>${escHtml(r.supervisor || '—')}</td><td>${reportNotes(r)}</td></tr>`; }).join('');
           document.getElementById('reportPreviewCount').textContent = records.length.toLocaleString() + ' รายการ';
           document.getElementById('reportPreview').innerHTML = `<div style="text-align:center;"><h2>รายงานผลการนิเทศ</h2><h3>${escHtml(title)}</h3><p>ศูนย์: ${escHtml(type)} · ช่วงวันที่ ${escHtml(from)} ถึง ${escHtml(to)}</p></div><div class="tk-row mb-3"><div class="tk-cell"><span class="tk-val">${records.length.toLocaleString()}</span><span class="tk-lbl">รายการนิเทศ</span></div><div class="tk-cell"><span class="tk-val">${mean}%</span><span class="tk-lbl">ร้อยละเฉลี่ย</span></div><div class="tk-cell"><span class="tk-val">${new Set(records.map(r => r.id)).size.toLocaleString()}</span><span class="tk-lbl">ศูนย์ที่มีผลนิเทศ</span></div></div><div id="reportAiOutput" class="report-ai">${reportAiText}</div><table class="report-table"><thead><tr><th>#</th><th>วันที่</th><th>ศูนย์</th><th>แบบนิเทศ</th><th>คะแนน</th><th>ร้อยละ</th><th>ระดับ</th><th>ผู้นิเทศ</th><th>จุดเด่น / ประเด็นพัฒนา</th></tr></thead><tbody>${body || '<tr><td colspan="9" class="text-center">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>'}</tbody></table><p class="small text-muted" style="margin-top:14px;">จัดทำเมื่อ ${new Date().toLocaleString('th-TH')} · รายงานนี้ใช้เพื่อวางแผนสนับสนุนและพัฒนา ไม่ใช้เพื่อจัดอันดับ</p>`;
           document.getElementById('reportPreviewCard').classList.remove('section-hidden');
           status.textContent = 'แสดงตัวอย่างแล้ว · ' + records.length.toLocaleString() + ' รายการ';
+          reportPreviewKey = JSON.stringify(context);
+          return { context, request, records };
         } catch (err) {
-          status.textContent = 'โหลดรายงานไม่สำเร็จ: ' + err.message;
+          if (reportRequestIsCurrent(request, context)) status.textContent = 'โหลดรายงานไม่สำเร็จ: ' + err.message;
+          return null;
         }
-      })();
     }
     async function generateReportSummary() {
+      const preview = await buildReportPreview();
+      if (!preview) return;
+      const { context, request, records } = preview;
+      if (!reportRequestIsCurrent(request, context)) return;
       const status = document.getElementById('reportStatus');
       status.textContent = 'AI กำลังวิเคราะห์ข้อมูลรายงาน...';
       try {
-        if (!reportPreviewRecords.length) {
-          const res = await api('getReportEvaluations', { type: document.getElementById('reportType').value, sessionToken: currentUser.sessionToken });
-          if (!res.success) throw new Error('โหลดข้อมูลไม่สำเร็จ');
-          reportSourceRecords = res.data || [];
-          reportPreviewRecords = reportSourceRecords.filter(r => reportRecordMatchesKind(r, document.getElementById('reportKind').value) && reportDateInRange(r));
-        }
-        const records = reportPreviewRecords;
         if (!records.length) throw new Error('ไม่มีข้อมูลตามเงื่อนไขที่เลือก');
-        const kind = document.getElementById('reportKind').value;
+        const kind = context.kind;
         const avg = Math.round(records.reduce((sum, r) => sum + reportScoreMetrics(r, kind).percent, 0) / records.length);
-        const aiRecords = records.slice(0, 100).map(r => ({ date: r.timestamp, type: r.type, name: r.name, formType: r.formType, ...reportScoreMetrics(r, kind), level: r.level, answers: r.details && r.details.answers, generalSummary: r.details && r.details.generalRecord && r.details.generalRecord.summary, form5: r.details && r.details.form5 }));
-        const res = await api('generateReportAI', { sessionToken: currentUser.sessionToken, report: { kind: reportKindName(document.getElementById('reportKind').value), title: 'รายงานผลการนิเทศ', filters: { type: document.getElementById('reportType').value, from: document.getElementById('reportFrom').value, to: document.getElementById('reportTo').value }, totals: { count: records.length, averagePercent: avg, centers: new Set(records.map(r => r.id)).size } }, records: aiRecords });
+        const aiRecords = records.slice(0, 100).map(r => ({ id: r.id, date: r.timestamp, type: r.type, name: r.name, formType: r.formType, ...reportScoreMetrics(r, kind), level: r.level, answers: r.details && r.details.answers, generalSummary: r.details && r.details.generalRecord && r.details.generalRecord.summary, form5: r.details && r.details.form5 }));
+        const res = await api('generateReportAI', { sessionToken: currentUser.sessionToken, report: { kind: reportKindName(kind), title: 'รายงานผลการนิเทศ', filters: context, totals: { count: records.length, averagePercent: avg, centers: 1 } }, records: aiRecords });
+        if (!reportRequestIsCurrent(request, context)) return;
         if (!res.success) throw new Error(res.message || 'AI สรุปไม่สำเร็จ');
         reportAiText = '<h3>บทสรุปโดย AI</h3>' + renderChatReply(res.text || '');
-        if (document.getElementById('reportPreviewCard').classList.contains('section-hidden')) {
-          document.getElementById('reportPreviewCard').classList.remove('section-hidden');
-          buildReportPreview();
-        } else {
-          const output = document.getElementById('reportAiOutput');
-          if (output) output.innerHTML = reportAiText;
-        }
+        const output = document.getElementById('reportAiOutput');
+        if (output) output.innerHTML = reportAiText;
         status.textContent = 'AI สรุปเรียบร้อย · กรุณาตรวจทานก่อนนำไปใช้';
       } catch (err) {
-        status.textContent = 'สรุปด้วย AI ไม่สำเร็จ: ' + err.message;
+        if (reportRequestIsCurrent(request, context)) status.textContent = 'สรุปด้วย AI ไม่สำเร็จ: ' + err.message;
       }
     }
     function printReportPDF() {
-      if (document.getElementById('reportPreviewCard').classList.contains('section-hidden')) {
+      if (!reportContext() || reportPreviewKey !== JSON.stringify(reportContext()) || document.getElementById('reportPreviewCard').classList.contains('section-hidden')) {
         Swal.fire({ icon: 'info', title: 'ยังไม่มีตัวอย่างรายงาน', text: 'กดแสดงตัวอย่างก่อนส่งออก PDF' });
         return;
       }
@@ -1648,6 +1680,7 @@
       const q = document.getElementById(c.search).value.trim().toLowerCase();
       const box = document.getElementById(c.suggest);
       c.selected = null;
+      if (key === 'sel') { selectedTadika = null; invalidateReport(); updatePinMap(); }
       document.getElementById(c.info).classList.add('d-none');
       if (c.btn) document.getElementById(c.btn).disabled = true;
       if (!q) { box.classList.add('d-none'); box.innerHTML = ''; if (key === 'addr') renderAddrTable(); return; }
@@ -1677,7 +1710,7 @@
       const t = c.matches[i];
       if (!t) return;
       c.selected = t;
-      if (key === 'sel') { selectedTadika = t; updatePinMap(); }
+      if (key === 'sel') { selectedTadika = t; invalidateReport(); updatePinMap(); }
       document.getElementById(c.search).value = tadikaLabel(t);
       document.getElementById(c.suggest).classList.add('d-none');
       document.getElementById(c.selName).innerText = tadikaLabel(t);
@@ -1717,7 +1750,7 @@
       const c = autoReg[key];
       c.matches = [t];
       c.selected = t;
-      if (key === 'sel') { selectedTadika = t; updatePinMap(); }
+      if (key === 'sel') { selectedTadika = t; invalidateReport(); updatePinMap(); }
       document.getElementById(c.search).value = tadikaLabel(t);
       document.getElementById(c.suggest).classList.add('d-none');
       document.getElementById(c.selName).innerText = tadikaLabel(t);
@@ -1747,6 +1780,7 @@
       const c = autoReg.sel;
       c.selected = null;
       selectedTadika = null;
+      invalidateReport();
       updatePinMap();
       document.getElementById(c.search).value = '';
       document.getElementById(c.suggest).classList.add('d-none');

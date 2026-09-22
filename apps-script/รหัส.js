@@ -505,20 +505,23 @@ function getReportSession(payload) {
   try { return JSON.parse(raw); } catch (e) { return null; }
 }
 
-// --- รายงานผลการนิเทศ: อ่านรายการบันทึกจาก DATA_TADEKA และ DATA_PONDOK ---
+// --- รายงานเฉพาะรหัสตาดีกาที่เลือก ห้ามส่งข้อมูลทุกศูนย์เมื่อไม่ระบุรหัส ---
 function getReportEvaluations(filters) {
   if (!getReportSession(filters)) return {success: false, message: 'หมดเวลาเข้าสู่ระบบ กรุณาเข้าสู่ระบบใหม่'};
+  const centerId = String(filters.centerId || '').trim();
+  if (!centerId || filters.type !== TYPE_TADEKA) return {success: false, message: 'กรุณาเลือกตาดีกาก่อนออกรายงาน'};
   const ss = SpreadsheetApp.openById(SHEET_ID);
   const list = [];
   for (const cfg of DATA_SHEETS) {
-    if (filters.type && filters.type !== 'ทั้งหมด' && filters.type !== cfg.type) continue;
+    if (cfg.type !== TYPE_TADEKA) continue;
     const sheet = ss.getSheetByName(cfg.name);
     if (!sheet || sheet.getLastRow() < 2) continue;
     const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, DATA_HEADERS.length).getValues();
     rows.forEach((r, i) => {
+      if (String(r[1] || '').trim() !== centerId) return;
       let details = {};
       try { details = JSON.parse(r[11] || '{}') || {}; } catch (e) { details = {}; }
-      list.push({ row: i + 2, type: cfg.type, timestamp: formatDate(r[0]), id: String(r[1] || ''),
+      list.push({ row: i + 2, type: cfg.type, timestamp: formatDate(r[0]), id: centerId,
         name: String(r[2] || ''), formType: String(r[3] || ''), score1: r[4], score2: r[5],
         score3: r[6], score4: r[7], totalScore: r[8], pct: r[9], level: String(r[10] || ''),
         details: details, supervisor: String(r[12] || '') });
@@ -531,11 +534,18 @@ function getReportEvaluations(filters) {
 // --- สังเคราะห์รายงานด้วย Gemini โดยใช้เฉพาะข้อมูลที่ผ่านตัวกรองจากหน้ารายงาน ---
 function generateReportAI(payload) {
   if (!getReportSession(payload)) return {success: false, message: 'หมดเวลาเข้าสู่ระบบ กรุณาเข้าสู่ระบบใหม่'};
+  const report = payload.report || {};
+  const filters = report.filters || {};
+  const centerId = String(filters.centerId || '').trim();
+  if (!centerId || filters.type !== TYPE_TADEKA) return {success: false, message: 'กรุณาเลือกตาดีกาก่อนออกรายงาน'};
+  const sourceRecords = Array.isArray(payload.records) ? payload.records : [];
+  if (sourceRecords.some(r => !r || String(r.id || '').trim() !== centerId || r.type !== TYPE_TADEKA)) {
+    return {success: false, message: 'ข้อมูลรายงานต้องเป็นของตาดีกาที่เลือกเท่านั้น'};
+  }
+  const records = sourceRecords.slice(0, 100);
+  if (!records.length) return {success: false, message: 'ไม่มีข้อมูลผลนิเทศในช่วงที่เลือก'};
   const settings = getSystemSettings();
   if (!settings.geminiKey) return {success: false, message: 'ยังไม่ได้ตั้งค่า Gemini API Key'};
-  const report = payload.report || {};
-  const records = Array.isArray(payload.records) ? payload.records.slice(0, 100) : [];
-  if (!records.length) return {success: false, message: 'ไม่มีข้อมูลผลนิเทศในช่วงที่เลือก'};
   const context = JSON.stringify({ title: report.title || 'รายงานผลการนิเทศ', filters: report.filters || {},
     totals: report.totals || {}, records: records });
   const prompt = 'ช่วยเรียบเรียงรายงานผลการนิเทศภาษาไทยอย่างเป็นทางการ โดยยึดข้อมูลในบริบทเท่านั้น ห้ามแต่งตัวเลขหรือสรุปเกินหลักฐาน ระบุภาพรวม จุดแข็ง ประเด็นที่ควรสนับสนุน และข้อเสนอแนะเชิงพัฒนา ใช้ถ้อยคำไม่จัดอันดับหรือตีตราศูนย์ หากจำนวนข้อมูลเกิน 100 รายการ บริบทนี้เป็นเพียงตัวอย่างที่ระบบส่งให้ประกอบสถิติรวม จึงห้ามอนุมานความถี่เกินสถิติรวม ข้อมูลรายงาน: ' + (report.kind || 'รายงานสรุป');
