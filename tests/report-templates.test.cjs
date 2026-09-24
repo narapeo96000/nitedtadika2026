@@ -18,7 +18,7 @@ test('each scored form uses all and only its live-schema questions, evidence, me
 
 test('general form preserves N/A, zero, notes, help and follow-up checkbox details', () => {
   const { templates, config, general, context } = fixture();
-  const output = templates.render([general], { ...context, kind: 'general' }, config);
+  const output = templates.render([general], { ...context, kind: 'form8' }, config);
   assert.equal((output.match(/>X<\/td>/g) || []).length, 12);
   assert.equal((output.match(/aria-label="N\/A">X/g) || []).length, 2);
   assert.equal((output.match(/aria-label="0">X/g) || []).length, 2);

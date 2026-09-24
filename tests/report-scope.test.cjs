@@ -146,7 +146,7 @@ test('AI sends selected ID only and ignores responses after center/filter change
     assert.equal(pending[1].payload.report.filters.centerId, '001');
     assert.deepEqual(Array.from(pending[1].payload.records, r => r.id), ['001']);
     if (change === 'center') element('reportCenter').value = '002';
-    if (change === 'filter') element('reportKind').value = 'general';
+    if (change === 'filter') element('reportKind').value = 'form8';
     if (change === 'close') ctx.closeReportMenu(); else ctx.invalidateReport();
     pending[1].resolve({ success: true, text: 'Old center summary' });
     await task;

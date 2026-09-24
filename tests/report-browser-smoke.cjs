@@ -64,7 +64,7 @@ const { fixture, html, root } = require('./report-fixtures.cjs');
     await page.locator('#reportCenterSearch').focus();
     await page.locator('#reportCenterSearch').press('Escape');
     assert.equal(await page.locator('#reportCenterSearch').getAttribute('aria-expanded'), 'false');
-    for (const [kind, no] of [['form1', '1'], ['form2', '2'], ['form3', '3'], ['form4', '4'], ['form5', '5'], ['general', '6']]) {
+    for (const [kind, no] of [['form8', '6']]) {
       await page.locator('#reportKind').selectOption(kind);
       await page.getByRole('button', { name: '🔎 แสดงตัวอย่าง', exact: true }).click();
       await page.waitForFunction(() => document.getElementById('reportStatus').textContent.startsWith('แสดงตัวอย่างแล้ว'));

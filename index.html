@@ -667,7 +667,7 @@
             <div id="reportCenterCount" class="small text-muted" role="status" aria-live="polite"></div>
             <div class="small text-muted">เลือกได้ครั้งละหนึ่งตาดีกา ไม่เปลี่ยนศูนย์ในแบบบันทึกการนิเทศ</div>
           </div>
-          <div class="col-6"><label for="reportKind">รูปแบบรายงาน</label><select id="reportKind" class="form-select"><option value="all">ทุกแบบนิเทศของตาดีกาที่เลือก</option><option value="form1">แบบที่ 1 การนำหลักสูตรไปใช้</option><option value="form2">แบบที่ 2 สังเกตการจัดการเรียนรู้</option><option value="form3">แบบที่ 3 วัดและประเมินผล</option><option value="form4">แบบที่ 4 สุ่มผลลัพธ์ผู้เรียน</option><option value="form5">แบบที่ 5 สรุปและแผนพัฒนา</option><option value="general">ผู้นิเทศทั่วไป หน้า 6–10</option><option value="summary">แบบรายงานสรุปด้วย AI</option></select></div>
+          <div class="col-6"><label for="reportKind">รูปแบบรายงาน</label><select id="reportKind" class="form-select"><option value="form8">แบบที่ 8 หน้าเดียว</option><option value="summary">แบบรายงานสรุปด้วย AI</option></select></div>
           <div class="col-6"><label for="reportFrom">ตั้งแต่วันที่</label><input type="date" id="reportFrom" class="form-control"></div>
           <div class="col-6"><label for="reportTo">ถึงวันที่</label><input type="date" id="reportTo" class="form-control"></div>
         </div>
@@ -1520,13 +1520,13 @@
       document.getElementById('reportPreviewCard').classList.add('section-hidden');
     }
     function reportKindName(kind) {
-      return ({ all: 'ผลการนิเทศทุกแบบของตาดีกาที่เลือก', form1: 'แบบที่ 1 การนำหลักสูตรไปใช้', form2: 'แบบที่ 2 สังเกตการจัดการเรียนรู้', form3: 'แบบที่ 3 วัดและประเมินผล', form4: 'แบบที่ 4 สุ่มผลลัพธ์ผู้เรียน', form5: 'แบบที่ 5 สรุปและแผนพัฒนา', general: 'ผลผู้นิเทศทั่วไป หน้า 6–10', summary: 'รายงานสรุปผลการนิเทศด้วย AI' })[kind] || 'รายงานผลการนิเทศ';
+      return ({ form8: 'แบบที่ 8 หน้าเดียว', summary: 'รายงานสรุปผลการนิเทศด้วย AI' })[kind] || 'รายงานผลการนิเทศ';
     }
     function hasGeneralReportContent(record) {
       return ReportTemplates.hasGeneral(record);
     }
     function reportRecordMatchesKind(record, kind) {
-      if (kind === 'general') return hasGeneralReportContent(record);
+      if (kind === 'form8') return hasGeneralReportContent(record);
       if (/^form[1-5]$/.test(kind)) return ReportTemplates.hasLegacy(record);
       return true;
     }
@@ -1537,7 +1537,7 @@
         const score = Number(record['score' + index]) || 0;
         return { score, maximum, percent: maximum ? Math.round(score / maximum * 100) : 0 };
       }
-      if (kind === 'general') {
+      if (kind === 'form8') {
         const answers = ((record.details || {}).generalRecord || {}).answers || [];
         const score = answers.reduce((sum, value) => sum + (value === 'N/A' || value === 'NA' ? 0 : Number(value) || 0), 0);
         return { score, maximum: 24, percent: Math.round(score / 24 * 100) };

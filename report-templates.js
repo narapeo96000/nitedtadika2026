@@ -116,7 +116,7 @@
   function render(records, context, config) {
     if (!records.length) return '<p class="report-empty">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</p>';
     return records.map(record => {
-      if (context.kind === 'general') return general(record, config, context);
+      if (context.kind === 'form8' || context.kind === 'general') return general(record, config, context);
       if (context.kind === 'form5') return summaryForm(record, config, context);
       const schema = config.forms.find(f => 'form' + f.no === context.kind);
       if (schema) return standard(record, schema, context);
