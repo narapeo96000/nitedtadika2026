@@ -2636,6 +2636,7 @@
     function editEvaluation(idx) {
       const h = evalHistory[idx];
       if (!h) return;
+      resetEvalForm();
       document.getElementById('editRow').value = h.row;
       document.getElementById('editType').value = h.type || '';
       document.getElementById('editBanner').classList.remove('d-none');
@@ -2646,6 +2647,9 @@
       const answers = details.answers || null;
       const notes = details.notes || null;
       const colScores = [h.score1, h.score2, h.score3, h.score4];
+      const gr = details.generalRecord || {};
+      const gAnswers = Array.isArray(gr.answers) ? gr.answers : [];
+      const gNotes = Array.isArray(gr.notes) ? gr.notes : [];
 
       // 1) คะแนนรายข้อ
       FORMS.forEach((f) => {
@@ -2677,6 +2681,20 @@
         });
       });
 
+      // โหลดคะแนนและบันทึกข้อสังเกตของแบบที่ 6 กลับเข้าหน้ากรอกข้อมูล
+      let gi = 0;
+      GENERAL_SCHEMA.sections.forEach((s, si) => {
+        s.items.forEach((it, ii) => {
+          const raw = gAnswers[gi];
+          const value = raw === 'N/A' || raw === 'NA' ? 'NA' : (raw == null || raw === '' ? 0 : Number(raw));
+          const btn = document.querySelector(`.form-panel[data-form="6"] .q-scale[data-q="${ii}"] button[data-v="${value}"]`);
+          if (btn) btn.classList.add('sel');
+          const note = document.getElementById(`note_6_${si}_${ii}`);
+          if (note && gNotes[gi] != null) tkSet(note.id, gNotes[gi]);
+          gi++;
+        });
+      });
+
       // 3) Meta (แบบ 2/3/4)
       const m2 = details.form2 || {}, m3 = details.form3 || {}, m4 = details.form4 || {};
       const setMeta = (obj) => Object.keys(obj).forEach(k => {
@@ -2700,7 +2718,6 @@
         f5_change: f5.change, f5_evidence: f5.evidence,
         f5_nextAction: f5.nextAction, f5_summary: f5.summary
       });
-      const gr = details.generalRecord || {};
       const gm = gr.meta || {}, gs = gr.summary || {};
       setMeta({
         g_date: gm.date, g_contact: gm.contact, g_levels: gm.levels, g_students: gm.students, g_teachers: gm.teachers,
