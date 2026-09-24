@@ -533,16 +533,6 @@
             <span>จดจำรหัสผ่าน</span>
           </label>
         </div>
-        <label>เลือกศูนย์ที่จะนิเทศ (ตาดีกา/ปอเนาะ) <span class="small text-muted">(พิมพ์ค้นหาได้)</span></label>
-        <div class="position-relative">
-          <input type="text" id="lgTadikaSearch" class="form-control" placeholder="ชื่อตาดีกา / มัสยิด / ตำบล / อำเภอ..."
-                 autocomplete="off" oninput="filterTadika('lg')" onkeydown="tadikaKey('lg', event)">
-          <div id="lgTadikaSuggest" class="suggest-box d-none"></div>
-        </div>
-        <div id="lgSelInfo" class="info-box d-none">
-          <b id="lgSelName"></b><br>
-          <span id="lgSelDetail" class="small text-muted"></span>
-        </div>
         <button class="btn btn-primary w-100 mt-3" id="loginBtn" onclick="handleLogin(event)">เข้าสู่ระบบ</button>
         <p class="text-center mt-3 mb-0 small">
           ยังไม่มีบัญชี? <a href="javascript:void(0)" style="color:var(--primary); font-weight:600;" onclick="showRegister()">สมัครสมาชิก</a>
@@ -1723,9 +1713,6 @@
       if (!user || !pass) {
         return Swal.fire({ icon: 'warning', title: 'กรอกข้อมูลไม่ครบ', text: 'กรุณากรอก Username และ Password ให้ครบ' });
       }
-      if (!autoReg.lg.selected) {
-        return Swal.fire({ icon: 'warning', title: 'ยังไม่ได้เลือกศูนย์', text: 'กรุณาพิมพ์ค้นหาและเลือกศูนย์ที่จะนิเทศก่อนเข้าสู่ระบบ' });
-      }
       const btn = document.getElementById('loginBtn');
       btn.disabled = true;
       showLoading('กำลังตรวจสอบข้อมูลผู้ใช้...');
@@ -1750,8 +1737,9 @@
           document.getElementById('appSection').classList.remove('section-hidden');
           const adminCard = document.getElementById('adminCard');
           if (currentUser.role === 'ผู้ดูแลระบบ') { adminCard.classList.remove('section-hidden'); loadUsers(); }
-          const sel = autoReg.lg.selected;
-          if (sel) { selectByObj('sel', sel); }
+          // เลือกสถานที่นิเทศหลังเข้าสู่ระบบจากการ์ด "เลือกศูนย์" ด้านล่าง
+          clearTadikaSelection();
+          document.getElementById('tadikaSearch').focus();
           initPinMap();
         } else {
           Swal.fire({ icon: 'error', title: 'เข้าสู่ระบบล้มเหลว', html: escHtml(res.message) });

@@ -1,0 +1,11 @@
+const assert = require('node:assert/strict');
+const { readFileSync } = require('node:fs');
+const path = require('node:path');
+const html = readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+const login = html.slice(html.indexOf('id="loginSection"'), html.indexOf('id="registerSection"'));
+const loginHandler = html.slice(html.indexOf('async function handleLogin'), html.indexOf('async function doRegister'));
+assert.doesNotMatch(login, /lgTadikaSearch|lgTadikaSuggest|lgSelInfo/);
+assert.doesNotMatch(loginHandler, /autoReg\.lg\.selected|ยังไม่ได้เลือกศูนย์/);
+assert.match(loginHandler, /clearTadikaSelection\(\)/);
+assert.match(html, /id="tadikaSearch"/);
+console.log('Login does not require a center; center selection is available after login.');
