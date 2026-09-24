@@ -419,6 +419,7 @@
       text-align: center; color: var(--muted); font-size: .78rem;
       padding: 10px 14px 22px; line-height: 1.7;
     }
+    #evaluationSection.report-mode > form > *:not(#reportSection):not(#reportPreviewCard) { display:none !important; }
     .app-footer .org { font-weight: 600; color: var(--primary-deep); }
 
     @media (max-width: 480px) {
@@ -654,37 +655,6 @@
         <button type="button" class="btn btn-outline" onclick="openReportMenu()">📊 รายงานผลการนิเทศ</button>
       </div>
 
-      <div id="reportSection" class="card section-hidden no-print">
-        <div class="card-title"><h4>📊 รายงานผลการนิเทศ</h4><span class="badge">Preview / PDF</span></div>
-        <div class="row">
-          <div class="col-6">
-            <label for="reportCenterSearch">ค้นหาและเลือกตาดีกาที่ต้องการรายงาน</label>
-            <div id="reportCenterPicker" class="report-center-picker">
-              <input type="search" id="reportCenterSearch" class="form-control" placeholder="พิมพ์ชื่อ รหัส อำเภอ หรือตำบล แล้วเลือกรายชื่อ" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="reportCenterOptions" aria-describedby="reportCenterCount" oninput="filterReportCenters()" onfocus="openReportCenterSuggestions()" onkeydown="reportCenterKey(event)" onblur="if (!document.getElementById('reportCenterPicker').contains(event.relatedTarget)) closeReportCenterSuggestions()">
-              <input type="hidden" id="reportCenter">
-              <div id="reportCenterOptions" class="report-center-options d-none" role="listbox" aria-label="รายชื่อตาดีกา"></div>
-            </div>
-            <div id="reportCenterCount" class="small text-muted" role="status" aria-live="polite"></div>
-            <div class="small text-muted">เลือกได้ครั้งละหนึ่งตาดีกา ไม่เปลี่ยนศูนย์ในแบบบันทึกการนิเทศ</div>
-          </div>
-          <div class="col-6"><label for="reportKind">รูปแบบรายงาน</label><select id="reportKind" class="form-select"><option value="form8">แบบที่ 8 หน้าเดียว</option><option value="summary">แบบรายงานสรุปด้วย AI</option></select></div>
-          <div class="col-6"><label for="reportFrom">ตั้งแต่วันที่</label><input type="date" id="reportFrom" class="form-control"></div>
-          <div class="col-6"><label for="reportTo">ถึงวันที่</label><input type="date" id="reportTo" class="form-control"></div>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
-          <button type="button" class="btn btn-primary" onclick="buildReportPreview()">🔎 แสดงตัวอย่าง</button>
-          <button type="button" class="btn btn-outline" onclick="generateReportSummary()">✨ สรุปด้วย AI</button>
-          <button type="button" class="btn btn-success" onclick="printReportPDF()">📄 ส่งออก PDF</button>
-          <button type="button" class="btn btn-outline2" onclick="closeReportMenu()">ปิดรายงาน</button>
-        </div>
-        <div id="reportStatus" class="small text-muted mt-2" aria-live="polite"></div>
-      </div>
-
-      <div id="reportPreviewCard" class="card section-hidden">
-        <div class="card-title"><h4>ตัวอย่างรายงาน</h4><span class="badge" id="reportPreviewCount">0 รายการ</span></div>
-        <div id="reportPreview" class="report-preview"><p class="text-muted">เลือกเงื่อนไขแล้วกด “แสดงตัวอย่าง”</p></div>
-      </div>
-
       <!-- จัดการผู้ใช้ (ผู้ดูแลระบบ) -->
       <div id="adminCard" class="card section-hidden">
         <div class="card-title">
@@ -821,6 +791,39 @@
                 </tbody>
               </table>
             </div>
+          </div>
+
+          </div>
+
+          <div id="reportSection" class="card section-hidden no-print">
+            <div class="card-title"><h4>📊 รายงานผลการนิเทศ</h4><span class="badge">Preview / PDF</span></div>
+            <div class="row">
+              <div class="col-6">
+                <label for="reportCenterSearch">ค้นหาและเลือกตาดีกาที่ต้องการรายงาน</label>
+                <div id="reportCenterPicker" class="report-center-picker">
+                  <input type="search" id="reportCenterSearch" class="form-control" placeholder="พิมพ์ชื่อ รหัส อำเภอ หรือตำบล แล้วเลือกรายชื่อ" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="reportCenterOptions" aria-describedby="reportCenterCount" oninput="filterReportCenters()" onfocus="openReportCenterSuggestions()" onkeydown="reportCenterKey(event)" onblur="if (!document.getElementById('reportCenterPicker').contains(event.relatedTarget)) closeReportCenterSuggestions()">
+                  <input type="hidden" id="reportCenter">
+                  <div id="reportCenterOptions" class="report-center-options d-none" role="listbox" aria-label="รายชื่อตาดีกา"></div>
+                </div>
+                <div id="reportCenterCount" class="small text-muted" role="status" aria-live="polite"></div>
+                <div class="small text-muted">เลือกได้ครั้งละหนึ่งตาดีกา ไม่เปลี่ยนศูนย์ในแบบบันทึกการนิเทศ</div>
+              </div>
+              <div class="col-6"><label for="reportKind">รูปแบบรายงาน</label><select id="reportKind" class="form-select"><option value="form8">แบบที่ 8 หน้าเดียว</option><option value="summary">แบบรายงานสรุปด้วย AI</option></select></div>
+              <div class="col-6"><label for="reportFrom">ตั้งแต่วันที่</label><input type="date" id="reportFrom" class="form-control"></div>
+              <div class="col-6"><label for="reportTo">ถึงวันที่</label><input type="date" id="reportTo" class="form-control"></div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+              <button type="button" class="btn btn-primary" onclick="buildReportPreview()">🔎 แสดงตัวอย่าง</button>
+              <button type="button" class="btn btn-outline" onclick="generateReportSummary()">✨ สรุปด้วย AI</button>
+              <button type="button" class="btn btn-success" onclick="printReportPDF()">📄 ส่งออก PDF</button>
+              <button type="button" class="btn btn-outline2" onclick="closeReportMenu()">ปิดรายงาน</button>
+            </div>
+            <div id="reportStatus" class="small text-muted mt-2" aria-live="polite"></div>
+          </div>
+
+          <div id="reportPreviewCard" class="card section-hidden">
+            <div class="card-title"><h4>ตัวอย่างรายงาน</h4><span class="badge" id="reportPreviewCount">0 รายการ</span></div>
+            <div id="reportPreview" class="report-preview"><p class="text-muted">เลือกเงื่อนไขแล้วกด “แสดงตัวอย่าง”</p></div>
           </div>
 
           <!-- บันทึกการนิเทศ -->
@@ -1075,6 +1078,7 @@
     let tadikaList = [];
     let selectedTadika = null;
     let activeTab = 6;
+    let reportOnlyWasHidden = false;
 
     // SweetAlert: ปิดข้อความอัตโนมัติใน 5 วินาที (ทุกหน้า) ยกเว้น dialog ยืนยัน/หน้าต่างโหลด
     const _origSwalFire = Swal.fire;
@@ -1509,6 +1513,12 @@
       populateReportCenters(true);
       closeReportCenterSuggestions();
       invalidateReport();
+      const evaluation = document.getElementById('evaluationSection');
+      if (evaluation) {
+        reportOnlyWasHidden = evaluation.classList.contains('section-hidden');
+        evaluation.classList.remove('section-hidden');
+        evaluation.classList.add('report-mode');
+      }
       const section = document.getElementById('reportSection');
       section.classList.remove('section-hidden');
       section.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1518,6 +1528,12 @@
       invalidateReport();
       document.getElementById('reportSection').classList.add('section-hidden');
       document.getElementById('reportPreviewCard').classList.add('section-hidden');
+      const evaluation = document.getElementById('evaluationSection');
+      if (evaluation) {
+        evaluation.classList.remove('report-mode');
+        if (reportOnlyWasHidden) evaluation.classList.add('section-hidden');
+      }
+      reportOnlyWasHidden = false;
     }
     function reportKindName(kind) {
       return ({ form8: 'แบบที่ 8 หน้าเดียว', summary: 'รายงานสรุปผลการนิเทศด้วย AI' })[kind] || 'รายงานผลการนิเทศ';
