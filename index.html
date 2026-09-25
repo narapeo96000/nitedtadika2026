@@ -152,10 +152,17 @@
     .workflow-step.active .num { background:var(--primary); color:#fff; }
     .workflow-step span:last-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .action-note { margin: 6px 0 12px; color:var(--muted); font-size:.88rem; }
+    .download-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; }
+    .download-link { display:flex; align-items:center; justify-content:center; gap:6px; min-height:48px; padding:10px 12px; border-radius:12px; text-decoration:none; font-weight:700; color:#fff; text-align:center; transition:transform .15s ease, box-shadow .15s ease; }
+    .download-link:hover { transform:translateY(-1px); box-shadow:0 5px 12px rgba(15,23,42,.15); }
+    .download-private { background:#2563eb; }
+    .download-pondok { background:#7c3aed; }
+    .download-tadika { background:#059669; }
     @media (max-width: 640px) {
       .workflow-guide { grid-template-columns: repeat(2, 1fr); gap:10px 8px; }
       .workflow-step { font-size:.8rem; }
       .workflow-step .num { flex-basis:26px; width:26px; height:26px; }
+      .download-grid { grid-template-columns:1fr; }
     }
 
     .alert { border-radius: 12px; padding: 12px 14px; margin: 10px 0; font-size: .92rem; }
@@ -555,6 +562,20 @@
         <p class="text-center mt-3 mb-0 small">
           ยังไม่มีบัญชี? <a href="javascript:void(0)" style="color:var(--primary); font-weight:600;" onclick="showRegister()">สมัครสมาชิก</a>
         </p>
+      </div>
+
+      <!-- ดาวน์โหลดแผนและเครื่องมือนิเทศ -->
+      <div class="card">
+        <div class="card-title">
+          <h4>📚 ดาวน์โหลดแผนและเครื่องมือนิเทศ <span class="small">PDF</span></h4>
+          <span class="badge">เอกสาร</span>
+        </div>
+        <p class="action-note">เลือกเอกสารให้ตรงกับประเภทสถานศึกษาที่ต้องการนิเทศ</p>
+        <div class="download-grid">
+          <a class="download-link download-private" href="https://drive.google.com/file/d/1gVkRj1wq8TjmxEZfq7cLJ035yUggpMaQ/view?usp=sharing" target="_blank" rel="noopener">🏫 โรงเรียนเอกชน</a>
+          <a class="download-link download-pondok" href="https://drive.google.com/file/d/1nuGVzZshKssSgGjSSEkkWkDU8FVSkwTP/view?usp=sharing" target="_blank" rel="noopener">🕌 ปอเนาะ</a>
+          <a class="download-link download-tadika" href="https://drive.google.com/file/d/1qm2s3AO5r7A2h7HKuUnB_QmI5tKuTJVC/view?usp=sharing" target="_blank" rel="noopener">📖 ตาดีกา</a>
+        </div>
       </div>
 
       <!-- สถิติระบบนิเทศออนไลน์ -->
