@@ -650,11 +650,6 @@
     <!-- ===== หน้าหลัก (หลังล็อกอิน) ===== -->
     <div id="appSection" class="section-hidden">
 
-      <div class="card no-print" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-        <div><b style="color:var(--primary-deep);">เมนูระบบนิเทศ</b><div class="small text-muted">เลือกเครื่องมือสำหรับทำงานหรือจัดทำรายงาน</div></div>
-        <button type="button" class="btn btn-outline" onclick="openReportMenu()">📊 รายงานผลการนิเทศ</button>
-      </div>
-
       <!-- จัดการผู้ใช้ (ผู้ดูแลระบบ) -->
       <div id="adminCard" class="card section-hidden">
         <div class="card-title">
@@ -703,6 +698,7 @@
           👉 คลิกบนแผนที่ (หรือกด <b>📍 ตำแหน่งปัจจุบัน</b>) แล้วกด <b>💾 บันทึกแผนที่</b> — ไม่บังคับ แต่แนะนำให้ปักหมุดเพื่อใช้เดินทางนิเทศ บันทึกลงชีต ADDRESS (U=ละติจูด, V=ลองจิจูด)
         </div>
         <button class="btn btn-success w-100 mt-3" id="selectBtn" onclick="fetchTadikaData()" disabled>เริ่มการนิเทศ</button>
+        <button type="button" class="btn btn-outline w-100 mt-2" onclick="openReportMenu()">📊 รายงานผลการนิเทศ</button>
       </div>
 
       <!-- Dashboard สถิติ -->
