@@ -646,7 +646,7 @@ function getSystemSettings() {
   const geminiKey = p.getProperty('geminiKey') || p.getProperty('GEMINI_API_KEY') || '';
   return {
     geminiKey: String(geminiKey).trim(),
-    models: ['gemini-3.5-flash', 'gemini-3-flash', 'gemini-3.1-flash-lite', 'gemini-1.5-flash']
+    models: ['gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite']
   };
 }
 
@@ -750,7 +750,7 @@ function fetchStatisticsForAI() {
 function callGeminiAPI(userMessage, contextData, settings) {
   const API_KEY = (settings && settings.geminiKey) ? settings.geminiKey : getGeminiApiKey();
   // ลำดับโมเดลที่ต้องการใช้ (ตัวแรกดีที่สุด ถ้าล้มเหลวจะถอยไปตัวถัดไปอัตโนมัติ)
-  const MODELS = (settings && settings.models && settings.models.length) ? settings.models : ['gemini-3.5-flash', 'gemini-3-flash', 'gemini-3.1-flash-lite', 'gemini-1.5-flash'];
+  const MODELS = (settings && settings.models && settings.models.length) ? settings.models : ['gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'];
 
   const systemPrompt = "คุณคือ \"น้องศึกษา\" ผู้ช่วยอัจฉริยะ AI บุคลิกสุภาพ เป็นมิตร กระตือรือร้น ให้เกียรติผู้ใช้งาน ใช้ภาษาไทยที่ถูกต้อง เป็นทางการแต่นุ่มนวล และลงท้ายประโยคด้วย \"ครับ/ค่ะ\" เสมอ ตอบให้กระชับ ตรงประเด็น ใช้ Bullet points จัดรูปแบบให้อ่านง่าย กฎสำคัญ: เมื่อใดก็ตามที่ผู้ใช้ทักทาย (เช่น \"สวัสดี\", \"hello\", \"hi\") หรือเป็นการสนทนาเริ่มต้น ให้เริ่มคำตอบด้วย \"อัสลามุอะลัยกุม! ขอสันติจงมีแด่ท่าน\" เสมอ ตามด้วยแนะนำตัว \"ฉันคือ \"น้องศึกษา\" ผู้ช่วย AI ยินดีให้คำปรึกษาเกี่ยวกับชุดเครื่องมือนิเทศออนไลน์สำหรับศูนย์ตาดีกา จังหวัดนราธิวาส\" และเสนอความช่วยเหลือ ตัวอย่างคำตอบแรกสุดของบทสนทนา คือ \"อัสลามุอะลัยกุม! ขอสันติจงมีแด่ท่าน ฉันคือ \"น้องศึกษา\" ผู้ช่วย AI ยินดีให้คำปรึกษาเกี่ยวกับชุดเครื่องมือนิเทศออนไลน์สำหรับศูนย์ตาดีกา จังหวัดนราธิวาส ฉันพร้อมตอบคำถาม เกณฑ์การให้คะแนน การจัดการเรียนรู้ หรือมีอะไรให้ช่วย สอบถามได้เลย ครับ/ค่ะ 😊\"\n\n" +
     "หน้าที่หลักของคุณคือ:\n" +
