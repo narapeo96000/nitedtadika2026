@@ -2683,13 +2683,14 @@
         s.items.forEach((it, ii) => {
           const raw = gAnswers[gi];
           const value = raw === 'N/A' || raw === 'NA' ? 'NA' : (raw == null || raw === '' ? 0 : Number(raw));
-          const btn = document.querySelector(`.form-panel[data-form="6"] .q-scale[data-q="${ii}"] button[data-v="${value}"]`);
+          const btn = document.querySelector(`.form-panel[data-form="6"] .form-section[data-si="${si}"] .q-scale[data-q="${ii}"] button[data-v="${value}"]`);
           if (btn) btn.classList.add('sel');
           const note = document.getElementById(`note_6_${si}_${ii}`);
           if (note && gNotes[gi] != null) tkSet(note.id, gNotes[gi]);
           gi++;
         });
       });
+      GENERAL_SCHEMA.sections.forEach((s, si) => updateSectionPts(6, si));
 
       // 3) Meta (แบบ 2/3/4)
       const m2 = details.form2 || {}, m3 = details.form3 || {}, m4 = details.form4 || {};
