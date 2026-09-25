@@ -697,6 +697,13 @@
         <div class="info-box mt-2 small" style="margin-bottom:0;">
           👉 คลิกบนแผนที่ (หรือกด <b>📍 ตำแหน่งปัจจุบัน</b>) แล้วกด <b>💾 บันทึกแผนที่</b> — ไม่บังคับ แต่แนะนำให้ปักหมุดเพื่อใช้เดินทางนิเทศ บันทึกลงชีต ADDRESS (U=ละติจูด, V=ลองจิจูด)
         </div>
+        <label for="visitType" class="mt-3">ครั้งที่นิเทศ (กรณีบันทึกใหม่)</label>
+        <select id="visitType" class="form-select">
+          <option value="">เลือกครั้งที่นิเทศ</option>
+          <option value="ครั้งที่ 1 การศึกษาสภาพและกำหนดประเด็นพัฒนา">ครั้งที่ 1 การศึกษาสภาพและกำหนดประเด็นพัฒนา</option>
+          <option value="ครั้งที่ 2 การติดตามและสนับสนุนการพัฒนา">ครั้งที่ 2 การติดตามและสนับสนุนการพัฒนา</option>
+          <option value="ครั้งที่ 3 การประเมินผลและสรุปพัฒนาการ">ครั้งที่ 3 การประเมินผลและสรุปพัฒนาการ</option>
+        </select>
         <button class="btn btn-success w-100 mt-3" id="selectBtn" onclick="fetchTadikaData()" disabled>เริ่มการนิเทศ</button>
       </div>
 
@@ -715,7 +722,7 @@
         </div>
       </div>
 
-      <div class="no-print">
+      <div id="reportMenuWrap" class="no-print section-hidden">
         <button type="button" class="btn btn-outline w-100" onclick="openReportMenu()">📊 รายงานผลการนิเทศ</button>
       </div>
 
@@ -1078,6 +1085,15 @@
     let selectedTadika = null;
     let activeTab = 6;
     let reportOnlyWasHidden = false;
+    let editingRecordFormType = '';
+
+    function visitTypeFromRecord(formType) {
+      const text = String(formType || '');
+      if (text.includes('ครั้งที่ 1')) return 'ครั้งที่ 1 การศึกษาสภาพและกำหนดประเด็นพัฒนา';
+      if (text.includes('ครั้งที่ 2')) return 'ครั้งที่ 2 การติดตามและสนับสนุนการพัฒนา';
+      if (text.includes('ครั้งที่ 3')) return 'ครั้งที่ 3 การประเมินผลและสรุปพัฒนาการ';
+      return '';
+    }
 
     // SweetAlert: ปิดข้อความอัตโนมัติใน 5 วินาที (ทุกหน้า) ยกเว้น dialog ยืนยัน/หน้าต่างโหลด
     const _origSwalFire = Swal.fire;
@@ -1807,6 +1823,7 @@
       document.getElementById('appSection').classList.add('section-hidden');
       document.getElementById('evaluationSection').classList.add('section-hidden');
       document.getElementById('historyCard').classList.add('section-hidden');
+      document.getElementById('reportMenuWrap').classList.add('section-hidden');
       document.getElementById('dashCard').classList.add('section-hidden');
       document.getElementById('adminCard').classList.add('section-hidden');
       clearTadikaSelection();
@@ -1830,12 +1847,33 @@
       return '<span class="lv lv-red">⛔ ไม่จดทะเบียน</span>';
     }
 
+    function prepareSelectedCenter(t) {
+      document.getElementById('historyCard').classList.remove('section-hidden');
+      document.getElementById('reportMenuWrap').classList.remove('section-hidden');
+      document.getElementById('historyBody').innerHTML = '<tr><td colspan="8" class="text-center text-muted py-3">กำลังค้นหาประวัติการนิเทศ...</td></tr>';
+      document.getElementById('historyCount').innerText = 'กำลังโหลด';
+      document.getElementById('evaluationSection').classList.add('section-hidden');
+      document.getElementById('dashCard').classList.add('section-hidden');
+      document.getElementById('visitType').value = '';
+      editingRecordFormType = '';
+      loadEvalHistory(t.id);
+    }
+
     function filterTadika(key) {
       const c = autoReg[key];
       const q = document.getElementById(c.search).value.trim().toLowerCase();
       const box = document.getElementById(c.suggest);
       c.selected = null;
-      if (key === 'sel') { selectedTadika = null; invalidateReport(); updatePinMap(); }
+      if (key === 'sel') {
+        selectedTadika = null;
+        evalHistory = [];
+        invalidateReport();
+        updatePinMap();
+        document.getElementById('historyCard').classList.add('section-hidden');
+        document.getElementById('reportMenuWrap').classList.add('section-hidden');
+        document.getElementById('evaluationSection').classList.add('section-hidden');
+        document.getElementById('dashCard').classList.add('section-hidden');
+      }
       document.getElementById(c.info).classList.add('d-none');
       if (c.btn) document.getElementById(c.btn).disabled = true;
       if (!q) { box.classList.add('d-none'); box.innerHTML = ''; if (key === 'addr') renderAddrTable(); return; }
@@ -1865,7 +1903,7 @@
       const t = c.matches[i];
       if (!t) return;
       c.selected = t;
-      if (key === 'sel') { selectedTadika = t; invalidateReport(); updatePinMap(); }
+      if (key === 'sel') { selectedTadika = t; invalidateReport(); updatePinMap(); prepareSelectedCenter(t); }
       document.getElementById(c.search).value = tadikaLabel(t);
       document.getElementById(c.suggest).classList.add('d-none');
       document.getElementById(c.selName).innerText = tadikaLabel(t);
@@ -1911,7 +1949,7 @@
       const c = autoReg[key];
       c.matches = [t];
       c.selected = t;
-      if (key === 'sel') { selectedTadika = t; invalidateReport(); updatePinMap(); }
+      if (key === 'sel') { selectedTadika = t; invalidateReport(); updatePinMap(); prepareSelectedCenter(t); }
       document.getElementById(c.search).value = tadikaLabel(t);
       document.getElementById(c.suggest).classList.add('d-none');
       document.getElementById(c.selName).innerText = tadikaLabel(t);
@@ -1941,12 +1979,17 @@
       const c = autoReg.sel;
       c.selected = null;
       selectedTadika = null;
+      evalHistory = [];
+      editingRecordFormType = '';
       invalidateReport();
       updatePinMap();
       document.getElementById(c.search).value = '';
       document.getElementById(c.suggest).classList.add('d-none');
       document.getElementById(c.info).classList.add('d-none');
       if (c.btn) document.getElementById(c.btn).disabled = true;
+      document.getElementById('historyCard').classList.add('section-hidden');
+      document.getElementById('reportMenuWrap').classList.add('section-hidden');
+      document.getElementById('visitType').value = '';
     }
 
     document.addEventListener('click', (e) => {
@@ -2511,9 +2554,12 @@
     }
 
     // ---- ดึงข้อมูลศูนย์ ----
-    async function fetchTadikaData() {
+    async function fetchTadikaData(allowNoVisit = false) {
       const t = selectedTadika;
       if (!t) return Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณาเลือกศูนย์ที่ต้องการนิเทศ' });
+      if (!allowNoVisit && !document.getElementById('visitType').value) {
+        return Swal.fire({ icon: 'warning', title: 'กรุณาระบุครั้งที่นิเทศ', text: 'เลือกครั้งที่ 1, 2 หรือ 3 ก่อนเริ่มการนิเทศใหม่' });
+      }
       const btn = document.getElementById('selectBtn');
       btn.disabled = true;
       showLoading('กำลังดึงข้อมูลศูนย์...');
@@ -2555,6 +2601,7 @@
           document.getElementById('centerTypeBadge').innerHTML = typeBadge(d.type || t.type);
           Swal.close();
           document.getElementById('historyCard').classList.remove('section-hidden');
+          document.getElementById('reportMenuWrap').classList.remove('section-hidden');
           document.getElementById('dashCard').classList.remove('section-hidden');
           document.getElementById('evaluationSection').classList.remove('section-hidden');
           resetEditState();
@@ -2573,6 +2620,7 @@
       clearTadikaSelection();
       document.getElementById('evaluationSection').classList.add('section-hidden');
       document.getElementById('historyCard').classList.add('section-hidden');
+      document.getElementById('reportMenuWrap').classList.add('section-hidden');
       document.getElementById('dashCard').classList.add('section-hidden');
     }
 
@@ -2636,9 +2684,17 @@
     }
 
     // ---- แก้ไขบันทึกเดิม ----
-    function editEvaluation(idx) {
+    async function editEvaluation(idx) {
       const h = evalHistory[idx];
       if (!h) return;
+      if (document.getElementById('evaluationSection').classList.contains('section-hidden')) {
+        document.getElementById('visitType').value = visitTypeFromRecord(h.formType);
+        await fetchTadikaData(true);
+        if (document.getElementById('evaluationSection').classList.contains('section-hidden')) return;
+      }
+      editingRecordFormType = String(h.formType || '');
+      const visitType = visitTypeFromRecord(h.formType);
+      if (visitType) document.getElementById('visitType').value = visitType;
       resetEvalForm();
       document.getElementById('editRow').value = h.row;
       document.getElementById('editType').value = h.type || '';
@@ -2790,6 +2846,7 @@
     }
 
     function resetEditState() {
+      editingRecordFormType = '';
       document.getElementById('editRow').value = '';
       document.getElementById('editType').value = '';
       document.getElementById('editBanner').classList.add('d-none');
@@ -2860,6 +2917,13 @@
     async function submitFinal(e) {
       e.preventDefault();
 
+      const editingExisting = document.getElementById('editRow').value;
+      const selectedVisitType = document.getElementById('visitType').value;
+      if (!editingExisting && !selectedVisitType) {
+        await Swal.fire({ icon: 'warning', title: 'กรุณาระบุครั้งที่นิเทศ', text: 'เลือกครั้งที่ 1, 2 หรือ 3 ก่อนบันทึกการนิเทศใหม่' });
+        return;
+      }
+
       // ตรวจสอบว่ามีข้อที่ยังไม่ได้ให้คะแนน (คะแนน 0) หรือไม่ — แจ้งเตือนแต่ยังบันทึกต่อได้
       const zeroList = [];
       [{ no: 6, scores: getFormScores(6).scores }].forEach(f => {
@@ -2929,7 +2993,7 @@
           rooms: document.getElementById('t_rooms').value
         },
         evalData: {
-          formType: 'แบบที่ 6 ผู้นิเทศทั่วไป (หน้า 6–10)',
+          formType: editingRecordFormType || selectedVisitType,
           score1: 0,
           score2: 0,
           score3: 0,
