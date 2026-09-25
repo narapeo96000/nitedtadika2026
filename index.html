@@ -717,11 +717,12 @@
         </div>
         <div class="row mt-2">
           <div class="col-6"><button type="button" class="btn btn-primary w-100" id="savePinBtn" onclick="savePinToSheet()" disabled>💾 บันทึกแผนที่</button></div>
-          <div class="col-6"><button type="button" class="btn btn-outline w-100" onclick="pinByGPS()">📍 ตำแหน่งปัจจุบัน</button></div>
+          <div class="col-6"><button type="button" class="btn btn-outline w-100" onclick="pinByGPS()">🧭 ตำแหน่งปัจจุบัน + เส้นทาง</button></div>
         </div>
         <div class="info-box mt-2 small" style="margin-bottom:0;">
-          👉 คลิกบนแผนที่ (หรือกด <b>📍 ตำแหน่งปัจจุบัน</b>) แล้วกด <b>💾 บันทึกแผนที่</b> — ไม่บังคับ แต่แนะนำให้ปักหมุดเพื่อใช้เดินทางนิเทศ บันทึกลงชีต ADDRESS (U=ละติจูด, V=ลองจิจูด)
+          👉 คลิกบนแผนที่เพื่อกำหนดที่ตั้งศูนย์ แล้วกด <b>💾 บันทึกแผนที่</b> · กด <b>🧭 ตำแหน่งปัจจุบัน + เส้นทาง</b> เพื่อดูเส้นทางจากจุดที่อยู่ไปยังศูนย์
         </div>
+        <div id="pinRouteStatus" class="small text-muted mt-2" aria-live="polite"></div>
         <label for="visitType" class="mt-3">3. เลือกครั้งที่นิเทศ</label>
         <p class="action-note">ถ้าเลือกศูนย์ที่เคยนิเทศแล้ว สามารถกด “แก้ไข” จากประวัติเดิมได้</p>
         <select id="visitType" class="form-select">
@@ -2427,16 +2428,26 @@
     let pinMapObj = null;
     let pinMarker = null;
     let pinCoords = null;
+    let routeLayer = null;
+    let routeStartMarker = null;
+    let pinBaseLayers = null;
 
     function initPinMap() {
       const box = document.getElementById('pinMapBox');
       if (!box || typeof L === 'undefined') return;
       if (pinMapObj) { pinMapObj.invalidateSize(); updatePinMap(); return; }
       pinMapObj = L.map(box).setView([6.425, 101.822], 9);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '&copy; OpenStreetMap contributors'
-      }).addTo(pinMapObj);
+      });
+      const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19,
+        attribution: 'Tiles &copy; Esri'
+      });
+      satelliteLayer.addTo(pinMapObj);
+      pinBaseLayers = { '🛰️ ภาพดาวเทียม': satelliteLayer, '🗺️ แผนที่ถนน': streetLayer };
+      L.control.layers(pinBaseLayers, null, { position: 'topright', collapsed: true }).addTo(pinMapObj);
       pinMapObj.on('click', (e) => {
         if (!selectedTadika) return Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณาเลือกศูนย์ก่อนปักหมุด' });
         setPinCoords(e.latlng.lat, e.latlng.lng);
@@ -2466,12 +2477,48 @@
       if (tg) tg.value = lo;
     }
 
+    function clearRoute() {
+      if (routeLayer && pinMapObj) { pinMapObj.removeLayer(routeLayer); routeLayer = null; }
+      if (routeStartMarker && pinMapObj) { pinMapObj.removeLayer(routeStartMarker); routeStartMarker = null; }
+      const status = document.getElementById('pinRouteStatus');
+      if (status) status.innerText = '';
+    }
+
+    async function showRouteFromCurrent(lat, lng) {
+      const destination = pinCoords || (selectedTadika && selectedTadika.lat && selectedTadika.lng
+        ? { lat: Number(selectedTadika.lat), lng: Number(selectedTadika.lng) } : null);
+      if (!destination) {
+        return Swal.fire({ icon: 'warning', title: 'ยังไม่มีจุดหมายปลายทาง', text: 'คลิกบนแผนที่เพื่อกำหนดที่ตั้งศูนย์ก่อนดูเส้นทาง' });
+      }
+      const status = document.getElementById('pinRouteStatus');
+      if (status) status.innerText = 'กำลังคำนวณเส้นทางจากตำแหน่งปัจจุบัน...';
+      if (routeLayer) pinMapObj.removeLayer(routeLayer);
+      if (routeStartMarker) pinMapObj.removeLayer(routeStartMarker);
+      routeStartMarker = L.circleMarker([lat, lng], { radius: 8, color: '#2563eb', fillColor: '#60a5fa', fillOpacity: .95, weight: 3 })
+        .bindTooltip('ตำแหน่งปัจจุบัน').addTo(pinMapObj);
+      const url = 'https://router.project-osrm.org/route/v1/driving/' + lng + ',' + lat + ';' + destination.lng + ',' + destination.lat + '?overview=full&geometries=geojson';
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        if (!response.ok || data.code !== 'Ok' || !data.routes || !data.routes.length) throw new Error('route unavailable');
+        routeLayer = L.geoJSON(data.routes[0].geometry, { style: { color: '#ef4444', weight: 5, opacity: .9 } }).addTo(pinMapObj);
+        pinMapObj.fitBounds(routeLayer.getBounds().pad(.12));
+        const km = (Number(data.routes[0].distance || 0) / 1000).toFixed(1);
+        const min = Math.round(Number(data.routes[0].duration || 0) / 60);
+        if (status) status.innerHTML = '🧭 เส้นทางประมาณ <b>' + km + ' กม.</b> ใช้เวลาประมาณ <b>' + min + ' นาที</b> · เส้นสีแดงคือเส้นทางแนะนำ';
+      } catch (e) {
+        if (status) status.innerText = 'ไม่สามารถคำนวณเส้นทางอัตโนมัติได้ กรุณาเปิดแผนที่ถนนหรือใช้ Google Maps';
+        Swal.fire({ icon: 'info', title: 'แสดงเส้นทางไม่สำเร็จ', text: 'สามารถใช้หมุดและเปิดแผนที่ถนนเพื่อเดินทางได้ตามปกติ' });
+      }
+    }
+
     function updatePinMap() {
       if (!pinMapObj) return;
       const t = selectedTadika;
       const badge = document.getElementById('pinBadge');
       if (!t) {
         if (pinMarker) { pinMapObj.removeLayer(pinMarker); pinMarker = null; }
+        clearRoute();
         pinCoords = null;
         document.getElementById('pinLatIn').value = '';
         document.getElementById('pinLngIn').value = '';
@@ -2481,6 +2528,7 @@
         return;
       }
       if (t.lat && t.lng) {
+        clearRoute();
         setPinCoords(t.lat, t.lng);
         pinMapObj.setView([Number(t.lat), Number(t.lng)], 16);
         badge.innerText = '📍 มีแผนที่แล้ว — คลิกบนแผนที่เพื่อแก้ไข';
@@ -2502,9 +2550,8 @@
         (pos) => {
           Swal.close();
           const lat = pos.coords.latitude, lng = pos.coords.longitude;
-          setPinCoords(lat, lng);
-          pinMapObj.setView([lat, lng], 17);
-          Swal.fire({ icon: 'success', title: 'ปักหมุดตำแหน่งปัจจุบัน', text: 'ละติจูด: ' + lat.toFixed(6) + ', ลองจิจูด: ' + lng.toFixed(6) + ' — กด 💾 บันทึกแผนที่ เพื่อบันทึก', timer: 2200, showConfirmButton: false });
+          pinMapObj.setView([lat, lng], 15);
+          showRouteFromCurrent(lat, lng);
         },
         (err) => {
           Swal.close();
