@@ -2101,9 +2101,10 @@
 
     function scaleButtons(f, si, ii) {
       let s = '';
-      for (let v = 0; v <= POINT_PER_ITEM; v++) {
+      const values = f.no === 6 ? [2, 1, 0] : Array.from({ length: POINT_PER_ITEM + 1 }, (_, v) => v);
+      values.forEach(v => {
         s += `<button type="button" data-v="${v}" onclick="setScore(${f.no}, ${si}, ${ii}, ${v})">${v}</button>`;
-      }
+      });
       if (f.no === 6) s += `<button type="button" data-v="NA" onclick="setScore(${f.no}, ${si}, ${ii}, 'NA')">N/A</button>`;
       return s;
     }
