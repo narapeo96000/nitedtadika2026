@@ -554,6 +554,16 @@ function generateReportAI(payload) {
   return {success: true, text: result};
 }
 
+// เรียกใช้ครั้งเดียวจาก Apps Script Editor เพื่ออนุมัติสิทธิ์ UrlFetchApp
+// ฟังก์ชันนี้ไม่ใช้ข้อมูลผู้ใช้และไม่ส่งข้อมูลรายงานออกไป
+function authorizeExternalRequest() {
+  const response = UrlFetchApp.fetch('https://www.googleapis.com/generate_204', {
+    method: 'get',
+    muteHttpExceptions: true
+  });
+  return 'อนุมัติสิทธิ์การเชื่อมต่อภายนอกแล้ว (HTTP ' + response.getResponseCode() + ')';
+}
+
 // --- บันทึก/แก้ไขผลนิเทศ + อัปเดตข้อมูลศูนย์ (เลือกชีตตามประเภทตาดีกา/ปอเนาะ) ---
 function saveEvaluation(payload) {
   const ss = SpreadsheetApp.openById(SHEET_ID);
