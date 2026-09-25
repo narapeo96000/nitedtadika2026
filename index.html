@@ -698,7 +698,25 @@
           👉 คลิกบนแผนที่ (หรือกด <b>📍 ตำแหน่งปัจจุบัน</b>) แล้วกด <b>💾 บันทึกแผนที่</b> — ไม่บังคับ แต่แนะนำให้ปักหมุดเพื่อใช้เดินทางนิเทศ บันทึกลงชีต ADDRESS (U=ละติจูด, V=ลองจิจูด)
         </div>
         <button class="btn btn-success w-100 mt-3" id="selectBtn" onclick="fetchTadikaData()" disabled>เริ่มการนิเทศ</button>
-        <button type="button" class="btn btn-outline w-100 mt-2" onclick="openReportMenu()">📊 รายงานผลการนิเทศ</button>
+      </div>
+
+      <!-- ประวัติ -->
+      <div id="historyCard" class="card section-hidden">
+        <div class="card-title"><h4>ประวัติการนิเทศของศูนย์นี้</h4><span class="badge" id="historyCount">0 รายการ</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>#</th><th>บันทึกเมื่อ</th><th>แบบ</th><th>คะแนน</th><th>ร้อยละ</th><th>ระดับ</th><th>ผู้นิเทศ</th><th></th></tr>
+            </thead>
+            <tbody id="historyBody">
+              <tr><td colspan="8" class="text-center text-muted py-3">ยังไม่มีประวัติการนิเทศ</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="no-print">
+        <button type="button" class="btn btn-outline w-100" onclick="openReportMenu()">📊 รายงานผลการนิเทศ</button>
       </div>
 
       <!-- Dashboard สถิติ -->
@@ -771,21 +789,6 @@
                 <div class="col"><input type="number" id="t_sTotal" class="form-control" placeholder="รวม"></div></div>
               </div>
               <div class="col-12 col-md-4"><label>จำนวนห้องเรียน</label><input type="number" id="t_rooms" class="form-control" placeholder="จำนวนห้องเรียน"></div>
-            </div>
-          </div>
-
-          <!-- ประวัติ -->
-          <div class="card">
-            <div class="card-title"><h4>ประวัติการนิเทศของศูนย์นี้</h4><span class="badge" id="historyCount">0 รายการ</span></div>
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr><th>#</th><th>บันทึกเมื่อ</th><th>แบบ</th><th>คะแนน</th><th>ร้อยละ</th><th>ระดับ</th><th>ผู้นิเทศ</th><th></th></tr>
-                </thead>
-                <tbody id="historyBody">
-                  <tr><td colspan="8" class="text-center text-muted py-3">ยังไม่มีประวัติการนิเทศ</td></tr>
-                </tbody>
-              </table>
             </div>
           </div>
 
@@ -1803,6 +1806,7 @@
       document.getElementById('appHeader').classList.add('section-hidden');
       document.getElementById('appSection').classList.add('section-hidden');
       document.getElementById('evaluationSection').classList.add('section-hidden');
+      document.getElementById('historyCard').classList.add('section-hidden');
       document.getElementById('dashCard').classList.add('section-hidden');
       document.getElementById('adminCard').classList.add('section-hidden');
       clearTadikaSelection();
@@ -2549,6 +2553,7 @@
           document.getElementById('dashTadikaName').innerHTML = tadikaLabel(t) + ' ' + typeBadge(t.type);
           document.getElementById('centerTypeBadge').innerHTML = typeBadge(d.type || t.type);
           Swal.close();
+          document.getElementById('historyCard').classList.remove('section-hidden');
           document.getElementById('dashCard').classList.remove('section-hidden');
           document.getElementById('evaluationSection').classList.remove('section-hidden');
           resetEditState();
@@ -2566,6 +2571,7 @@
       resetEditState();
       clearTadikaSelection();
       document.getElementById('evaluationSection').classList.add('section-hidden');
+      document.getElementById('historyCard').classList.add('section-hidden');
       document.getElementById('dashCard').classList.add('section-hidden');
     }
 
