@@ -873,6 +873,7 @@
             </div>
 
             <button type="submit" class="btn btn-primary w-100 mt-3 py-3" id="finalSubmitBtn">💾 บันทึกการนิเทศและอัปเดตข้อมูลศูนย์</button>
+            <div id="unsavedNotice" class="alert alert-warn d-none mt-2 mb-0" role="status">⚠️ มีข้อมูลที่แก้ไขแล้ว กรุณากดปุ่ม “บันทึกการนิเทศ” ก่อนออกจากหน้านี้</div>
           </div>
         </form>
       </div>
@@ -1436,6 +1437,30 @@
     let reportPreviewKey = '';
     let reportCenterMatches = [];
     let reportCenterActive = -1;
+    let formDirty = false;
+    function markFormDirty() {
+      if (document.getElementById('evaluationSection').classList.contains('section-hidden')) return;
+      formDirty = true;
+      const notice = document.getElementById('unsavedNotice');
+      if (notice) notice.classList.remove('d-none');
+    }
+    function clearFormDirty() {
+      formDirty = false;
+      const notice = document.getElementById('unsavedNotice');
+      if (notice) notice.classList.add('d-none');
+    }
+    async function confirmLeaveUnsaved(actionText) {
+      if (!formDirty) return true;
+      const result = await Swal.fire({
+        icon: 'warning',
+        title: 'มีข้อมูลที่ยังไม่ได้บันทึก',
+        text: 'ต้องการ' + actionText + 'โดยไม่บันทึกข้อมูลหรือไม่',
+        showCancelButton: true,
+        confirmButtonColor: '#d97706', cancelButtonColor: '#64748b',
+        confirmButtonText: 'ออกโดยไม่บันทึก', cancelButtonText: 'กลับไปบันทึก'
+      });
+      return result.isConfirmed;
+    }
     function reportCenterLabel(t) { return t.name + ' · รหัส ' + String(t.id).trim(); }
     function populateReportCenters(useDefault = false) {
       const select = document.getElementById('reportCenter');
@@ -1536,6 +1561,13 @@
     }
     ['reportKind', 'reportFrom', 'reportTo'].forEach(id => document.getElementById(id).addEventListener('change', invalidateReport));
     function openReportMenu() {
+      if (formDirty) {
+        confirmLeaveUnsaved('เปิดรายงาน').then(ok => { if (ok) openReportMenuUnlocked(); });
+        return;
+      }
+      openReportMenuUnlocked();
+    }
+    function openReportMenuUnlocked() {
       populateReportCenters(true);
       closeReportCenterSuggestions();
       invalidateReport();
@@ -2584,7 +2616,8 @@
       btn.disabled = false;
     }
 
-    function backToSelect() {
+    async function backToSelect() {
+      if (!await confirmLeaveUnsaved('เปลี่ยนศูนย์')) return;
       resetEditState();
       clearTadikaSelection();
       document.getElementById('evaluationSection').classList.add('section-hidden');
@@ -2656,6 +2689,16 @@
     async function editEvaluation(idx) {
       const h = evalHistory[idx];
       if (!h) return;
+      if (!await confirmLeaveUnsaved('เลือกบันทึกอื่น')) return;
+      const confirmEdit = await Swal.fire({
+        icon: 'question',
+        title: 'ต้องการแก้ไข ใช่หรือไม่',
+        text: 'ระบบจะนำข้อมูลเดิมมาแสดงเพื่อให้แก้ไขและบันทึกใหม่',
+        showCancelButton: true,
+        confirmButtonColor: '#059669', cancelButtonColor: '#64748b',
+        confirmButtonText: 'ใช่, แก้ไข', cancelButtonText: 'ยกเลิก'
+      });
+      if (!confirmEdit.isConfirmed) return;
       if (document.getElementById('evaluationSection').classList.contains('section-hidden')) {
         document.getElementById('visitType').value = visitTypeFromRecord(h.formType);
         await fetchTadikaData(true);
@@ -2670,6 +2713,7 @@
       document.getElementById('editBanner').classList.remove('d-none');
       document.getElementById('editInfo').innerText = h.timestamp + ' (ผู้นิเทศ: ' + h.supervisor + ')';
       document.getElementById('finalSubmitBtn').innerText = '💾 บันทึกการแก้ไขและอัปเดตข้อมูลศูนย์';
+      clearFormDirty();
 
       const details = h.details || {};
       const answers = details.answers || null;
@@ -2821,10 +2865,14 @@
       document.getElementById('editBanner').classList.add('d-none');
       document.getElementById('editInfo').innerText = '';
       document.getElementById('finalSubmitBtn').innerText = '💾 บันทึกการนิเทศและอัปเดตข้อมูลศูนย์';
+      clearFormDirty();
       resetEvalForm();
     }
 
-    function cancelEdit() { resetEditState(); }
+    async function cancelEdit() {
+      if (!await confirmLeaveUnsaved('ยกเลิกการแก้ไข')) return;
+      resetEditState();
+    }
 
     // ---- บันทึก ----
     function collectAnswers() {
@@ -2989,6 +3037,7 @@
         const res = await api('saveEvaluation', payload);
         if (res.success) {
           const tadikaId = document.getElementById('t_id').value;
+          clearFormDirty();
           Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ!', html: res.message, confirmButtonText: 'ตกลง' }).then(() => {
             resetEditState();
             loadEvalHistory(tadikaId);
@@ -3026,6 +3075,16 @@
 
     // ---- Init ----
     renderFormSchema();
+    document.getElementById('mainForm').addEventListener('input', markFormDirty);
+    document.getElementById('mainForm').addEventListener('change', markFormDirty);
+    document.getElementById('mainForm').addEventListener('click', (event) => {
+      if (event.target.closest('.q-scale button, input[type="checkbox"], #addPlanBtn, .ap-del')) markFormDirty();
+    });
+    window.addEventListener('beforeunload', (event) => {
+      if (!formDirty) return;
+      event.preventDefault();
+      event.returnValue = 'มีข้อมูลที่ยังไม่ได้บันทึก';
+    });
     initTadikaCk();
     renderAddrHeader();
     loadTadikaList();
