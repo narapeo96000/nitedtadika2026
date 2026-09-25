@@ -12,7 +12,6 @@
   <script>tailwind.config = { corePlugins: { preflight: false } };</script>
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.20/dist/sweetalert2.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/@ckeditor/ckeditor5-build-classic@41.3.1/build/ckeditor.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.20/dist/sweetalert2.all.min.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -2262,6 +2261,22 @@
       });
     }
 
+    // โหลด CKEditor หลังหน้าเว็บพร้อมใช้งาน เพื่อลดเวลารอหน้า Login
+    let ckEditorLoadPromise = null;
+    function loadCkEditor() {
+      if (window.ClassicEditor) { initTadikaCk(); return Promise.resolve(); }
+      if (ckEditorLoadPromise) return ckEditorLoadPromise;
+      ckEditorLoadPromise = new Promise(resolve => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/@ckeditor/ckeditor5-build-classic@41.3.1/build/ckeditor.js';
+        script.async = true;
+        script.onload = () => { initTadikaCk(); resolve(); };
+        script.onerror = () => resolve();
+        document.head.appendChild(script);
+      });
+      return ckEditorLoadPromise;
+    }
+
     function setScore(formNo, si, ii, v) {
       const section = document.querySelector(`.form-panel[data-form="${formNo}"] .form-section[data-si="${si}"]`);
       if (!section) return;
@@ -2672,6 +2687,7 @@
           document.getElementById('reportMenuWrap').classList.remove('section-hidden');
           document.getElementById('dashCard').classList.remove('section-hidden');
           document.getElementById('evaluationSection').classList.remove('section-hidden');
+          loadCkEditor();
           resetEditState();
           loadEvalHistory(d.id);
         } else {
@@ -3155,7 +3171,10 @@
     initTadikaCk();
     renderAddrHeader();
     loadTadikaList();
-    loadStats();
+    const runWhenIdle = (fn, timeout = 1200) => window.requestIdleCallback
+      ? window.requestIdleCallback(fn, { timeout }) : window.setTimeout(fn, 250);
+    runWhenIdle(() => loadStats());
+    runWhenIdle(() => loadCkEditor());
     loadRememberedLogin();
     window.addEventListener('online', () => setConnectionStatus(true));
     window.addEventListener('offline', () => setConnectionStatus(false));
