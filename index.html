@@ -140,6 +140,23 @@
       background: var(--primary-light); border: 1px solid var(--primary-soft);
       border-radius: 12px; padding: 10px 14px; margin-top: 8px;
     }
+    .workflow-guide {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+      margin-bottom: 16px; padding: 12px; background: #fff;
+      border: 1px solid var(--border); border-radius: 16px;
+      box-shadow: 0 2px 10px rgba(6,95,70,.05);
+    }
+    .workflow-step { display:flex; align-items:center; gap:8px; min-width:0; color:var(--muted); font-size:.84rem; font-weight:600; }
+    .workflow-step .num { flex:0 0 28px; width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:50%; background:#eef2f6; color:var(--muted); font-weight:700; }
+    .workflow-step.active { color:var(--primary-deep); }
+    .workflow-step.active .num { background:var(--primary); color:#fff; }
+    .workflow-step span:last-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .action-note { margin: 6px 0 12px; color:var(--muted); font-size:.88rem; }
+    @media (max-width: 640px) {
+      .workflow-guide { grid-template-columns: repeat(2, 1fr); gap:10px 8px; }
+      .workflow-step { font-size:.8rem; }
+      .workflow-step .num { flex-basis:26px; width:26px; height:26px; }
+    }
 
     .alert { border-radius: 12px; padding: 12px 14px; margin: 10px 0; font-size: .92rem; }
     .alert-warn { background: #fef3c7; border: 1px solid #fde68a; color: #92400e; }
@@ -650,6 +667,13 @@
     <!-- ===== หน้าหลัก (หลังล็อกอิน) ===== -->
     <div id="appSection" class="section-hidden">
 
+      <div class="workflow-guide" aria-label="ขั้นตอนการนิเทศ">
+        <div class="workflow-step active"><span class="num">1</span><span>เลือกศูนย์</span></div>
+        <div class="workflow-step"><span class="num">2</span><span>ตรวจสอบที่อยู่</span></div>
+        <div class="workflow-step"><span class="num">3</span><span>เลือกครั้งที่</span></div>
+        <div class="workflow-step"><span class="num">4</span><span>เริ่มนิเทศ</span></div>
+      </div>
+
       <!-- จัดการผู้ใช้ (ผู้ดูแลระบบ) -->
       <div id="adminCard" class="card section-hidden">
         <div class="card-title">
@@ -667,7 +691,8 @@
 
       <!-- เลือกศูนย์ -->
       <div class="card">
-        <div class="card-title"><h4>เลือกศูนย์ตาดีกา / ปอเนาะ / ศอม.</h4><span class="badge" id="selTadikaBadge">ยังไม่ได้เลือก</span></div>
+        <div class="card-title"><h4>1. เลือกศูนย์ตาดีกา / ปอเนาะ / ศอม.</h4><span class="badge" id="selTadikaBadge">ยังไม่ได้เลือก</span></div>
+        <p class="action-note">ค้นหาด้วยชื่อศูนย์ ชื่อมัสยิด ที่อยู่ ตำบล หรืออำเภอ แล้วแตะรายการที่ต้องการ</p>
         <div class="position-relative">
           <input type="text" id="tadikaSearch" class="form-control" placeholder="พิมพ์ชื่อตาดีกา / มัสยิด / ที่อยู่ / ตำบล / อำเภอ..."
                  autocomplete="off" oninput="filterTadika('sel')" onkeydown="tadikaKey('sel', event)">
@@ -682,7 +707,7 @@
       <!-- แผนที่ปักหมุดแผนที่ (แสดงหลังล็อกอิน, ไม่บังคับ) -->
       <div class="card">
         <div class="card-title">
-          <h4>📍 แผนที่ศูนย์</h4>
+          <h4>2. 📍 เลือกที่อยู่ ศูนย์ตาดีกา</h4>
           <span class="badge" id="pinBadge">ยังไม่ได้เลือกศูนย์</span>
         </div>
         <div id="pinMapBox" style="height:280px; border-radius:14px; border:1.5px solid var(--border); z-index:0;"></div>
@@ -697,14 +722,15 @@
         <div class="info-box mt-2 small" style="margin-bottom:0;">
           👉 คลิกบนแผนที่ (หรือกด <b>📍 ตำแหน่งปัจจุบัน</b>) แล้วกด <b>💾 บันทึกแผนที่</b> — ไม่บังคับ แต่แนะนำให้ปักหมุดเพื่อใช้เดินทางนิเทศ บันทึกลงชีต ADDRESS (U=ละติจูด, V=ลองจิจูด)
         </div>
-        <label for="visitType" class="mt-3">ครั้งที่นิเทศ (กรณีบันทึกใหม่)</label>
+        <label for="visitType" class="mt-3">3. เลือกครั้งที่นิเทศ</label>
+        <p class="action-note">ถ้าเลือกศูนย์ที่เคยนิเทศแล้ว สามารถกด “แก้ไข” จากประวัติเดิมได้</p>
         <select id="visitType" class="form-select">
           <option value="">เลือกครั้งที่นิเทศ</option>
           <option value="ครั้งที่ 1 การศึกษาสภาพและกำหนดประเด็นพัฒนา">ครั้งที่ 1 การศึกษาสภาพและกำหนดประเด็นพัฒนา</option>
           <option value="ครั้งที่ 2 การติดตามและสนับสนุนการพัฒนา">ครั้งที่ 2 การติดตามและสนับสนุนการพัฒนา</option>
           <option value="ครั้งที่ 3 การประเมินผลและสรุปพัฒนาการ">ครั้งที่ 3 การประเมินผลและสรุปพัฒนาการ</option>
         </select>
-        <button class="btn btn-success w-100 mt-3" id="selectBtn" onclick="fetchTadikaData()" disabled>เริ่มการนิเทศ</button>
+        <button class="btn btn-success w-100 mt-3" id="selectBtn" onclick="fetchTadikaData()" disabled>4. เริ่มการนิเทศใหม่</button>
       </div>
 
       <!-- ประวัติ -->
@@ -766,23 +792,8 @@
               <div class="col-12"><label>สถานที่ตั้ง</label><input type="text" id="t_address" class="form-control"></div>
               <div class="col-6 col-md-4"><label>ตำบล</label><input type="text" id="t_subdist" class="form-control"></div>
               <div class="col-6 col-md-4"><label>อำเภอ</label><input type="text" id="t_dist" class="form-control"></div>
-              <div class="col-12 col-md-4">
-                <label>แผนที่ GPS (ปักหมุด)</label>
-                <div style="display:flex; gap:6px;">
-                  <input type="text" id="t_lat" class="form-control" placeholder="ละติจูด" readonly>
-                  <input type="text" id="t_lng" class="form-control" placeholder="ลองจิจูด" readonly>
-                </div>
-              </div>
-              <div class="col-12 col-md-8" style="display:flex; align-items:flex-end;">
-                <button type="button" class="btn btn-outline w-100" id="pinBtn" onclick="pinLocation()">📍 ปักหมุดตำแหน่งปัจจุบัน</button>
-              </div>
-              <div class="col-12">
-                <div id="pinStatus" class="info-box d-none mt-1"></div>
-                <div id="pinMapWrap" class="d-none mt-2">
-                  <iframe id="pinMap" width="100%" height="220" style="border:0; border-radius:12px;"
-                          loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-                </div>
-              </div>
+              <input type="hidden" id="t_lat">
+              <input type="hidden" id="t_lng">
             </div>
             <div class="row mt-3">
               <div class="col-6 col-md-4"><label>จำนวนครูผู้สอน (ช/ญ/รวม)</label>
@@ -2380,52 +2391,6 @@
       Swal.fire({ icon: 'success', title: 'AI ร่างแผนพัฒนาสำเร็จ', html: `ระดับผลการนิเทศเบื้องต้น: <b>${lvl.name} (${pct}%)</b><br>กรุณาตรวจสอบและปรับแก้ก่อนบันทึก`, confirmButtonText: 'ตกลง' });
     }
 
-    // ---- แผนที่ GPS (ปักหมุดตาดีกา) ----
-    function showPinMap(lat, lng, label) {
-      const url = 'https://www.google.com/maps?q=' + encodeURIComponent(lat + ',' + lng) + '&z=17';
-      const embed = 'https://maps.google.com/maps?q=' + encodeURIComponent(lat + ',' + lng) + '&z=17&output=embed';
-      document.getElementById('pinMap').src = embed;
-      document.getElementById('pinMapWrap').classList.remove('d-none');
-      const st = document.getElementById('pinStatus');
-      st.innerHTML = '<b>📍 แผนที่:</b> ' + escHtml(lat) + ', ' + escHtml(lng) +
-        ' <a href="' + url + '" target="_blank" rel="noopener" style="color:var(--blue-dark); font-weight:600;">เปิดแผนที่ ↗</a>';
-      st.classList.remove('d-none');
-      if (label) document.getElementById('dashTadikaName').innerText = label;
-    }
-    function hidePinMap() {
-      document.getElementById('pinMapWrap').classList.add('d-none');
-      document.getElementById('pinMap').src = '';
-      document.getElementById('pinStatus').classList.add('d-none');
-    }
-
-    function pinLocation() {
-      if (!navigator.geolocation) {
-        return Swal.fire({ icon: 'error', title: 'ไม่รองรับ', text: 'เบราว์เซอร์นี้ไม่รองรับการระบุตำแหน่ง (GPS)' });
-      }
-      const btn = document.getElementById('pinBtn');
-      btn.disabled = true;
-      btn.innerText = '⏳ กำลังหาตำแหน่ง...';
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const lat = pos.coords.latitude.toFixed(6);
-          const lng = pos.coords.longitude.toFixed(6);
-          document.getElementById('t_lat').value = lat;
-          document.getElementById('t_lng').value = lng;
-          showPinMap(lat, lng);
-          Swal.fire({ icon: 'success', title: 'ปักหมุดสำเร็จ!', text: 'ละติจูด: ' + lat + ', ลองจิจูด: ' + lng, timer: 1800, showConfirmButton: false });
-          btn.disabled = false;
-          btn.innerText = '📍 ปักหมุดตำแหน่งใหม่';
-        },
-        (err) => {
-          btn.disabled = false;
-          btn.innerText = '📍 ปักหมุดตำแหน่งปัจจุบัน';
-          const msgs = { 1: 'คุณไม่อนุญาตให้เข้าถึงตำแหน่ง', 2: 'ระบบไม่สามารถรับสัญญาณตำแหน่งได้', 3: 'การค้นหาตำแหน่งหมดเวลา' };
-          Swal.fire({ icon: 'warning', title: 'ไม่สามารถปักหมุดได้', text: msgs[err.code] || 'เกิดข้อผิดพลาดในการระบุตำแหน่ง' });
-        },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
-      );
-    }
-
     // ---- แผนที่ปักหมุด (Leaflet + OpenStreetMap — เลือกแผนที่จากแผนที่ได้) ----
     let pinMapObj = null;
     let pinMarker = null;
@@ -2586,8 +2551,12 @@
           document.getElementById('t_size').value = d.size;
           document.getElementById('t_lat').value = d.lat || '';
           document.getElementById('t_lng').value = d.lng || '';
-          if (d.lat && d.lng) showPinMap(d.lat, d.lng, tadikaLabel(t));
-          else hidePinMap();
+          if (d.lat && d.lng) {
+            setPinCoords(d.lat, d.lng);
+            if (pinMapObj) pinMapObj.setView([Number(d.lat), Number(d.lng)], 16);
+          } else {
+            updatePinMap();
+          }
           document.getElementById('t_tMale').value = d.tMale;
           document.getElementById('t_tFemale').value = d.tFemale;
           document.getElementById('t_tTotal').value = d.tTotal;
