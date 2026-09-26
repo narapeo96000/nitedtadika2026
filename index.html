@@ -223,8 +223,6 @@
     .q-note { width: 100%; margin-top: 10px; }
     .q-note textarea { width: 100%; min-height: 48px; border: 1.5px solid var(--border); border-radius: 10px; padding: 8px 12px; font-family: inherit; font-size: .88rem; resize: vertical; background: #fbfdff; }
     .q-note textarea:focus { outline: none; border-color: var(--blue); }
-    .ck-editor__editable_inline { min-height: 90px; max-height: 300px; overflow-y: auto; border-radius: 10px; }
-    .q-note .ck-editor__editable_inline { min-height: 48px; }
     .q-note label { font-size: .78rem; color: var(--muted); font-weight: 600; margin: 0 0 3px; }
     .check-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:8px; padding:8px 0; }
     .check-item { display:flex; align-items:flex-start; gap:7px; margin:0; padding:8px 10px; border:1px solid var(--border); border-radius:10px; background:#fff; font-weight:500; color:var(--ink); }
@@ -464,7 +462,6 @@
       .btn-sm { min-height: 40px; padding: 6px 12px; }
       .logout-btn { min-height: 40px; padding: 6px 14px; }
       .q-note textarea { min-height: 56px; }
-      .q-note .ck-editor__editable_inline { min-height: 56px; }
       .ap-del { min-height: 40px; padding: 6px 12px; }
       .suggest-item { padding: 12px 14px; }
       .form-control, .form-select { min-height: 44px; padding: 8px 12px; font-size: .95rem; }
@@ -2224,57 +2221,15 @@
       window.dispatchEvent(new Event('resize'));
     }
 
-    // ---- CKEditor สำหรับกล่องข้อความ/หมายเหตุ (บันทึกเป็นข้อความธรรมดา) ----
-    function tkToText(html) {
-      let s = String(html || '').replace(/<\/(p|div|li|h\d)>/gi, '\n').replace(/<br\s*\/?>/gi, '\n').replace(/<li[^>]*>/gi, '• ');
-      const tmp = document.createElement('div'); tmp.innerHTML = s;
-      return ((tmp.textContent || tmp.innerText || '').replace(/[ \t]+/g, ' ').replace(/[ \t]*\n[ \t]*/g, '\n').replace(/\n{3,}/g, '\n\n')).trim();
-    }
-
-    function tkCk(id) { return (window.__tkCk || {})[id]; }
-
+    // ---- ช่องข้อความธรรมดา ----
     function tkGet(id) {
-      const e = tkCk(id), t = document.getElementById(id);
-      if (e) return tkToText(e.getData());
+      const t = document.getElementById(id);
       return t ? String(t.value || '').trim() : '';
     }
 
     function tkSet(id, txt) {
-      txt = (txt == null ? '' : String(txt));
-      const e = tkCk(id), t = document.getElementById(id);
-      if (e) e.setData(txt);
-      if (t) t.value = txt;
-    }
-
-    function initTadikaCk() {
-      if (!window.ClassicEditor) return;
-      window.__tkCk = {};
-      const targets = Array.prototype.slice.call(document.querySelectorAll('.q-note textarea, textarea[id="f2_suggestion"], textarea[id^="f5_"]'));
-      targets.forEach(t => {
-        ClassicEditor.create(t, {
-          toolbar: ['bold', 'italic', 'underline', 'link', 'bulletedList', 'numberedList', 'blockQuote', 'undo', 'redo'],
-          placeholder: t.getAttribute('placeholder') || ''
-        }).then(ed => {
-          window.__tkCk[t.id] = ed;
-          ed.model.document.on('change:data', () => { t.value = tkToText(ed.getData()); });
-        }).catch(() => {});
-      });
-    }
-
-    // โหลด CKEditor หลังหน้าเว็บพร้อมใช้งาน เพื่อลดเวลารอหน้า Login
-    let ckEditorLoadPromise = null;
-    function loadCkEditor() {
-      if (window.ClassicEditor) { initTadikaCk(); return Promise.resolve(); }
-      if (ckEditorLoadPromise) return ckEditorLoadPromise;
-      ckEditorLoadPromise = new Promise(resolve => {
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/@ckeditor/ckeditor5-build-classic@41.3.1/build/ckeditor.js';
-        script.async = true;
-        script.onload = () => { initTadikaCk(); resolve(); };
-        script.onerror = () => resolve();
-        document.head.appendChild(script);
-      });
-      return ckEditorLoadPromise;
+      const t = document.getElementById(id);
+      if (t) t.value = (txt == null ? '' : String(txt));
     }
 
     function setScore(formNo, si, ii, v) {
@@ -2687,7 +2642,6 @@
           document.getElementById('reportMenuWrap').classList.remove('section-hidden');
           document.getElementById('dashCard').classList.remove('section-hidden');
           document.getElementById('evaluationSection').classList.remove('section-hidden');
-          loadCkEditor();
           resetEditState();
           loadEvalHistory(d.id);
         } else {
@@ -2908,7 +2862,7 @@
 
     function resetEvalForm() {
       document.querySelectorAll('.q-scale button').forEach(b => b.classList.remove('sel'));
-      document.querySelectorAll('.q-note textarea').forEach(t => { const e = tkCk(t.id); if (e) e.setData(''); t.value = ''; });
+      document.querySelectorAll('.q-note textarea').forEach(t => { t.value = ''; });
       ['g_date','g_contact','g_levels','g_students','g_teachers','g_teacher','g_subject','g_class','g_duration',
        ...GENERAL_FIELDS.map(fd => fd.id),
        'f1_date','f1_contact','f1_levels','f1_students','f1_teachers',
@@ -3168,13 +3122,11 @@
       event.preventDefault();
       event.returnValue = 'มีข้อมูลที่ยังไม่ได้บันทึก';
     });
-    initTadikaCk();
     renderAddrHeader();
     loadTadikaList();
     const runWhenIdle = (fn, timeout = 1200) => window.requestIdleCallback
       ? window.requestIdleCallback(fn, { timeout }) : window.setTimeout(fn, 250);
     runWhenIdle(() => loadStats());
-    runWhenIdle(() => loadCkEditor());
     loadRememberedLogin();
     window.addEventListener('online', () => setConnectionStatus(true));
     window.addEventListener('offline', () => setConnectionStatus(false));
