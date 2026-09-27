@@ -726,17 +726,18 @@
           <h4>2. 📍 เลือกที่อยู่ ศูนย์ตาดีกา</h4>
           <span class="badge" id="pinBadge">ยังไม่ได้เลือกศูนย์</span>
         </div>
-        <div id="pinMapBox" style="height:280px; border-radius:14px; border:1.5px solid var(--border); z-index:0;"></div>
+        <div id="pinMapBox" style="height:280px; border-radius:14px; border:1.5px solid var(--border); z-index:0; cursor:crosshair;"></div>
         <div class="row mt-2">
           <div class="col-6"><label>ละติจูด</label><input type="text" id="pinLatIn" class="form-control bg-light" readonly placeholder="-"></div>
           <div class="col-6"><label>ลองจิจูด</label><input type="text" id="pinLngIn" class="form-control bg-light" readonly placeholder="-"></div>
         </div>
         <div class="row mt-2">
-          <div class="col-6"><button type="button" class="btn btn-primary w-100" id="savePinBtn" onclick="savePinToSheet()" disabled>💾 บันทึกแผนที่</button></div>
-          <div class="col-6"><button type="button" class="btn btn-outline w-100" onclick="pinByGPS()">📍 ปักหมุดตำแหน่งปัจจุบัน</button></div>
+          <div class="col-12 col-md-4"><button type="button" class="btn btn-outline w-100" onclick="pinByGPS()">📍 ปักหมุดตำแหน่งปัจจุบัน (GPS)</button></div>
+          <div class="col-12 col-md-4"><button type="button" class="btn btn-outline w-100" onclick="focusPinMap()">🖱️ คลิกเลือกบนแผนที่</button></div>
+          <div class="col-12 col-md-4"><button type="button" class="btn btn-primary w-100" id="savePinBtn" onclick="savePinToSheet()" disabled>💾 บันทึกพิกัด</button></div>
         </div>
         <div class="info-box mt-2 small" style="margin-bottom:0;">
-          👉 คลิกบนแผนที่ หรือกด <b>📍 ปักหมุดตำแหน่งปัจจุบัน</b> เพื่อกำหนดพิกัดศูนย์ แล้วกด <b>💾 บันทึกแผนที่</b> เพื่อบันทึกพิกัดล่าสุด
+          👉 เลือกวิธีปักหมุด 1 วิธี แล้วตรวจสอบละติจูด/ลองจิจูดก่อนกด <b>💾 บันทึกพิกัด</b>
         </div>
         <label for="visitType" class="mt-3">3. เลือกครั้งที่นิเทศ</label>
         <p class="action-note">ถ้าเลือกศูนย์ที่เคยนิเทศแล้ว สามารถกด “แก้ไข” จากประวัติเดิมได้</p>
@@ -2442,6 +2443,17 @@
       updatePinMap();
     }
 
+    function focusPinMap() {
+      const box = document.getElementById('pinMapBox');
+      if (!selectedTadika) {
+        return Swal.fire({ icon: 'warning', title: 'กรุณาเลือกศูนย์ก่อน', text: 'เลือกศูนย์ตาดีกาก่อนปักหมุดพิกัด' });
+      }
+      if (box) {
+        box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (pinMapObj) setTimeout(() => pinMapObj.invalidateSize(), 250);
+      }
+    }
+
     function setPinCoords(lat, lng) {
       const la = Number(lat).toFixed(6);
       const lo = Number(lng).toFixed(6);
@@ -2502,7 +2514,7 @@
           const lat = pos.coords.latitude, lng = pos.coords.longitude;
           setPinCoords(lat, lng);
           pinMapObj.setView([lat, lng], 17);
-          Swal.fire({ icon: 'success', title: 'ปักหมุดตำแหน่งปัจจุบันแล้ว', text: 'ตรวจสอบตำแหน่ง แล้วกด 💾 บันทึกแผนที่ เพื่อบันทึกพิกัดล่าสุด', timer: 2200, showConfirmButton: false });
+          Swal.fire({ icon: 'success', title: 'ปักหมุดตำแหน่งปัจจุบันแล้ว', text: 'ตรวจสอบตำแหน่ง แล้วกด 💾 บันทึกพิกัด เพื่อบันทึกพิกัดล่าสุด', timer: 2200, showConfirmButton: false });
         },
         (err) => {
           Swal.close();
