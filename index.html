@@ -752,7 +752,7 @@
 
       <!-- ประวัติ -->
       <div id="historyCard" class="card section-hidden">
-        <div class="card-title"><h4>ประวัติการนิเทศของศูนย์นี้</h4><span class="badge" id="historyCount">0 รายการ</span></div>
+        <div class="card-title"><h4 id="historyTitle">ประวัติการนิเทศศูนย์ตาดีกา</h4><span class="badge" id="historyCount">0 รายการ</span></div>
         <div class="table-wrap">
           <table>
             <thead>
@@ -1922,6 +1922,7 @@
     }
 
     function prepareSelectedCenter(t) {
+      document.getElementById('historyTitle').innerText = 'ประวัติการนิเทศศูนย์ตาดีกา ' + String(t.name || t.id || '').trim();
       document.getElementById('historyCard').classList.remove('section-hidden');
       document.getElementById('reportMenuWrap').classList.remove('section-hidden');
       document.getElementById('historyBody').innerHTML = '<tr><td colspan="8" class="text-center text-muted py-3">กำลังค้นหาประวัติการนิเทศ...</td></tr>';
@@ -2062,6 +2063,7 @@
       const c = autoReg.sel;
       c.selected = null;
       selectedTadika = null;
+      document.getElementById('historyTitle').innerText = 'ประวัติการนิเทศศูนย์ตาดีกา';
       evalHistory = [];
       editingRecordFormType = '';
       invalidateReport();
