@@ -19,7 +19,7 @@ function getAddrSheet(type) { return type === TYPE_PONDOK ? SHEET_ADDR_PONDOK : 
 function getDataSheet(type) { return type === TYPE_PONDOK ? SHEET_DATA_PONDOK : SHEET_DATA_TADEKA; }
 
 // โครงสร้างใหม่ของชีต DATA (15 คอลัมน์ รองรับการประเมิน 4 ด้าน + สรุป)
-const DATA_HEADERS = ['Timestamp', 'ID ศูนย์', 'ชื่อศูนย์', 'ประเภทการประเมิน', 'คะแนนแบบ1', 'คะแนนแบบ2', 'คะแนนแบบ3', 'คะแนนแบบ4', 'รวม/150', 'ร้อยละ', 'ระดับ', 'รายละเอียด', 'ผู้นิเทศ', 'แก้ไขครั้งล่าสุด', 'ผู้แก้ไขล่าสุด'];
+const DATA_HEADERS = ['Timestamp', 'ID ศูนย์', 'ชื่อศูนย์', 'ประเภทการประเมิน', 'คะแนนแบบ1', 'คะแนนแบบ2', 'คะแนนแบบ3', 'คะแนนแบบ4', 'รวม/150', 'ร้อยละ', 'ระดับ', 'รายละเอียด', 'ผู้นิเทศ', 'ผู้แก้ไขล่าสุด', 'แก้ไขครั้งล่าสุด'];
 
 function doGet(e) {
   // GET API สำหรับข้อมูลอ่านอย่างเดียว: /exec?action=getTadikaList
@@ -438,6 +438,17 @@ function ensureDataSheet(type) {
     sheet.getRange(1, 1, 1, DATA_HEADERS.length).setValues([DATA_HEADERS]);
     return sheet;
   }
+  const lastRow = sheet.getLastRow();
+  if (lastRow >= 2) {
+    const currentHead = sheet.getRange(1, 13, 1, 3).getValues()[0].map(v => String(v || '').trim());
+    // ย้ายข้อมูลเดิมจาก M=ผู้นิเทศ, N=วันเวลา, O=ผู้แก้ไข
+    // เป็นรูปแบบใหม่ M=ผู้นิเทศ, N=ผู้แก้ไขล่าสุด, O=แก้ไขครั้งล่าสุด เพียงครั้งเดียว
+    if (currentHead[1] === 'แก้ไขครั้งล่าสุด' && currentHead[2] === 'ผู้แก้ไขล่าสุด') {
+      const audit = sheet.getRange(2, 13, lastRow - 1, 3).getValues();
+      audit.forEach(row => { const oldEditTime = row[1]; row[1] = row[2]; row[2] = oldEditTime; });
+      sheet.getRange(2, 13, audit.length, 3).setValues(audit);
+    }
+  }
   sheet.getRange(1, 1, 1, DATA_HEADERS.length).setValues([DATA_HEADERS]);
   return sheet;
 }
@@ -482,8 +493,8 @@ function getEvaluations(tadikaId) {
           level: rows[i][10],
           details: details,
           supervisor: rows[i][12],
-          lastEdit: formatDate(rows[i][13]),
-          lastEditor: rows[i][14]
+          lastEdit: formatDate(rows[i][14]),
+          lastEditor: rows[i][13]
         });
       }
     }
@@ -642,8 +653,9 @@ function saveEvaluation(payload) {
     dataSheet.getRange(row, 10).setValue(e.pct);
     dataSheet.getRange(row, 11).setValue(e.level);
     dataSheet.getRange(row, 12).setValue(detailsJSON);
-    // ยืนยันคอลัมน์ M:N:O ให้ตรงกับหัวตารางทุกครั้งที่แก้ไขรายการเดิม
-    dataSheet.getRange(row, 13, 1, 3).setValues([[supervisor, now, supervisor]]);
+    // คงผู้นิเทศเดิมไว้ที่ M และบันทึกผู้แก้ไข/เวลาไว้ที่ N:O
+    const originalSupervisor = dataSheet.getRange(row, 13).getValue() || supervisor;
+    dataSheet.getRange(row, 13, 1, 3).setValues([[originalSupervisor, supervisor, now]]);
     return {
       success: true,
       message: 'แก้ไขผลการนิเทศเรียบร้อยแล้ว!<br>แก้ไขครั้งล่าสุด: ' + formatDate(now) + ' โดย ' + supervisor,
@@ -652,7 +664,7 @@ function saveEvaluation(payload) {
     };
   }
 
-  dataSheet.appendRow([now, t.id, t.name, e.formType, e.score1, e.score2, e.score3, e.score4, e.totalScore, e.pct, e.level, detailsJSON, supervisor, now, supervisor]);
+  dataSheet.appendRow([now, t.id, t.name, e.formType, e.score1, e.score2, e.score3, e.score4, e.totalScore, e.pct, e.level, detailsJSON, supervisor, supervisor, now]);
   return {success: true, message: 'อัปเดตข้อมูลศูนย์ และบันทึกผลการนิเทศเรียบร้อยแล้ว!', lastEdit: formatDate(now), lastEditor: supervisor};
 }
 
