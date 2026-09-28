@@ -2853,6 +2853,7 @@
       recalcTotal();
       switchTab(6);
       document.getElementById('mainForm').scrollIntoView({ behavior: 'smooth' });
+      await Swal.fire({ icon: 'success', title: 'เรียกข้อมูลเพื่อแก้ไขแล้ว', text: 'ตรวจสอบและแก้ไขข้อมูลได้ตามต้องการ', timer: 1800, showConfirmButton: false });
     }
 
     // แจกคะแนนรวมรายด้านลงรายข้อ (สำหรับบันทึกเก่าที่ไม่มีรายละเอียดข้อ) — ข้อละ max ไม่เกิน
