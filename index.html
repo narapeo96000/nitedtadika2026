@@ -1478,6 +1478,19 @@
       });
       return result.isConfirmed;
     }
+    async function confirmExitEdit(actionText) {
+      if (formDirty) return confirmLeaveUnsaved(actionText);
+      if (!document.getElementById('editRow').value) return true;
+      const result = await Swal.fire({
+        icon: 'question',
+        title: 'ต้องการ' + actionText + 'ใช่หรือไม่',
+        text: 'ข้อมูลเดิมจะไม่ถูกบันทึกเพิ่มเติม',
+        showCancelButton: true,
+        confirmButtonColor: '#d97706', cancelButtonColor: '#64748b',
+        confirmButtonText: 'ยืนยัน', cancelButtonText: 'อยู่หน้านี้ต่อ'
+      });
+      return result.isConfirmed;
+    }
     function reportCenterLabel(t) { return t.name + ' · รหัส ' + String(t.id).trim(); }
     function populateReportCenters(useDefault = false) {
       const select = document.getElementById('reportCenter');
@@ -1873,7 +1886,8 @@
       }
     }
 
-    function doLogout() {
+    async function doLogout() {
+      if (!await confirmExitEdit('ออกจากระบบ')) return;
       currentUser = {};
       selectedTadika = null;
       document.getElementById('reportCenter').value = '';
@@ -1921,6 +1935,15 @@
 
     function filterTadika(key) {
       const c = autoReg[key];
+      if (key === 'sel' && (formDirty || document.getElementById('editRow').value)) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'ยังมีข้อมูลการนิเทศที่ยังไม่บันทึก',
+          text: 'กรุณากดบันทึกหรือยกเลิกการแก้ไขก่อนเปลี่ยนศูนย์',
+          confirmButtonText: 'ตกลง'
+        });
+        return;
+      }
       const q = document.getElementById(c.search).value.trim().toLowerCase();
       const box = document.getElementById(c.suggest);
       c.selected = null;
@@ -2627,7 +2650,7 @@
     }
 
     async function backToSelect() {
-      if (!await confirmLeaveUnsaved('เปลี่ยนศูนย์')) return;
+      if (!await confirmExitEdit('เปลี่ยนศูนย์')) return;
       resetEditState();
       clearTadikaSelection();
       document.getElementById('evaluationSection').classList.add('section-hidden');
@@ -2916,7 +2939,7 @@
     }
 
     async function cancelEdit() {
-      if (!await confirmLeaveUnsaved('ยกเลิกการแก้ไข')) return;
+      if (!await confirmExitEdit('ยกเลิกการแก้ไข')) return;
       resetEditState();
     }
 
