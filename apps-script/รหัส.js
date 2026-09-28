@@ -5,6 +5,7 @@ const SHEET_ADDR_TADEKA  = 'ADDR_TADEKA';
 const SHEET_DATA_PONDOK = 'DATA_PONDOK';
 const SHEET_ADDR_PONDOK = 'ADDR_PONDOK';
 const SHEET_USERS = 'USERS';
+const SHEET_LOGFILE_TADEKA = 'logfile_tadika';
 const TYPE_TADEKA = 'ตาดีกา';
 const TYPE_PONDOK = 'ปอเนาะ';
 const ADDR_SHEETS = [
@@ -453,6 +454,28 @@ function ensureDataSheet(type) {
   return sheet;
 }
 
+function ensureLogFileSheet() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  let sheet = ss.getSheetByName(SHEET_LOGFILE_TADEKA);
+  const headers = ['Timestamp', 'การดำเนินการ', 'ชีตต้นทาง', 'ประเภทศูนย์', 'แถวต้นทาง', 'รหัสศูนย์', 'ชื่อศูนย์', 'ผู้ดำเนินการ', 'ข้อมูลเดิมทั้งแถว'];
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_LOGFILE_TADEKA);
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  } else if (sheet.getLastRow() === 0) {
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  }
+  return sheet;
+}
+
+function backupEvaluationRow(sheet, type, row, action, actor) {
+  const oldValues = sheet.getRange(row, 1, 1, DATA_HEADERS.length).getValues()[0];
+  const logSheet = ensureLogFileSheet();
+  logSheet.appendRow([
+    new Date(), action, sheet.getName(), type, row,
+    String(oldValues[1] || ''), String(oldValues[2] || ''), String(actor || ''), JSON.stringify(oldValues)
+  ]);
+}
+
 function formatDate(d) {
   if(!d) return '';
   if(!(d instanceof Date)) d = new Date(d);
@@ -505,7 +528,8 @@ function getEvaluations(tadikaId) {
 
 // --- ลบประวัติการนิเทศเฉพาะรายการของศูนย์ที่เลือก ---
 function deleteEvaluation(payload) {
-  if (!getReportSession(payload)) return {success: false, message: 'หมดเวลาเข้าสู่ระบบ กรุณาเข้าสู่ระบบใหม่'};
+  const session = getReportSession(payload);
+  if (!session) return {success: false, message: 'หมดเวลาเข้าสู่ระบบ กรุณาเข้าสู่ระบบใหม่'};
   const centerId = String(payload.centerId || '').trim();
   const type = String(payload.type || '').trim();
   const row = Number(payload.row);
@@ -516,6 +540,7 @@ function deleteEvaluation(payload) {
   if (!sheet || row > sheet.getLastRow()) return {success: false, message: 'ไม่พบรายการที่ต้องการลบ'};
   const savedId = String(sheet.getRange(row, 2).getValue() || '').trim();
   if (savedId !== centerId) return {success: false, message: 'ไม่อนุญาตให้ลบข้อมูลของศูนย์อื่น'};
+  backupEvaluationRow(sheet, type, row, 'ลบก่อนดำเนินการ', session.username || 'ผู้ใช้งาน');
   sheet.deleteRow(row);
   return {success: true, message: 'ลบประวัติการนิเทศเรียบร้อยแล้ว'};
 }
@@ -644,6 +669,7 @@ function saveEvaluation(payload) {
 
   if(payload.editRow && !isNaN(payload.editRow)) {
     const row = Number(payload.editRow);
+    backupEvaluationRow(dataSheet, dataType, row, 'แก้ไขก่อนบันทึก', supervisor);
     dataSheet.getRange(row, 4).setValue(e.formType);
     dataSheet.getRange(row, 5).setValue(e.score1);
     dataSheet.getRange(row, 6).setValue(e.score2);
