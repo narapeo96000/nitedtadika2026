@@ -2662,7 +2662,10 @@
                 <td>${pct}%</td>
                 <td><span class="lv ${lvl.cls}">${lvl.name}</span></td>
                 <td class="small">${escHtml(h.supervisor)}</td>
-                <td><button class="btn btn-outline btn-sm" onclick="editEvaluation(${idx})">✏️ แก้ไข</button></td>`;
+                <td style="white-space:nowrap;">
+                  <button class="btn btn-outline btn-sm" onclick="editEvaluation(${idx})">✏️ แก้ไข</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteEvaluation(${idx})">🗑️ ลบ</button>
+                </td>`;
               body.appendChild(tr);
             });
           }
@@ -2670,6 +2673,38 @@
         }
       } catch (e) {
         body.innerHTML = '<tr><td colspan="8" class="text-center text-danger py-3">โหลดประวัติล้มเหลว</td></tr>';
+      }
+    }
+
+    async function deleteEvaluation(idx) {
+      const h = evalHistory[idx];
+      if (!h) return;
+      if (!await confirmLeaveUnsaved('ลบรายการนี้')) return;
+      const result = await Swal.fire({
+        icon: 'warning',
+        title: 'ต้องการลบประวัติการนิเทศ ใช่หรือไม่',
+        html: 'รายการวันที่ <b>' + escHtml(h.timestamp) + '</b><br>การลบข้อมูลไม่สามารถเรียกคืนได้',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626', cancelButtonColor: '#64748b',
+        confirmButtonText: 'ใช่, ลบรายการนี้', cancelButtonText: 'ยกเลิก'
+      });
+      if (!result.isConfirmed) return;
+      showLoading('กำลังลบประวัติการนิเทศ...');
+      try {
+        const res = await api('deleteEvaluation', {
+          sessionToken: currentUser.sessionToken,
+          centerId: h.id,
+          row: h.row,
+          type: h.type
+        });
+        Swal.close();
+        if (!res.success) return Swal.fire({ icon: 'error', title: 'ลบไม่สำเร็จ', html: escHtml(res.message) });
+        clearFormDirty();
+        await Swal.fire({ icon: 'success', title: 'ลบเรียบร้อยแล้ว', text: res.message, timer: 1600, showConfirmButton: false });
+        loadEvalHistory(document.getElementById('t_id').value || h.id);
+      } catch (e) {
+        Swal.close();
+        Swal.fire({ icon: 'error', title: 'ล้มเหลว', text: 'เครือข่ายขัดข้อง ไม่สามารถลบประวัติได้' });
       }
     }
 

@@ -80,6 +80,7 @@ function routeAction(action, payload) {
   if (action === 'setUserStatus') return setUserStatus(payload || {});
   if (action === 'getTadikaData') return getTadikaData(payload);
   if (action === 'getEvaluations') return getEvaluations(payload);
+  if (action === 'deleteEvaluation') return deleteEvaluation(payload || {});
   if (action === 'getReportEvaluations') return getReportEvaluations(payload || {});
   if (action === 'generateReportAI') return generateReportAI(payload || {});
   if (action === 'saveEvaluation') return saveEvaluation(payload || {});
@@ -489,6 +490,23 @@ function getEvaluations(tadikaId) {
   }
   list.sort((a, b) => a.timestamp < b.timestamp ? 1 : -1);
   return {success: true, data: list};
+}
+
+// --- ลบประวัติการนิเทศเฉพาะรายการของศูนย์ที่เลือก ---
+function deleteEvaluation(payload) {
+  if (!getReportSession(payload)) return {success: false, message: 'หมดเวลาเข้าสู่ระบบ กรุณาเข้าสู่ระบบใหม่'};
+  const centerId = String(payload.centerId || '').trim();
+  const type = String(payload.type || '').trim();
+  const row = Number(payload.row);
+  if (!centerId || ![TYPE_TADEKA, TYPE_PONDOK].includes(type) || !Number.isInteger(row) || row < 2) {
+    return {success: false, message: 'ข้อมูลรายการที่ต้องการลบไม่ถูกต้อง'};
+  }
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(getDataSheet(type));
+  if (!sheet || row > sheet.getLastRow()) return {success: false, message: 'ไม่พบรายการที่ต้องการลบ'};
+  const savedId = String(sheet.getRange(row, 2).getValue() || '').trim();
+  if (savedId !== centerId) return {success: false, message: 'ไม่อนุญาตให้ลบข้อมูลของศูนย์อื่น'};
+  sheet.deleteRow(row);
+  return {success: true, message: 'ลบประวัติการนิเทศเรียบร้อยแล้ว'};
 }
 
 function createReportSession(username, role) {
