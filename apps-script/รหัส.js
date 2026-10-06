@@ -79,6 +79,7 @@ function routeAction(action, payload) {
   if (action === 'getStats') return getStats();
   if (action === 'getUsers') return getUsers(payload || {});
   if (action === 'setUserStatus') return setUserStatus(payload || {});
+  if (action === 'addTadika') return addTadika(payload || {});
   if (action === 'getTadikaData') return getTadikaData(payload);
   if (action === 'getEvaluations') return getEvaluations(payload);
   if (action === 'deleteEvaluation') return deleteEvaluation(payload || {});
@@ -247,6 +248,44 @@ function getTadikaList() {
       address: rows[i][9], subdist: rows[i][10], dist: rows[i][11], lat: rows[i][20], lng: rows[i][21] });
   }
   return {success: true, data: list};
+}
+
+// --- เพิ่มข้อมูลศูนย์ตาดีกาใหม่จากผู้ใช้ที่เข้าสู่ระบบแล้ว ---
+function addTadika(payload) {
+  const session = getReportSession(payload);
+  if (!session) return {success: false, message: 'หมดเวลาเข้าสู่ระบบ กรุณาเข้าสู่ระบบใหม่'};
+
+  const data = payload.data || {};
+  const id = String(data.id || '').trim();
+  const name = String(data.name || '').trim();
+  const status = String(data.status || '').trim();
+  if (!id || !name || !status) return {success: false, message: 'กรุณากรอกรหัสตาดีกา สถานะ และชื่อศูนย์ให้ครบถ้วน'};
+  if (id.length > 100 || name.length > 200) return {success: false, message: 'รหัสหรือชื่อศูนย์ยาวเกินกำหนด'};
+
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sheet = ss.getSheetByName(SHEET_ADDR_TADEKA);
+  if (!sheet) return {success: false, message: 'ไม่พบชีต ADDR_TADEKA'};
+
+  const startRow = 6;
+  const lastRow = sheet.getLastRow();
+  if (lastRow >= startRow) {
+    const ids = sheet.getRange(startRow, 1, lastRow - startRow + 1, 1).getValues();
+    if (ids.some(row => String(row[0] || '').trim().toLowerCase() === id.toLowerCase())) {
+      return {success: false, message: 'รหัสตาดีกานี้มีอยู่ในระบบแล้ว กรุณาตรวจสอบหรือค้นหาใหม่'};
+    }
+  }
+
+  const row = Math.max(sheet.getLastRow() + 1, startRow);
+  const values = [[
+    id, status, String(data.mosque || '').trim(), name, String(data.head || '').trim(),
+    String(data.eduSec || '').trim(), String(data.eduRel || '').trim(), String(data.foundedDate || '').trim(),
+    String(data.regNum || '').trim(), String(data.address || '').trim(), String(data.subdist || '').trim(),
+    String(data.dist || '').trim(), String(data.phone || '').trim(), String(data.size || '').trim(),
+    data.tMale || '', data.tFemale || '', data.tTotal || '', data.sMale || '', data.sFemale || '',
+    data.sTotal || '', data.lat || '', data.lng || ''
+  ]];
+  sheet.getRange(row, 1, 1, values[0].length).setValues(values);
+  return {success: true, message: 'เพิ่มข้อมูลศูนย์ตาดีกาเรียบร้อยแล้ว', row: row, id: id};
 }
 
 // --- สถิติระบบนิเทศออนไลน์ (นับเฉพาะตาดีกาที่ได้รับการนิเทศ จาก ADDR_TADEKA + DATA_TADEKA) ---

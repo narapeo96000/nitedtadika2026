@@ -720,6 +720,49 @@
         </div>
       </div>
 
+      <!-- เพิ่มข้อมูลเมื่อค้นหาไม่พบ -->
+      <div id="addTadikaCard" class="card section-hidden">
+        <div class="card-title">
+          <h4>➕ เพิ่มข้อมูลศูนย์ตาดีกาใหม่</h4>
+          <span class="badge">สำหรับผู้เข้าสู่ระบบ</span>
+        </div>
+        <div class="info-box small">ไม่พบชื่อศูนย์ที่ค้นหาใช่หรือไม่? กรอกข้อมูลด้านล่างเพื่อเพิ่มศูนย์ใหม่ลงฐานข้อมูลตาดีกา</div>
+        <div class="row">
+          <div class="col-6"><label for="newTadikaId">ID (รหัสตาดีกา) <span class="text-danger">*</span></label><input id="newTadikaId" class="form-control" maxlength="100" autocomplete="off"></div>
+          <div class="col-6"><label for="newTadikaStatus">สถานะ <span class="text-danger">*</span></label><select id="newTadikaStatus" class="form-select"><option value="">เลือกสถานะ</option><option value="จดทะเบียน">จดทะเบียน</option><option value="ไม่จดทะเบียน">ไม่จดทะเบียน</option></select></div>
+          <div class="col-6"><label for="newTadikaMosque">ชื่อมัสยิด</label><input id="newTadikaMosque" class="form-control"></div>
+          <div class="col-6"><label for="newTadikaName">ชื่อศูนย์ (ตาดีกา) <span class="text-danger">*</span></label><input id="newTadikaName" class="form-control"></div>
+          <div class="col-6"><label for="newTadikaHead">ประธานศูนย์ฯ (ตาดีกา)</label><input id="newTadikaHead" class="form-control"></div>
+          <div class="col-6"><label for="newTadikaFounded">วันเดือนปีที่ก่อตั้ง</label><input id="newTadikaFounded" class="form-control" placeholder="เช่น 1 มกราคม 2560"></div>
+          <div class="col-6"><label for="newTadikaEduSec">วุฒิการศึกษา (สามัญ)</label><input id="newTadikaEduSec" class="form-control"></div>
+          <div class="col-6"><label for="newTadikaEduRel">วุฒิการศึกษา (ศาสนา)</label><input id="newTadikaEduRel" class="form-control"></div>
+          <div class="col-6"><label for="newTadikaRegNum">เลขที่จดทะเบียน</label><input id="newTadikaRegNum" class="form-control"></div>
+          <div class="col-6"><label for="newTadikaPhone">โทรศัพท์</label><input id="newTadikaPhone" class="form-control" inputmode="tel"></div>
+          <div class="col-6"><label for="newTadikaAddress">เลขที่ หมู่ ถนน</label><input id="newTadikaAddress" class="form-control"></div>
+          <div class="col-6"><label for="newTadikaSubdist">ตำบล</label><input id="newTadikaSubdist" class="form-control"></div>
+          <div class="col-6"><label for="newTadikaDist">อำเภอ</label><input id="newTadikaDist" class="form-control"></div>
+          <div class="col-6"><label for="newTadikaSize">ขนาดศูนย์</label><input id="newTadikaSize" class="form-control"></div>
+        </div>
+        <div class="card-subtitle mt-3">👨‍🏫 จำนวนผู้สอน</div>
+        <div class="row">
+          <div class="col-4"><label for="newTadikaTMale">ชาย</label><input id="newTadikaTMale" class="form-control" type="number" min="0" inputmode="numeric"></div>
+          <div class="col-4"><label for="newTadikaTFemale">หญิง</label><input id="newTadikaTFemale" class="form-control" type="number" min="0" inputmode="numeric"></div>
+          <div class="col-4"><label for="newTadikaTTotal">รวม</label><input id="newTadikaTTotal" class="form-control" type="number" min="0" inputmode="numeric"></div>
+        </div>
+        <div class="card-subtitle mt-3">🎒 จำนวนผู้เรียน</div>
+        <div class="row">
+          <div class="col-4"><label for="newTadikaSMale">ชาย</label><input id="newTadikaSMale" class="form-control" type="number" min="0" inputmode="numeric"></div>
+          <div class="col-4"><label for="newTadikaSFemale">หญิง</label><input id="newTadikaSFemale" class="form-control" type="number" min="0" inputmode="numeric"></div>
+          <div class="col-4"><label for="newTadikaSTotal">รวม</label><input id="newTadikaSTotal" class="form-control" type="number" min="0" inputmode="numeric"></div>
+        </div>
+        <div class="card-subtitle mt-3">📍 พิกัด (ไม่บังคับ)</div>
+        <div class="row">
+          <div class="col-6"><label for="newTadikaLat">พิกัด x / ละติจูด</label><input id="newTadikaLat" class="form-control" type="number" step="any" inputmode="decimal"></div>
+          <div class="col-6"><label for="newTadikaLng">พิกัด y / ลองจิจูด</label><input id="newTadikaLng" class="form-control" type="number" step="any" inputmode="decimal"></div>
+        </div>
+        <button type="button" class="btn btn-primary w-100 mt-3" onclick="submitNewTadika()">💾 บันทึกข้อมูลศูนย์ใหม่</button>
+      </div>
+
       <!-- แผนที่ปักหมุดแผนที่ (แสดงหลังล็อกอิน, ไม่บังคับ) -->
       <div class="card">
         <div class="card-title">
@@ -1999,7 +2042,12 @@
       }
       document.getElementById(c.info).classList.add('d-none');
       if (c.btn) document.getElementById(c.btn).disabled = true;
-      if (!q) { box.classList.add('d-none'); box.innerHTML = ''; if (key === 'addr') renderAddrTable(); return; }
+      if (!q) {
+        box.classList.add('d-none'); box.innerHTML = '';
+        if (key === 'sel') document.getElementById('addTadikaCard').classList.add('section-hidden');
+        if (key === 'addr') renderAddrTable();
+        return;
+      }
 
       c.matches = tadikaList.filter(t => {
         const hay = [t.id, t.name, t.mosque, t.address, t.subdist, t.dist].filter(Boolean).join(' ').toLowerCase();
@@ -2008,9 +2056,13 @@
 
       box.classList.remove('d-none');
       if (c.matches.length === 0) {
-        box.innerHTML = '<button class="suggest-item" disabled>ไม่พบข้อมูลศูนย์ที่ค้นหา</button>';
+        box.innerHTML = key === 'sel'
+          ? '<div class="suggest-item" role="status">ไม่พบข้อมูลศูนย์ที่ค้นหา</div><button type="button" class="btn btn-outline2 btn-sm w-100 mt-1" onclick="openAddTadikaForm()">➕ เพิ่มข้อมูลศูนย์นี้</button>'
+          : '<button class="suggest-item" disabled>ไม่พบข้อมูลศูนย์ที่ค้นหา</button>';
+        if (key === 'sel') document.getElementById('addTadikaCard').classList.remove('section-hidden');
         return;
       }
+      if (key === 'sel') document.getElementById('addTadikaCard').classList.add('section-hidden');
       box.innerHTML = c.matches.map((t, i) => `
         <button type="button" class="suggest-item" onclick="selectTadika('${key}', ${i})">
           <b style="color:var(--primary-deep);">${escHtml(tadikaLabel(t))}</b>
@@ -2025,6 +2077,7 @@
       const c = autoReg[key];
       const t = c.matches[i];
       if (!t) return;
+      if (key === 'sel') document.getElementById('addTadikaCard').classList.add('section-hidden');
       c.selected = t;
       if (key === 'sel') { selectedTadika = t; invalidateReport(); updatePinMap(); prepareSelectedCenter(t); }
       document.getElementById(c.search).value = tadikaLabel(t);
@@ -2072,6 +2125,7 @@
       const c = autoReg[key];
       c.matches = [t];
       c.selected = t;
+      if (key === 'sel') document.getElementById('addTadikaCard').classList.add('section-hidden');
       if (key === 'sel') { selectedTadika = t; invalidateReport(); updatePinMap(); prepareSelectedCenter(t); }
       document.getElementById(c.search).value = tadikaLabel(t);
       document.getElementById(c.suggest).classList.add('d-none');
@@ -2116,6 +2170,71 @@
       document.getElementById('visitType').value = '';
       document.getElementById('visitTypeOther').value = '';
       toggleVisitTypeOther();
+      document.getElementById('addTadikaCard').classList.add('section-hidden');
+    }
+
+    function openAddTadikaForm() {
+      const card = document.getElementById('addTadikaCard');
+      if (!card) return;
+      card.classList.remove('section-hidden');
+      document.getElementById('newTadikaName').value = document.getElementById('tadikaSearch').value.trim();
+      card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(() => document.getElementById('newTadikaId').focus(), 350);
+    }
+
+    function newTadikaValue(id) {
+      return String(document.getElementById(id)?.value || '').trim();
+    }
+
+    function clearNewTadikaForm() {
+      ['newTadikaId','newTadikaStatus','newTadikaMosque','newTadikaName','newTadikaHead','newTadikaFounded','newTadikaEduSec','newTadikaEduRel','newTadikaRegNum','newTadikaPhone','newTadikaAddress','newTadikaSubdist','newTadikaDist','newTadikaSize','newTadikaTMale','newTadikaTFemale','newTadikaTTotal','newTadikaSMale','newTadikaSFemale','newTadikaSTotal','newTadikaLat','newTadikaLng'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = '';
+      });
+    }
+
+    async function submitNewTadika() {
+      const id = newTadikaValue('newTadikaId');
+      const status = newTadikaValue('newTadikaStatus');
+      const name = newTadikaValue('newTadikaName');
+      const required = [{ id: 'newTadikaId', value: id, label: 'ID (รหัสตาดีกา)' }, { id: 'newTadikaStatus', value: status, label: 'สถานะ' }, { id: 'newTadikaName', value: name, label: 'ชื่อศูนย์ (ตาดีกา)' }];
+      const missing = required.find(field => !field.value);
+      if (missing) {
+        const el = document.getElementById(missing.id);
+        await Swal.fire({ icon: 'warning', title: 'กรอกข้อมูลไม่ครบ', text: 'กรุณากรอก' + missing.label, confirmButtonText: 'ตกลง' });
+        if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        return;
+      }
+      const numberValue = id => {
+        const value = newTadikaValue(id);
+        return value === '' ? '' : Number(value);
+      };
+      const data = {
+        id, status, name,
+        mosque: newTadikaValue('newTadikaMosque'), head: newTadikaValue('newTadikaHead'),
+        foundedDate: newTadikaValue('newTadikaFounded'), eduSec: newTadikaValue('newTadikaEduSec'), eduRel: newTadikaValue('newTadikaEduRel'),
+        regNum: newTadikaValue('newTadikaRegNum'), phone: newTadikaValue('newTadikaPhone'), address: newTadikaValue('newTadikaAddress'),
+        subdist: newTadikaValue('newTadikaSubdist'), dist: newTadikaValue('newTadikaDist'), size: newTadikaValue('newTadikaSize'),
+        tMale: numberValue('newTadikaTMale'), tFemale: numberValue('newTadikaTFemale'), tTotal: numberValue('newTadikaTTotal'),
+        sMale: numberValue('newTadikaSMale'), sFemale: numberValue('newTadikaSFemale'), sTotal: numberValue('newTadikaSTotal'),
+        lat: numberValue('newTadikaLat'), lng: numberValue('newTadikaLng')
+      };
+      const confirm = await Swal.fire({ icon: 'question', title: 'ยืนยันเพิ่มข้อมูลศูนย์?', html: 'ระบบจะเพิ่ม <b>' + escHtml(name) + '</b> ลงฐานข้อมูลตาดีกา', showCancelButton: true, confirmButtonText: 'ยืนยันบันทึก', cancelButtonText: 'ยกเลิก' });
+      if (!confirm.isConfirmed) return;
+      showLoading('กำลังเพิ่มข้อมูลศูนย์ตาดีกา...');
+      try {
+        const res = await api('addTadika', { sessionToken: currentUser.sessionToken, data });
+        Swal.close();
+        if (!res.success) return Swal.fire({ icon: 'error', title: 'เพิ่มข้อมูลไม่สำเร็จ', html: escHtml(res.message) });
+        clearNewTadikaForm();
+        document.getElementById('addTadikaCard').classList.add('section-hidden');
+        await loadTadikaList(true);
+        const added = tadikaList.find(t => String(t.id).trim().toLowerCase() === id.toLowerCase());
+        if (added) selectByObj('sel', added);
+        await Swal.fire({ icon: 'success', title: 'เพิ่มข้อมูลสำเร็จ', text: 'พบข้อมูลศูนย์ใหม่แล้ว สามารถเลือกครั้งที่นิเทศและเริ่มบันทึกได้', confirmButtonText: 'ตกลง' });
+      } catch (e) {
+        Swal.close();
+        Swal.fire({ icon: 'error', title: 'เครือข่ายขัดข้อง', text: 'ไม่สามารถเพิ่มข้อมูลศูนย์ได้ กรุณาลองใหม่' });
+      }
     }
 
     document.addEventListener('click', (e) => {
