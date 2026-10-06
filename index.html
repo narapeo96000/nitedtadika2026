@@ -325,7 +325,8 @@
     @media print {
       @page { size:A4; margin:14mm; @bottom-center { content:counter(page); font:8pt sans-serif; color:#64748b; } }
       html,body { background:#fff !important; margin:0 !important; padding:0 !important; }
-      body > :not(.container),body > .container > :not(#appSection),#appSection > :not(#reportPreviewCard) { display:none !important; }
+      /* reportPreviewCard อยู่ภายใน evaluationSection จึงต้องคงพาเรนต์ไว้ตอนพิมพ์ ไม่เช่นนั้น PDF จะเป็นหน้าว่าง */
+      body > :not(.container),body > .container > :not(#appSection),#appSection > :not(#evaluationSection),#evaluationSection:not(.report-mode),#evaluationSection.report-mode > form > :not(#reportPreviewCard) { display:none !important; }
       body > .container,#appSection { max-width:none !important; width:100% !important; margin:0 !important; padding:0 !important; }
       #reportPreviewCard { position:static !important; width:100% !important; max-width:none !important; margin:0 !important; padding:0 !important; border:0 !important; box-shadow:none !important; }
       #reportPreviewCard .card-title,.no-print { display:none !important; }
