@@ -1923,6 +1923,8 @@
           if (currentUser.role === 'ผู้ดูแลระบบ') { adminCard.classList.remove('section-hidden'); loadUsers(); }
           // เลือกสถานที่นิเทศหลังเข้าสู่ระบบจากการ์ด "เลือกศูนย์" ด้านล่าง
           clearTadikaSelection();
+          // โหลดรายชื่อใหม่หลัง Login เพื่อไม่ให้ช่องค้นหาใช้ข้อมูลว่างจากรอบก่อนเข้าสู่ระบบ
+          await loadTadikaList(true);
           document.getElementById('tadikaSearch').focus();
           initPinMap();
         } else {
@@ -2016,7 +2018,7 @@
       loadEvalHistory(t.id);
     }
 
-    function filterTadika(key) {
+    async function filterTadika(key) {
       const c = autoReg[key];
       if (key === 'sel' && (formDirty || document.getElementById('editRow').value)) {
         Swal.fire({
@@ -2048,6 +2050,9 @@
         if (key === 'addr') renderAddrTable();
         return;
       }
+
+      // ถ้ารายชื่อยังไม่พร้อม ให้รอการโหลดก่อนกรองคำค้น เพื่อไม่แสดงผลว่าไม่พบข้อมูลหลอก
+      if (key === 'sel' && !tadikaList.length) await loadTadikaList();
 
       c.matches = tadikaList.filter(t => {
         const hay = [t.id, t.name, t.mosque, t.address, t.subdist, t.dist].filter(Boolean).join(' ').toLowerCase();
