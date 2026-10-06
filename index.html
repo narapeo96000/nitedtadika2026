@@ -1536,6 +1536,7 @@
     let reportCenterMatches = [];
     let reportCenterActive = -1;
     let formDirty = false;
+    let centerSwitchConfirmOpen = false;
     function markFormDirty() {
       if (document.getElementById('evaluationSection').classList.contains('section-hidden')) return;
       formDirty = true;
@@ -2022,13 +2023,17 @@
     async function filterTadika(key) {
       const c = autoReg[key];
       if (key === 'sel' && (formDirty || document.getElementById('editRow').value)) {
-        Swal.fire({
-          icon: 'warning',
-          title: 'ยังมีข้อมูลการนิเทศที่ยังไม่บันทึก',
-          text: 'กรุณากดบันทึกหรือยกเลิกการแก้ไขก่อนเปลี่ยนศูนย์',
-          confirmButtonText: 'ตกลง'
-        });
-        return;
+        if (centerSwitchConfirmOpen) return;
+        const previousSelectedLabel = c.selected ? tadikaLabel(c.selected) : '';
+        centerSwitchConfirmOpen = true;
+        const ok = await confirmExitEdit('เปลี่ยนศูนย์');
+        centerSwitchConfirmOpen = false;
+        if (!ok) {
+          document.getElementById(c.search).value = previousSelectedLabel;
+          return;
+        }
+        resetEditState();
+        return filterTadika(key);
       }
       const q = document.getElementById(c.search).value.trim().toLowerCase();
       const box = document.getElementById(c.suggest);
