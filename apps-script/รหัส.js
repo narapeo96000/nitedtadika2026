@@ -267,11 +267,15 @@ function addTadika(payload) {
   if (!sheet) return {success: false, message: 'ไม่พบชีต ADDR_TADEKA'};
 
   const startRow = 6;
+  const normalizeName = value => String(value || '').trim().toLowerCase().replace(/\s+/g, '');
   const lastRow = sheet.getLastRow();
   if (lastRow >= startRow) {
-    const ids = sheet.getRange(startRow, 1, lastRow - startRow + 1, 1).getValues();
-    if (ids.some(row => String(row[0] || '').trim().toLowerCase() === id.toLowerCase())) {
+    const existing = sheet.getRange(startRow, 1, lastRow - startRow + 1, 4).getValues();
+    if (existing.some(row => String(row[0] || '').trim().toLowerCase() === id.toLowerCase())) {
       return {success: false, message: 'รหัสตาดีกานี้มีอยู่ในระบบแล้ว กรุณาตรวจสอบหรือค้นหาใหม่'};
+    }
+    if (existing.some(row => normalizeName(row[3]) === normalizeName(name))) {
+      return {success: false, message: 'ชื่อศูนย์ตาดีกานี้มีอยู่ในระบบแล้ว กรุณาค้นหาและเลือกศูนย์เดิม'};
     }
   }
 

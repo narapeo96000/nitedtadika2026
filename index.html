@@ -733,7 +733,7 @@
           <div class="col-6"><label for="newTadikaId">ID (รหัสตาดีกา) <span class="text-danger">*</span></label><input id="newTadikaId" class="form-control" maxlength="100" autocomplete="off"></div>
           <div class="col-6"><label for="newTadikaStatus">สถานะ <span class="text-danger">*</span></label><select id="newTadikaStatus" class="form-select"><option value="">เลือกสถานะ</option><option value="จดทะเบียน">จดทะเบียน</option><option value="ไม่จดทะเบียน">ไม่จดทะเบียน</option></select></div>
           <div class="col-6"><label for="newTadikaMosque">ชื่อมัสยิด</label><input id="newTadikaMosque" class="form-control"></div>
-          <div class="col-6"><label for="newTadikaName">ชื่อศูนย์ (ตาดีกา) <span class="text-danger">*</span></label><input id="newTadikaName" class="form-control"></div>
+          <div class="col-6"><label for="newTadikaName">ชื่อศูนย์ (ตาดีกา) <span class="text-danger">*</span></label><input id="newTadikaName" class="form-control" aria-describedby="newTadikaNameCheck" oninput="checkNewTadikaName()"><div id="newTadikaNameCheck" class="small mt-1" role="status" aria-live="polite"></div></div>
           <div class="col-6"><label for="newTadikaHead">ประธานศูนย์ฯ (ตาดีกา)</label><input id="newTadikaHead" class="form-control"></div>
           <div class="col-6"><label for="newTadikaFounded">วันเดือนปีที่ก่อตั้ง</label><input id="newTadikaFounded" class="form-control" placeholder="เช่น 1 มกราคม 2560"></div>
           <div class="col-6"><label for="newTadikaEduSec">วุฒิการศึกษา (สามัญ)</label><input id="newTadikaEduSec" class="form-control"></div>
@@ -2190,6 +2190,7 @@
       if (!card) return;
       card.classList.remove('section-hidden');
       document.getElementById('newTadikaName').value = document.getElementById('tadikaSearch').value.trim();
+      checkNewTadikaName();
       card.scrollIntoView({ behavior: 'smooth', block: 'start' });
       setTimeout(() => document.getElementById('newTadikaId').focus(), 350);
     }
@@ -2202,18 +2203,52 @@
       ['newTadikaId','newTadikaStatus','newTadikaMosque','newTadikaName','newTadikaHead','newTadikaFounded','newTadikaEduSec','newTadikaEduRel','newTadikaRegNum','newTadikaPhone','newTadikaAddress','newTadikaSubdist','newTadikaDist','newTadikaSize','newTadikaTMale','newTadikaTFemale','newTadikaTTotal','newTadikaSMale','newTadikaSFemale','newTadikaSTotal','newTadikaLat','newTadikaLng'].forEach(id => {
         const el = document.getElementById(id); if (el) el.value = '';
       });
+      checkNewTadikaName();
+    }
+
+    function normalizeNewTadikaName(value) {
+      return String(value || '').trim().toLowerCase().replace(/\s+/g, '');
+    }
+
+    function checkNewTadikaName() {
+      const input = document.getElementById('newTadikaName');
+      const message = document.getElementById('newTadikaNameCheck');
+      if (!input || !message) return null;
+      const name = String(input.value || '').trim();
+      const normalized = normalizeNewTadikaName(name);
+      const duplicate = normalized ? tadikaList.find(t => normalizeNewTadikaName(t.name) === normalized) : null;
+      if (duplicate) {
+        message.className = 'small mt-1 text-danger';
+        message.innerHTML = '⚠️ พบชื่อศูนย์นี้ในระบบแล้ว: <b>' + escHtml(tadikaLabel(duplicate)) + '</b>';
+        input.setCustomValidity('ชื่อศูนย์นี้มีอยู่ในระบบแล้ว');
+      } else if (name) {
+        message.className = 'small mt-1 text-success';
+        message.textContent = '✓ ไม่พบชื่อซ้ำในรายชื่อที่โหลดไว้';
+        input.setCustomValidity('');
+      } else {
+        message.className = 'small mt-1 text-muted';
+        message.textContent = 'พิมพ์ชื่อศูนย์เพื่อให้ระบบตรวจสอบชื่อซ้ำ';
+        input.setCustomValidity('');
+      }
+      return duplicate;
     }
 
     async function submitNewTadika() {
       const id = newTadikaValue('newTadikaId');
       const status = newTadikaValue('newTadikaStatus');
       const name = newTadikaValue('newTadikaName');
+      const duplicateName = checkNewTadikaName();
       const required = [{ id: 'newTadikaId', value: id, label: 'ID (รหัสตาดีกา)' }, { id: 'newTadikaStatus', value: status, label: 'สถานะ' }, { id: 'newTadikaName', value: name, label: 'ชื่อศูนย์ (ตาดีกา)' }];
       const missing = required.find(field => !field.value);
       if (missing) {
         const el = document.getElementById(missing.id);
         await Swal.fire({ icon: 'warning', title: 'กรอกข้อมูลไม่ครบ', text: 'กรุณากรอก' + missing.label, confirmButtonText: 'ตกลง' });
         if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        return;
+      }
+      if (duplicateName) {
+        await Swal.fire({ icon: 'warning', title: 'ชื่อศูนย์ซ้ำในระบบ', text: 'กรุณาตรวจสอบชื่อศูนย์ หรือค้นหาและเลือกศูนย์เดิมแทน', confirmButtonText: 'ตกลง' });
+        document.getElementById('newTadikaName').focus();
         return;
       }
       const numberValue = id => {
